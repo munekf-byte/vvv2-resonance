@@ -1,9 +1,8 @@
 // =============================================================================
 // VALVRAVE-RESONANCE: 実戦セッション画面 [BYPASS MODE]
-// 認証チェック無効 — RLS回避のためモックセッションで描画確認
+// ID不明・DB取得失敗でも必ずゲスト用空セッションを表示する
 // =============================================================================
 
-import { notFound } from "next/navigation";
 import { loadSessionById } from "@/lib/supabase/session-db";
 import { PlayClientPage } from "./PlayClientPage";
 import type { PlaySession } from "@/types";
@@ -12,12 +11,11 @@ interface PlayPageProps {
   params: Promise<{ id: string }>;
 }
 
-/** RLS/認証バイパス時のモックセッション */
 function makeMockSession(id: string): PlaySession {
   return {
     id,
     userId: "guest-user",
-    machineName: "バルvrave2",
+    machineName: "ヴァルヴレイヴ2",
     startedAt: new Date().toISOString(),
     endedAt: null,
     status: "ACTIVE",
@@ -36,10 +34,14 @@ function makeMockSession(id: string): PlaySession {
 export default async function PlayPage({ params }: PlayPageProps) {
   const { id } = await params;
 
-  if (!id) notFound();
+  // DB取得を試みる（失敗時はモックで継続）
+  let session: PlaySession | null = null;
+  try {
+    session = await loadSessionById(id, "guest-user");
+  } catch {
+    // DB接続エラー等 → モックで継続
+  }
 
-  // 認証バイパス: ゲストユーザーIDで試みる → 失敗時はモックセッションを使用
-  const session = (await loadSessionById(id, "guest-user")) ?? makeMockSession(id);
-
-  return <PlayClientPage initialSession={session} />;
+  // notFound() は呼ばない — 必ずゲスト用空セッションで表示
+  return <PlayClientPage initialSession={session ?? makeMockSession(id)} />;
 }
