@@ -90,11 +90,11 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-v2-black flex flex-col">
+    <div className="flex flex-col overflow-hidden" style={{ height: "100dvh" }}>
 
-      {/* ===== Sticky ヘッダー ===== */}
+      {/* ===== ヘッダー (固定) ===== */}
       <header
-        className="sticky top-0 z-40 border-b-2 border-gray-600 safe-area-top shadow-md"
+        className="flex-none border-b-2 border-gray-600 safe-area-top shadow-md"
         style={{ backgroundColor: "#1f2937" }}
       >
         <div className="max-w-2xl mx-auto px-3 h-14 flex items-center gap-3">
@@ -120,8 +120,8 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
         </div>
       </header>
 
-      {/* ===== メインコンテンツ ===== */}
-      <main className="flex-1 max-w-2xl w-full mx-auto pb-32 pt-1">
+      {/* ===== メインコンテンツ (スクロール領域) ===== */}
+      <main className="flex-1 overflow-y-auto min-h-0 max-w-2xl w-full mx-auto pb-32">
         <NormalBlockList
           blocks={blocks}
           atLabels={atLabels}

@@ -10,7 +10,8 @@ import type { NormalBlock } from "@/types";
 import {
   TG_ZONES, TG_MODES, TG_WIN_TRIGGERS, TG_EVENTS,
   TG_ENDING_SUGGESTIONS, TG_TROPHIES, TG_KAKUGAN,
-  TG_SHINSEKAI, TG_INVITATIONS, TG_ZENCHO,
+  TG_SHINSEKAI, TG_INVITATIONS,
+  TG_ZENCHO_ZONES, TG_ZENCHO_TYPES,
 } from "@/lib/engine/constants";
 import {
   getZoneCellColor, getModeCellColor, getTriggerCellColor, getEventCellColor,
@@ -28,8 +29,7 @@ interface Props {
 
 type FormState = Omit<NormalBlock, "id">;
 
-const ZENCHO_SLOTS = 4;
-const MULTI_SLOTS  = 3;
+const MULTI_SLOTS = 4; // 赫眼・精神世界・招待状 それぞれ4スロット
 
 function emptyForm(): FormState {
   return {
@@ -201,17 +201,13 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
           </div>
         </div>
 
-        {/* ── 前兆履歴 (4スロット) ── */}
-        <MultiSelectSection
-          title="前兆履歴"
-          titleColor={{ backgroundColor: "#ef4444", color: "#ffffff" }}
-          options={[...TG_ZENCHO]}
+        {/* ── 前兆履歴 (ゾーン別スロット) ── */}
+        <ZenchoSection
           values={form.zencho}
-          slots={ZENCHO_SLOTS}
-          onChange={(i, v) => setArraySlot("zencho", i, v)}
+          onChange={(next) => setField("zencho", next)}
         />
 
-        {/* ── 赫眼状態 (3スロット) ── */}
+        {/* ── 赫眼状態 (4スロット) ── */}
         <MultiSelectSection
           title="赫眼状態"
           titleColor={{ backgroundColor: "#b10202", color: "#ffffff" }}
@@ -222,7 +218,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
           colorFn={getKakuganCellColor}
         />
 
-        {/* ── 精神世界 (3スロット) ── */}
+        {/* ── 精神世界 (4スロット) ── */}
         <MultiSelectSection
           title="精神世界"
           titleColor={{ backgroundColor: "#5a3286", color: "#ffffff" }}
@@ -233,7 +229,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
           colorFn={getShinsekaiCellColor}
         />
 
-        {/* ── 招待状 (3スロット) ── */}
+        {/* ── 招待状 (4スロット) ── */}
         <MultiSelectSection
           title="招待状"
           titleColor={{ backgroundColor: "#7c3aed", color: "#ffffff" }}
@@ -253,6 +249,62 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
         >
           保存
         </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── ZenchoSection ───────────────────────────────────────────────────────────
+// ゾーンごとの固定スロット。各ゾーンに「-」「前兆」「東京上空」を選択。
+// 格納フォーマット: "ゾーン:タイプ" (例: "100:東京上空")
+
+function ZenchoSection({
+  values, onChange,
+}: {
+  values: string[];
+  onChange: (next: string[]) => void;
+}) {
+  // values → ゾーンキーのマップ
+  const zoneMap: Record<string, string> = {};
+  for (const v of values) {
+    const col = v.indexOf(":");
+    if (col !== -1) zoneMap[v.slice(0, col)] = v.slice(col + 1);
+  }
+
+  function handleChange(zone: string, type: string) {
+    const filtered = values.filter((v) => !v.startsWith(zone + ":"));
+    onChange(type ? [...filtered, `${zone}:${type}`] : filtered);
+  }
+
+  return (
+    <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
+      <span
+        className="inline-block text-[11px] font-mono font-bold px-3 py-1 rounded mb-3"
+        style={{ backgroundColor: "#ef4444", color: "#ffffff" }}
+      >
+        前兆履歴
+      </span>
+      <div className="grid grid-cols-3 gap-2">
+        {([...TG_ZENCHO_ZONES] as string[]).map((zone) => {
+          const current = zoneMap[zone] ?? "";
+          return (
+            <div key={zone} className="flex flex-col gap-1">
+              <span className="text-[10px] font-mono text-gray-500 text-center font-bold">
+                {zone}
+              </span>
+              <select
+                className="w-full text-sm font-mono border-2 border-gray-300 rounded px-1 py-3 focus:outline-none focus:border-gray-500 bg-white text-center"
+                value={current}
+                onChange={(e) => handleChange(zone, e.target.value)}
+              >
+                <option value="">-</option>
+                {([...TG_ZENCHO_TYPES] as string[]).map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
