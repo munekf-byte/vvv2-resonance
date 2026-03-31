@@ -2,7 +2,7 @@
 // VALVRAVE-RESONANCE: セッション DB 操作 (サーバー用)
 // =============================================================================
 
-import type { PlaySession, NormalBlock, ATEntry, SessionSummary, ModeInferenceResult } from "@/types";
+import type { PlaySession, NormalBlock, ATEntry, SessionSummary } from "@/types";
 import { createServerSupabaseClient } from "./server";
 
 // -----------------------------------------------------------------------------
@@ -27,7 +27,7 @@ function rowToSession(row: Record<string, unknown>): PlaySession {
     normalBlocks: castJson<NormalBlock[]>(row.normal_blocks ?? []),
     atEntries: castJson<ATEntry[]>(row.at_entries ?? []),
     summary: castJson<SessionSummary | null>(row.summary ?? null),
-    modeInferences: castJson<(ModeInferenceResult | null)[]>(row.mode_inferences ?? []),
+    modeInferences: castJson<null[]>(row.mode_inferences ?? []),
     memo: (row.memo as string | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,

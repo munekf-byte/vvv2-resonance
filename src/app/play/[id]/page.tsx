@@ -15,7 +15,7 @@ function makeMockSession(id: string): PlaySession {
   return {
     id,
     userId: "guest-user",
-    machineName: "ヴァルヴレイヴ2",
+    machineName: "東京喰種 RESONANCE",
     startedAt: new Date().toISOString(),
     endedAt: null,
     status: "ACTIVE",
