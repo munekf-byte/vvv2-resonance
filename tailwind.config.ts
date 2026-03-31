@@ -1,8 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  // ダークモードをデフォルト強制（class ベース）
-  darkMode: "class",
+  // ライトモード固定 (darkMode 無効)
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,62 +10,53 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // ===== VALVRAVE-RESONANCE デザインシステム =====
-        // 漆黒: ベース背景
+        // ===== TOKYO GHOUL RESONANCE デザインシステム =====
+        // 白・ライトグレー: ベース背景 (クラス名は互換性のため v2-* を維持)
         "v2-black": {
-          DEFAULT: "#0A0A0A",
-          50: "#1A1A1A",
-          100: "#141414",
-          200: "#0F0F0F",
-          300: "#0A0A0A",
+          DEFAULT: "#FFFFFF",
+          50:      "#F9FAFB",
+          100:     "#F3F4F6",
+          200:     "#E5E7EB",
+          300:     "#D1D5DB",
         },
-        // 深みのある赤: 危険・AT・差枚マイナス
+        // 深紅: 喰種・アクセント
         "v2-red": {
-          DEFAULT: "#CC0000",
-          50: "#FF4444",
-          100: "#FF2222",
-          200: "#EE0000",
-          300: "#CC0000",
-          400: "#AA0000",
-          500: "#880000",
-          muted: "#3D0000",
-          bg: "#1A0000",
+          DEFAULT: "#B91C1C",
+          50:      "#EF4444",
+          100:     "#DC2626",
+          200:     "#B91C1C",
+          300:     "#991B1B",
+          400:     "#7F1D1D",
+          500:     "#6B1212",
+          muted:   "#FEE2E2",
+          bg:      "#FFF5F5",
         },
-        // サイバーな紫: AT・CZ・ハラキリ・アクセント
+        // チャコール: サブアクセント
         "v2-purple": {
-          DEFAULT: "#6600AA",
-          50: "#CC88FF",
-          100: "#AA55EE",
-          200: "#8833DD",
-          300: "#6600AA",
-          400: "#550088",
-          500: "#440066",
-          muted: "#2D0044",
-          bg: "#140022",
+          DEFAULT: "#374151",
+          50:      "#6B7280",
+          100:     "#4B5563",
+          200:     "#374151",
+          300:     "#1F2937",
+          400:     "#111827",
+          500:     "#030712",
+          muted:   "#F3F4F6",
+          bg:      "#F9FAFB",
         },
         // 補助カラー
-        "v2-cyan": {
-          DEFAULT: "#00CCDD",
-          muted: "#003344",
-        },
-        "v2-gold": {
-          DEFAULT: "#FFAA00",
-          muted: "#332200",
-        },
-        "v2-green": {
-          DEFAULT: "#00CC66",
-          muted: "#003322",
-        },
+        "v2-cyan":   { DEFAULT: "#0891B2", muted: "#E0F2FE" },
+        "v2-gold":   { DEFAULT: "#D97706", muted: "#FEF3C7" },
+        "v2-green":  { DEFAULT: "#059669", muted: "#D1FAE5" },
         // テキスト
         "v2-text": {
-          primary: "#F0F0F0",
-          secondary: "#A0A0A0",
-          muted: "#606060",
+          primary:   "#111827",
+          secondary: "#6B7280",
+          muted:     "#9CA3AF",
         },
         // ボーダー
         "v2-border": {
-          DEFAULT: "#2A2A2A",
-          accent: "#3A0066",
+          DEFAULT: "#E5E7EB",
+          accent:  "#FECACA",
         },
       },
       fontFamily: {
@@ -74,22 +64,21 @@ const config: Config = {
         sans: ["'Noto Sans JP'", "'Inter'", "sans-serif"],
       },
       backgroundImage: {
-        // グラデーション: ヘッダー等
-        "v2-gradient": "linear-gradient(135deg, #0A0A0A 0%, #14001E 50%, #0A0A0A 100%)",
-        "v2-card": "linear-gradient(180deg, #141414 0%, #0F0F0F 100%)",
+        "v2-gradient": "linear-gradient(135deg, #FFFFFF 0%, #FFF5F5 50%, #FFFFFF 100%)",
+        "v2-card":     "linear-gradient(180deg, #FFFFFF 0%, #F9FAFB 100%)",
       },
       animation: {
-        "pulse-red": "pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "pulse-red":   "pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "glow-purple": "glow-purple 2s ease-in-out infinite alternate",
       },
       keyframes: {
         "pulse-red": {
-          "0%, 100%": { boxShadow: "0 0 0 0 rgba(204, 0, 0, 0)" },
-          "50%": { boxShadow: "0 0 12px 4px rgba(204, 0, 0, 0.4)" },
+          "0%, 100%": { boxShadow: "0 0 0 0 rgba(185,28,28,0)" },
+          "50%":       { boxShadow: "0 0 12px 4px rgba(185,28,28,0.2)" },
         },
         "glow-purple": {
-          from: { boxShadow: "0 0 4px rgba(102, 0, 170, 0.3)" },
-          to: { boxShadow: "0 0 16px rgba(102, 0, 170, 0.7)" },
+          from: { boxShadow: "0 0 4px rgba(55,65,81,0.15)" },
+          to:   { boxShadow: "0 0 16px rgba(55,65,81,0.35)" },
         },
       },
     },

@@ -1,82 +1,58 @@
 // =============================================================================
-// VALVRAVE-RESONANCE: セッション状態管理 (Zustand v2)
-// Project: V2-Web-Analytic | Version: 0.2.0
+// TOKYO GHOUL RESONANCE: セッション状態管理 (Zustand)
+// エンジン計算なし — データ保持・操作のみ
 // =============================================================================
 
 import { create } from "zustand";
-import type {
-  PlaySession,
-  NormalBlock,
-  ATEntry,
-  ATRound,
-  RecalculateOutput,
-} from "@/types";
-import { V2Engine, applyRecalculateOutput } from "@/lib/engine/V2Engine";
+import type { PlaySession, NormalBlock, ATEntry, ATRound } from "@/types";
 
 // -----------------------------------------------------------------------------
 // Store 型定義
 // -----------------------------------------------------------------------------
 
 interface SessionState {
-  /** 現在編集中のセッション */
   session: PlaySession | null;
-  /** Engineの最新計算出力 */
-  lastOutput: RecalculateOutput | null;
-  /** ローディング */
   isLoading: boolean;
-  /** エラーメッセージ */
   error: string | null;
 }
 
 interface SessionActions {
-  /** セッションをロードして再計算 */
   loadSession: (session: PlaySession) => void;
 
-  // --- 通常ブロック ---
   appendNormalBlock: (block: NormalBlock) => void;
   updateNormalBlock: (blockId: string, updated: NormalBlock) => void;
   deleteNormalBlock: (blockId: string) => void;
 
-  // --- ATエントリ ---
   appendATEntry: (entry: ATEntry) => void;
   updateATEntry: (atKey: string, updated: ATEntry) => void;
   deleteATEntry: (atKey: string) => void;
 
-  // --- ATラウンド ---
   appendATRound: (atKey: string, round: ATRound) => void;
   updateATRound: (atKey: string, roundId: string, updated: ATRound) => void;
   deleteATRound: (atKey: string, roundId: string) => void;
 
-  // --- セッション設定 ---
   updateStartDiff: (newStartDiff: number) => void;
   updateInitialThroughCount: (count: number) => void;
 
-  /** セッションクリア */
   clearSession: () => void;
-  /** エラークリア */
   clearError: () => void;
 }
-
-// -----------------------------------------------------------------------------
-// ヘルパー: V2Engineの出力をセッションに適用してstoreを更新する
-// -----------------------------------------------------------------------------
 
 type SetFn = (partial: Partial<SessionState & SessionActions>) => void;
 type GetFn = () => SessionState & SessionActions;
 
-function withRecalculate(
+// セッションを直接更新するヘルパー (エンジン計算なし)
+function mutateSession(
   set: SetFn,
   get: GetFn,
-  engineFn: (session: PlaySession) => RecalculateOutput
+  mutateFn: (s: PlaySession) => PlaySession
 ): void {
   const { session } = get();
   if (!session) return;
   try {
-    const output = engineFn(session);
-    const updatedSession = applyRecalculateOutput(session, output);
-    set({ session: updatedSession, lastOutput: output, error: null });
+    set({ session: mutateFn(session), error: null });
   } catch (e) {
-    set({ error: e instanceof Error ? e.message : "計算エラー" });
+    set({ error: e instanceof Error ? e.message : "更新エラー" });
   }
 }
 
@@ -86,88 +62,96 @@ function withRecalculate(
 
 export const useSessionStore = create<SessionState & SessionActions>(
   (set, get) => ({
-    // 初期状態
     session: null,
-    lastOutput: null,
     isLoading: false,
     error: null,
 
-    // ---- loadSession ----
     loadSession: (session) => {
-      set({ isLoading: true, error: null });
-      try {
-        const output = V2Engine.recalculate({ session });
-        const updated = applyRecalculateOutput(session, output);
-        set({ session: updated, lastOutput: output, isLoading: false });
-      } catch (e) {
-        set({
-          error: e instanceof Error ? e.message : "セッション読み込みエラー",
-          isLoading: false,
-        });
-      }
+      set({ session, isLoading: false, error: null });
     },
 
     // ---- 通常ブロック ----
     appendNormalBlock: (block) =>
-      withRecalculate(set, get, (s) => V2Engine.appendNormalBlock(s, block)),
+      mutateSession(set, get, (s) => ({
+        ...s,
+        normalBlocks: [...s.normalBlocks, block],
+      })),
 
     updateNormalBlock: (blockId, updated) =>
-      withRecalculate(set, get, (s) =>
-        V2Engine.updateNormalBlock(s, blockId, updated)
-      ),
+      mutateSession(set, get, (s) => ({
+        ...s,
+        normalBlocks: s.normalBlocks.map((b) => (b.id === blockId ? updated : b)),
+      })),
 
     deleteNormalBlock: (blockId) =>
-      withRecalculate(set, get, (s) => V2Engine.deleteNormalBlock(s, blockId)),
+      mutateSession(set, get, (s) => ({
+        ...s,
+        normalBlocks: s.normalBlocks.filter((b) => b.id !== blockId),
+      })),
 
     // ---- ATエントリ ----
     appendATEntry: (entry) =>
-      withRecalculate(set, get, (s) => V2Engine.appendATEntry(s, entry)),
+      mutateSession(set, get, (s) => ({
+        ...s,
+        atEntries: [...s.atEntries, entry],
+      })),
 
     updateATEntry: (atKey, updated) =>
-      withRecalculate(set, get, (s) =>
-        V2Engine.updateATEntry(s, atKey, updated)
-      ),
+      mutateSession(set, get, (s) => ({
+        ...s,
+        atEntries: s.atEntries.map((e) => (e.atKey === atKey ? updated : e)),
+      })),
 
     deleteATEntry: (atKey) =>
-      withRecalculate(set, get, (s) => V2Engine.deleteATEntry(s, atKey)),
+      mutateSession(set, get, (s) => ({
+        ...s,
+        atEntries: s.atEntries.filter((e) => e.atKey !== atKey),
+      })),
 
     // ---- ATラウンド ----
     appendATRound: (atKey, round) =>
-      withRecalculate(set, get, (s) =>
-        V2Engine.appendATRound(s, atKey, round)
-      ),
+      mutateSession(set, get, (s) => ({
+        ...s,
+        atEntries: s.atEntries.map((e) =>
+          e.atKey === atKey ? { ...e, rounds: [...e.rounds, round] } : e
+        ),
+      })),
 
     updateATRound: (atKey, roundId, updated) =>
-      withRecalculate(set, get, (s) =>
-        V2Engine.updateATRound(s, atKey, roundId, updated)
-      ),
+      mutateSession(set, get, (s) => ({
+        ...s,
+        atEntries: s.atEntries.map((e) =>
+          e.atKey === atKey
+            ? { ...e, rounds: e.rounds.map((r) => (r.id === roundId ? updated : r)) }
+            : e
+        ),
+      })),
 
     deleteATRound: (atKey, roundId) =>
-      withRecalculate(set, get, (s) =>
-        V2Engine.deleteATRound(s, atKey, roundId)
-      ),
+      mutateSession(set, get, (s) => ({
+        ...s,
+        atEntries: s.atEntries.map((e) =>
+          e.atKey === atKey
+            ? { ...e, rounds: e.rounds.filter((r) => r.id !== roundId) }
+            : e
+        ),
+      })),
 
     // ---- セッション設定 ----
     updateStartDiff: (newStartDiff) =>
-      withRecalculate(set, get, (s) =>
-        V2Engine.updateStartDiff(s, newStartDiff)
-      ),
+      mutateSession(set, get, (s) => ({ ...s, startDiff: newStartDiff })),
 
     updateInitialThroughCount: (count) =>
-      withRecalculate(set, get, (s) =>
-        V2Engine.updateInitialThroughCount(s, count)
-      ),
+      mutateSession(set, get, (s) => ({ ...s, initialThroughCount: count })),
 
     // ---- ユーティリティ ----
-    clearSession: () =>
-      set({ session: null, lastOutput: null, error: null }),
-
+    clearSession: () => set({ session: null, error: null }),
     clearError: () => set({ error: null }),
   })
 );
 
 // -----------------------------------------------------------------------------
-// セレクター (コンポーネントからの便利アクセス)
+// セレクター
 // -----------------------------------------------------------------------------
 
 export const selectTotalDiff = (s: SessionState): number =>
@@ -184,7 +168,6 @@ export const selectATEntries = (s: SessionState): ATEntry[] =>
 
 export const selectLatestModeInference = (s: SessionState) => {
   const inferences = s.session?.modeInferences ?? [];
-  // 最後の非nullな推定結果を返す
   for (let i = inferences.length - 1; i >= 0; i--) {
     if (inferences[i] !== null) return inferences[i];
   }

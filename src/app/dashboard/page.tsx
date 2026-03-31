@@ -1,6 +1,6 @@
 // =============================================================================
-// VALVRAVE-RESONANCE: ダッシュボード [GHOST-BUSTERS MODE]
-// 認証・リダイレクト完全排除 — GUEST_PROFILEで必ず描画する
+// TOKYO GHOUL RESONANCE: ダッシュボード
+// 認証バイパス中 — GUEST_PROFILEで描画
 // =============================================================================
 
 import { SignOutButton } from "./SignOutButton";
@@ -31,7 +31,7 @@ function DashboardView({ profile }: DashboardViewProps) {
       <header className="sticky top-0 z-40 bg-v2-black border-b border-v2-border safe-area-top">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-mono font-black text-v2-red text-lg tracking-wider">V2</span>
+            <span className="font-mono font-black text-v2-red text-lg tracking-wider">TGR</span>
             <span className="font-mono text-v2-text-muted text-xs tracking-widest">RESONANCE</span>
           </div>
           <div className="flex items-center gap-3">

@@ -2,23 +2,22 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "VALVRAVE-RESONANCE | V2実戦分析",
-  description: "ヴァルヴレイヴ2 実戦データ精密分析システム",
-  // PWA対応 (ホールでの使用を想定)
+  title: "TOKYO GHOUL RESONANCE | 実戦分析",
+  description: "東京喰種 実戦データ精密分析システム",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
-    title: "V2-Analytic",
+    statusBarStyle: "default",
+    title: "TGR",
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,       // ホール操作: 拡大無効
+  maximumScale: 1,
   userScalable: false,
-  themeColor: "#0A0A0A",
+  themeColor: "#FFFFFF",
 };
 
 export default function RootLayout({
@@ -27,8 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" className="dark">
-      <body className="antialiased min-h-screen bg-v2-black">
+    <html lang="ja">
+      <body className="antialiased min-h-screen bg-white">
         {children}
       </body>
     </html>

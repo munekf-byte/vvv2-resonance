@@ -7,7 +7,8 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Zap } from "lucide-react";
 import type { ATEntry, ATRound } from "@/types";
-import { CUT_FLAG_ED } from "@/lib/engine/constants";
+
+const CUT_FLAG_ED = "切断║ED"; // 将来的に東京喰種用定数に置き換え予定
 
 interface ATSessionCardProps {
   entry: ATEntry;

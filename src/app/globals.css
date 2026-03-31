@@ -2,100 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ===== VALVRAVE-RESONANCE グローバルスタイル ===== */
+/* ===== TOKYO GHOUL RESONANCE グローバルスタイル ===== */
 
 @layer base {
-  /* 漆黒をデフォルト背景に強制 */
   html {
-    background-color: #0A0A0A;
-    color: #F0F0F0;
+    background-color: #FFFFFF;
+    color: #111827;
   }
 
   body {
     @apply bg-v2-black text-v2-text-primary font-sans;
-    /* ホールでの使用を想定: タップハイライト無効化 */
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* スクロールバー: V2配色 */
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #141414;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #6600AA;
-    border-radius: 2px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #8833DD;
-  }
+  ::-webkit-scrollbar       { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: #F3F4F6; }
+  ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
 }
 
 @layer components {
-  /* ===== カード =====  */
   .v2-card {
-    @apply bg-v2-black-50 border border-v2-border rounded-lg;
+    @apply bg-white border border-v2-border rounded-lg shadow-sm;
   }
 
-  /* ===== ボタン基底 ===== */
   .v2-btn {
     @apply inline-flex items-center justify-center
            rounded-md font-mono text-sm font-medium
            transition-colors duration-150
-           focus:outline-none focus:ring-2 focus:ring-v2-purple
+           focus:outline-none focus:ring-2 focus:ring-v2-red
            disabled:opacity-50 disabled:pointer-events-none;
   }
-
-  .v2-btn-primary {
-    @apply v2-btn bg-v2-red text-white hover:bg-v2-red-200 active:bg-v2-red-400;
-  }
-
-  .v2-btn-secondary {
-    @apply v2-btn bg-v2-purple text-white hover:bg-v2-purple-200 active:bg-v2-purple-400;
-  }
-
+  .v2-btn-primary   { @apply v2-btn bg-v2-red text-white hover:bg-v2-red-100 active:bg-v2-red-200; }
+  .v2-btn-secondary { @apply v2-btn bg-v2-purple text-white hover:bg-v2-purple-100 active:bg-v2-purple-200; }
   .v2-btn-ghost {
     @apply v2-btn bg-transparent text-v2-text-secondary
            hover:bg-v2-black-50 hover:text-v2-text-primary
            border border-v2-border;
   }
 
-  /* ===== 差枚バッジ ===== */
-  .v2-diff-positive {
-    @apply text-v2-green font-mono font-bold;
-  }
+  .v2-diff-positive { @apply text-v2-green font-mono font-bold; }
+  .v2-diff-negative { @apply text-v2-red font-mono font-bold; }
+  .v2-diff-zero     { @apply text-v2-text-muted font-mono; }
 
-  .v2-diff-negative {
-    @apply text-v2-red font-mono font-bold;
-  }
-
-  .v2-diff-zero {
-    @apply text-v2-text-muted font-mono;
-  }
-
-  /* ===== ボトムシート (ホール入力UI) ===== */
   .v2-bottom-sheet {
     @apply fixed bottom-0 left-0 right-0
-           bg-v2-black-50 border-t border-v2-border
-           rounded-t-2xl z-50
+           bg-white border-t border-v2-border
+           rounded-t-2xl z-50 shadow-lg
            safe-area-bottom;
   }
 }
 
 @layer utilities {
-  /* セーフエリア対応 (iPhone ノッチ/ホームバー) */
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  .safe-area-top {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-
-  /* モノスペースフォントでの数値揃え */
-  .tabular-nums {
-    font-variant-numeric: tabular-nums;
-  }
+  .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .safe-area-top    { padding-top: env(safe-area-inset-top, 0px); }
+  .tabular-nums     { font-variant-numeric: tabular-nums; }
 }
