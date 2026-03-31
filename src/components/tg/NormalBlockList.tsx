@@ -1,10 +1,9 @@
 "use client";
 // =============================================================================
 // TOKYO GHOUL RESONANCE: 通常時ブロック一覧
-// レイアウト: main が overflow-y-auto のスクロールコンテナ
-//   → 列ヘッダーは sticky top-0 でコンテナ内に固定
-//   → overflow-x-auto は使わない (sticky との競合防止)
-// 示唆列: 現状の半分幅 / 他の重要列を拡大
+// グリッド: [編集52px] [ゾーン1fr] [モード1fr] [契機46px] [イベント46px] [AT46px] [示唆56px] [▼26px]
+// 編集セル: 実G数 + ✎ 編集 の2行表示 — 大きくタップしやすい
+// アコーディオントグル: 最右端の独立した26px列
 // =============================================================================
 
 import { useState } from "react";
@@ -24,8 +23,6 @@ import {
   type CellColor,
 } from "@/lib/tg/cellColors";
 
-// ─── Props ───────────────────────────────────────────────────────────────────
-
 interface Props {
   blocks: NormalBlock[];
   atLabels: Map<string, string>;
@@ -33,10 +30,8 @@ interface Props {
   onDelete: (blockId: string) => void;
 }
 
-// ─── グリッド定義 ─────────────────────────────────────────────────────────────
-// ✎ | 実G数 | ゾーン | モード | 契機 | イベント | AT | 示唆(半分)
-// 示唆: 60px = 旧1frの約半分
-const COLS = "grid-cols-[20px_32px_36px_36px_46px_36px_30px_60px]";
+// ─── グリッド ─────────────────────────────────────────────────────────────────
+const COLS = "grid-cols-[52px_1fr_1fr_46px_46px_46px_56px_26px]";
 
 const HDR_BG       = "#1f2937";
 const HDR_TEXT     = "#f9fafb";
@@ -61,12 +56,12 @@ export function NormalBlockList({ blocks, atLabels, onEdit, onDelete }: Props) {
   return (
     <div className="border-x border-gray-400">
 
-      {/* ===== スティッキー列ヘッダー (main スクロールコンテナ内で固定) ===== */}
+      {/* ===== スティッキー列ヘッダー ===== */}
       <div
         className={`sticky top-0 z-30 grid ${COLS} border-b-2 border-gray-500`}
         style={{ backgroundColor: HDR_BG }}
       >
-        {["✎", "実G", "ゾーン", "モード", "契機", "イベント", "AT", "示唆"].map((h, i) => (
+        {["編集", "ゾーン", "モード", "契機", "イベント", "AT", "示唆", ""].map((h, i) => (
           <div
             key={i}
             style={{ color: HDR_TEXT }}
@@ -78,7 +73,7 @@ export function NormalBlockList({ blocks, atLabels, onEdit, onDelete }: Props) {
       </div>
 
       {/* ===== データ行 ===== */}
-      <div className="border-t-0">
+      <div>
         {blocks.map((block, index) => {
           const isExpanded = expandedId === block.id;
           const atLabel    = atLabels.get(block.id);
@@ -99,18 +94,17 @@ export function NormalBlockList({ blocks, atLabels, onEdit, onDelete }: Props) {
               {/* ── メイン行 ── */}
               <div className={`grid ${COLS}`}>
 
-                {/* 鉛筆 → 編集 */}
+                {/* 編集ボタン (52px): 実G数 + ✎ 編集 */}
                 <button
                   onClick={() => onEdit(block, index)}
-                  className={`flex items-center justify-center py-2 text-[12px] text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors ${COL_BORDER_R}`}
+                  className={`flex flex-col items-center justify-center py-1.5 min-h-[42px] transition-colors ${COL_BORDER_R}`}
+                  style={{ backgroundColor: "#eef2f7", color: "#374151" }}
                 >
-                  ✎
+                  <span className="text-[11px] font-mono font-bold leading-tight">
+                    {block.jisshuG != null ? `${block.jisshuG}G` : "—"}
+                  </span>
+                  <span className="text-[8px] font-mono text-gray-400 leading-tight">✎ 編集</span>
                 </button>
-
-                {/* 実G数 */}
-                <Cell color={{ backgroundColor: "#f9fafb", color: "#111827" }} borderR>
-                  {block.jisshuG != null ? `${block.jisshuG}` : "—"}
-                </Cell>
 
                 {/* ゾーン */}
                 <Cell color={getZoneCellColor(block.zone)} borderR>
@@ -137,25 +131,32 @@ export function NormalBlockList({ blocks, atLabels, onEdit, onDelete }: Props) {
                   <span className={atLabel ? "font-bold" : ""}>{atLabel ?? "—"}</span>
                 </Cell>
 
-                {/* 終了示唆 / トロフィー (2行) */}
-                <button
-                  onClick={() => hasExtras && setExpandedId(isExpanded ? null : block.id)}
-                  className="flex items-center justify-center py-1 px-0.5 min-h-[36px] w-full"
+                {/* 示唆 (2行表示) */}
+                <div
+                  className={`flex items-center justify-center py-1 px-0.5 min-h-[42px] ${COL_BORDER_R}`}
                   style={suggColor}
                 >
                   {suggLines ? (
                     <span className="flex flex-col items-center leading-[1.15] text-[7px] font-mono w-full">
                       <span className="font-bold truncate w-full text-center">{suggLines.name}</span>
                       <span className="opacity-80 truncate w-full text-center">{suggLines.hint}</span>
-                      {hasExtras && (
-                        <span className="opacity-50 text-[6px]">{isExpanded ? "▲" : "▼"}</span>
-                      )}
                     </span>
                   ) : (
-                    <span className="text-[8px] font-mono opacity-50">
-                      {hasExtras ? (isExpanded ? "▲" : "▼") : "—"}
-                    </span>
+                    <span className="text-[8px] font-mono opacity-40">—</span>
                   )}
+                </div>
+
+                {/* アコーディオントグル (その他▼) */}
+                <button
+                  onClick={() => hasExtras && setExpandedId(isExpanded ? null : block.id)}
+                  className="flex items-center justify-center min-h-[42px] text-[9px] font-mono transition-colors"
+                  style={
+                    hasExtras
+                      ? { backgroundColor: "#374151", color: "#f9fafb" }
+                      : { backgroundColor: "#f3f4f6", color: "#d1d5db" }
+                  }
+                >
+                  {hasExtras ? (isExpanded ? "▲" : "▼") : ""}
                 </button>
               </div>
 
@@ -225,7 +226,7 @@ function Cell({
   return (
     <div
       style={color}
-      className={`flex items-center justify-center py-2 px-0.5 text-[9px] font-mono text-center leading-tight min-h-[36px] overflow-hidden ${borderR ? COL_BORDER_R : ""}`}
+      className={`flex items-center justify-center py-2 px-0.5 text-[9px] font-mono text-center leading-tight min-h-[42px] overflow-hidden ${borderR ? COL_BORDER_R : ""}`}
     >
       <span className="truncate w-full text-center">{children}</span>
     </div>
@@ -238,7 +239,9 @@ function ZenchoField({ values }: { values: string[] }) {
       <p className="text-[9px] text-gray-500 font-mono mb-1">前兆履歴</p>
       <div className="flex flex-wrap gap-1">
         {values.map((v, i) => {
-          const [zone, type] = v.split(":");
+          const col = v.indexOf(":");
+          const zone = col !== -1 ? v.slice(0, col) : v;
+          const type = col !== -1 ? v.slice(col + 1) : "";
           return (
             <span key={i} className="text-[9px] font-mono bg-blue-50 border border-blue-300 text-blue-800 px-1.5 py-0.5 rounded">
               {zone}→{type}

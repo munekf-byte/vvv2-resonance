@@ -1,6 +1,8 @@
 "use client";
 // =============================================================================
 // TOKYO GHOUL RESONANCE: 実戦セッション Client Shell
+// データ永続化: localStorage を一次ストレージとして使用
+// (Supabase 認証バイパス中のため API 保存は行わない)
 // =============================================================================
 
 import { useEffect, useCallback, useRef, useState } from "react";
@@ -9,28 +11,25 @@ import type { PlaySession, NormalBlock } from "@/types";
 import { useSessionStore } from "@/store/useSessionStore";
 import { NormalBlockList } from "@/components/tg/NormalBlockList";
 import { NormalBlockEditDashboard } from "@/components/tg/NormalBlockEditDashboard";
+import { lsLoadSession, lsSaveSession } from "@/lib/tg/localStore";
 
 interface PlayClientPageProps {
   initialSession: PlaySession;
 }
 
-/** atWin=true のブロックを順カウントして AT1/AT2... マップを生成 */
 function computeAtLabels(blocks: NormalBlock[]): Map<string, string> {
   const map = new Map<string, string>();
   let count = 0;
   for (const block of blocks) {
-    if (block.atWin) {
-      count++;
-      map.set(block.id, `AT${count}`);
-    }
+    if (block.atWin) { count++; map.set(block.id, `AT${count}`); }
   }
   return map;
 }
 
 interface EditingState {
   open: boolean;
-  block: NormalBlock | null; // null = 新規
-  index: number;             // 表示用 1-based
+  block: NormalBlock | null;
+  index: number;
 }
 
 const CLOSED: EditingState = { open: false, block: null, index: 0 };
@@ -46,22 +45,25 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
   const [editing, setEditing] = useState<EditingState>(CLOSED);
 
+  // ── 起動時: localStorage を優先して復元 ──────────────────────────────────
   useEffect(() => {
-    loadSession(initialSession);
+    const local = lsLoadSession(initialSession.id);
+    // localStorage に保存済みデータがあればそちらを使用
+    if (local && local.normalBlocks.length >= initialSession.normalBlocks.length) {
+      loadSession(local);
+    } else {
+      loadSession(initialSession);
+    }
     return () => clearSession();
   }, [initialSession.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 800ms debounce で DB 保存
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ── state 変更時: localStorage に即時保存 ────────────────────────────────
+  const lastSavedRef = useRef<string>("");
   const persistSession = useCallback((s: PlaySession) => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      fetch(`/api/session/${s.id}/save`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(s),
-      }).catch(() => {});
-    }, 800);
+    const json = JSON.stringify(s);
+    if (json === lastSavedRef.current) return; // 変更なければスキップ
+    lastSavedRef.current = json;
+    lsSaveSession(s);
   }, []);
 
   useEffect(() => {
@@ -81,11 +83,8 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   }
 
   function handleSave(block: NormalBlock) {
-    if (editing.block === null) {
-      appendNormalBlock(block);
-    } else {
-      updateNormalBlock(block.id, block);
-    }
+    if (editing.block === null) appendNormalBlock(block);
+    else updateNormalBlock(block.id, block);
     setEditing(CLOSED);
   }
 
