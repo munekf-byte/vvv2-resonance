@@ -14,7 +14,7 @@ interface PlayClientPageProps {
   initialSession: PlaySession;
 }
 
-/** atWin=true のブロックに AT1, AT2... ラベルを割り当てる */
+/** atWin=true のブロックを順カウントして AT1/AT2... マップを生成 */
 function computeAtLabels(blocks: NormalBlock[]): Map<string, string> {
   const map = new Map<string, string>();
   let count = 0;
@@ -27,29 +27,31 @@ function computeAtLabels(blocks: NormalBlock[]): Map<string, string> {
   return map;
 }
 
+interface EditingState {
+  open: boolean;
+  block: NormalBlock | null; // null = 新規
+  index: number;             // 表示用 1-based
+}
+
+const CLOSED: EditingState = { open: false, block: null, index: 0 };
+
 export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const router = useRouter();
-  const loadSession    = useSessionStore((s) => s.loadSession);
-  const clearSession   = useSessionStore((s) => s.clearSession);
-  const session        = useSessionStore((s) => s.session);
+  const loadSession       = useSessionStore((s) => s.loadSession);
+  const clearSession      = useSessionStore((s) => s.clearSession);
+  const session           = useSessionStore((s) => s.session);
   const appendNormalBlock = useSessionStore((s) => s.appendNormalBlock);
   const updateNormalBlock = useSessionStore((s) => s.updateNormalBlock);
   const deleteNormalBlock = useSessionStore((s) => s.deleteNormalBlock);
 
-  /**
-   * undefined  → 編集ダッシュボード非表示
-   * null       → 新規追加モード
-   * NormalBlock → 既存編集モード
-   */
-  const [editingBlock, setEditingBlock] = useState<NormalBlock | null | undefined>(undefined);
+  const [editing, setEditing] = useState<EditingState>(CLOSED);
 
-  // 初回マウント時にストアへロード
   useEffect(() => {
     loadSession(initialSession);
     return () => clearSession();
   }, [initialSession.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // セッション変更のたびにDBへバックグラウンド保存 (800ms debounce)
+  // 800ms debounce で DB 保存
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const persistSession = useCallback((s: PlaySession) => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -63,22 +65,28 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   }, []);
 
   useEffect(() => {
-    if (session && session.id === initialSession.id) {
-      persistSession(session);
-    }
+    if (session && session.id === initialSession.id) persistSession(session);
   }, [session, initialSession.id, persistSession]);
 
   const blocks   = session?.normalBlocks ?? [];
   const atLabels = computeAtLabels(blocks);
   const atCount  = blocks.filter((b) => b.atWin).length;
 
+  function handleEdit(block: NormalBlock, index: number) {
+    setEditing({ open: true, block, index: index + 1 });
+  }
+
+  function handleOpenNew() {
+    setEditing({ open: true, block: null, index: blocks.length + 1 });
+  }
+
   function handleSave(block: NormalBlock) {
-    if (editingBlock === null) {
+    if (editing.block === null) {
       appendNormalBlock(block);
-    } else if (editingBlock !== undefined) {
+    } else {
       updateNormalBlock(block.id, block);
     }
-    setEditingBlock(undefined);
+    setEditing(CLOSED);
   }
 
   return (
@@ -86,7 +94,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
       {/* ===== Sticky ヘッダー ===== */}
       <header className="sticky top-0 z-40 bg-white border-b border-v2-border safe-area-top shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
+        <div className="max-w-2xl mx-auto px-3 h-14 flex items-center gap-3">
           <button
             onClick={() => router.push("/dashboard")}
             className="text-v2-text-secondary text-sm font-mono flex-shrink-0"
@@ -101,27 +109,29 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               通常時 · {blocks.length} 周期
             </p>
           </div>
-          <span className="text-xs font-mono text-green-700 font-bold flex-shrink-0">
-            {atCount > 0 ? `AT ×${atCount}` : ""}
-          </span>
+          {atCount > 0 && (
+            <span className="text-xs font-mono font-bold text-green-700 flex-shrink-0">
+              AT ×{atCount}
+            </span>
+          )}
         </div>
       </header>
 
       {/* ===== メインコンテンツ ===== */}
-      <main className="flex-1 max-w-2xl w-full mx-auto px-4 py-4 pb-32">
+      <main className="flex-1 max-w-2xl w-full mx-auto pb-32 pt-1">
         <NormalBlockList
           blocks={blocks}
           atLabels={atLabels}
-          onEdit={(block) => setEditingBlock(block)}
+          onEdit={handleEdit}
           onDelete={(blockId) => deleteNormalBlock(blockId)}
         />
       </main>
 
-      {/* ===== FAB: 周期追加 (ダッシュボード非表示時のみ) ===== */}
-      {editingBlock === undefined && (
-        <div className="fixed bottom-6 right-4 z-40 safe-area-bottom">
+      {/* ===== FAB: 周期追加 ===== */}
+      {!editing.open && (
+        <div className="fixed bottom-6 right-4 z-40">
           <button
-            onClick={() => setEditingBlock(null)}
+            onClick={handleOpenNew}
             className="flex items-center gap-2 bg-v2-red text-white font-mono font-bold text-sm px-5 py-3 rounded-full shadow-lg active:scale-95 transition-transform"
           >
             ＋ 周期追加
@@ -130,11 +140,12 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
       )}
 
       {/* ===== 編集ダッシュボード オーバーレイ ===== */}
-      {editingBlock !== undefined && (
+      {editing.open && (
         <NormalBlockEditDashboard
-          block={editingBlock}
+          block={editing.block}
+          blockIndex={editing.index}
           onSave={handleSave}
-          onClose={() => setEditingBlock(undefined)}
+          onClose={() => setEditing(CLOSED)}
         />
       )}
     </div>

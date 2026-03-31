@@ -18,10 +18,8 @@ export interface TGNormalBlock {
   estimatedMode: string;
   /** 当選契機 (TG_WIN_TRIGGERS) */
   winTrigger: string;
-  /** イベント1 (TG_EVENTS | "") */
-  event1: string;
-  /** イベント2 (TG_EVENTS | "") */
-  event2: string;
+  /** イベント (TG_EVENTS | "") — 1周期1イベント */
+  event: string;
   /** AT初当り — true = "AT Get" */
   atWin: boolean;
   /** 終了画面示唆 (TG_ENDING_SUGGESTIONS | "") */
@@ -95,7 +93,7 @@ export interface PlaySession {
 }
 
 // -----------------------------------------------------------------------------
-// Supabase DB Row型
+// Supabase DB Row 型
 // -----------------------------------------------------------------------------
 
 export type Json =

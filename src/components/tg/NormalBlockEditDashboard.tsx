@@ -1,28 +1,21 @@
 "use client";
 // =============================================================================
 // TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード
-// フルスクリーンオーバーレイ — 新規追加 / 既存編集
+// レイアウト: 上部チップ3グループ（前兆履歴/特殊演出/招待状）+ 下部3列フォームグリッド
 // =============================================================================
 
 import { useState } from "react";
 import type { NormalBlock } from "@/types";
 import {
-  TG_ZONES,
-  TG_MODES,
-  TG_WIN_TRIGGERS,
-  TG_EVENTS,
-  TG_ENDING_SUGGESTIONS,
-  TG_TROPHIES,
-  TG_KAKUGAN,
-  TG_SHINSEKAI,
-  TG_INVITATIONS,
-  TG_ZENCHO,
+  TG_ZONES, TG_MODES, TG_WIN_TRIGGERS, TG_EVENTS,
+  TG_ENDING_SUGGESTIONS, TG_TROPHIES, TG_KAKUGAN,
+  TG_SHINSEKAI, TG_INVITATIONS, TG_ZENCHO,
 } from "@/lib/engine/constants";
 import { getSuggestionColors, getHintText } from "@/lib/tg/suggestionColors";
 
 interface Props {
-  /** null = 新規追加, NormalBlock = 既存編集 */
-  block: NormalBlock | null;
+  block: NormalBlock | null; // null = 新規追加
+  blockIndex: number;        // 表示用行番号 (1始まり)
   onSave: (block: NormalBlock) => void;
   onClose: () => void;
 }
@@ -35,8 +28,7 @@ function emptyForm(): FormState {
     zone: "不明",
     estimatedMode: "不明",
     winTrigger: "不明",
-    event1: "",
-    event2: "",
+    event: "",
     atWin: false,
     endingSuggestion: "",
     trophy: "",
@@ -47,7 +39,38 @@ function emptyForm(): FormState {
   };
 }
 
-export function NormalBlockEditDashboard({ block, onSave, onClose }: Props) {
+// ─── 省略ヘルパー (チップ表示用) ──────────────────────────────────────────────
+
+function abbrevZencho(v: string): string {
+  return v.replace("-前兆ステージ", "前S").replace("-前兆", "前");
+}
+
+function abbrevInvitation(v: string): string {
+  const hint = getHintText(v);
+  const map: Record<string, string> = {
+    "デフォルト": "デフォ",
+    "規定G数を示唆": "規定G",
+    "残り100G or 300G or 500G以内示唆": "残100/300/500",
+    "残り200G or 400G or 600G以内示唆": "残200/400/600",
+    "600G否定": "600G否",
+    "残り200G以内or 500G以上示唆": "残200↓/500↑",
+    "残り300G以内濃厚": "残300↓",
+    "残り200G以内濃厚": "残200↓",
+    "残り100G以内濃厚": "残100↓",
+    "偶数設定期待度UP": "偶数UP",
+    "設定1否定": "設1否",
+    "設定2否定": "設2否",
+    "設定3否定": "設3否",
+    "設定4否定": "設4否",
+    "設定4以上濃厚": "設定4↑",
+    "設定6濃厚": "設定6!",
+  };
+  return map[hint] ?? hint;
+}
+
+// ─── メインコンポーネント ──────────────────────────────────────────────────────
+
+export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }: Props) {
   const isNew = block === null;
   const [form, setForm] = useState<FormState>(() =>
     block ? { ...block } : emptyForm()
@@ -57,28 +80,36 @@ export function NormalBlockEditDashboard({ block, onSave, onClose }: Props) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  // チップトグル: 同じ値を再タップで解除
+  function toggleField(
+    field: "zencho" | "kakugan" | "shinsekai" | "invitation",
+    value: string
+  ) {
+    setField(field, form[field] === value ? "" : value);
+  }
+
   function handleSave() {
-    const id = block?.id ?? crypto.randomUUID();
-    onSave({ id, ...form });
+    onSave({ id: block?.id ?? crypto.randomUUID(), ...form });
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white">
+    <div className="fixed inset-0 z-50 flex flex-col bg-v2-black-50">
+
       {/* ===== ヘッダー ===== */}
-      <div className="sticky top-0 z-10 bg-white border-b border-v2-border safe-area-top shadow-sm">
-        <div className="flex items-center justify-between px-4 h-14">
+      <div className="sticky top-0 bg-white border-b border-v2-border safe-area-top shadow-sm flex-shrink-0">
+        <div className="flex items-center px-3 h-12 gap-2">
           <button
             onClick={onClose}
-            className="text-v2-text-secondary text-sm font-mono px-1 py-1"
+            className="text-[11px] font-mono text-v2-text-secondary border border-v2-border rounded px-2 py-1 flex-shrink-0 whitespace-nowrap"
           >
-            ✕ 閉じる
+            一覧へ戻る
           </button>
-          <h2 className="text-sm font-mono font-bold text-v2-text-primary">
-            {isNew ? "周期 追加" : "周期 編集"}
-          </h2>
+          <p className="flex-1 text-[11px] font-mono font-bold text-v2-text-primary text-center truncate px-1">
+            {isNew ? "新規追加" : `[通常時] 行No.${blockIndex} 編集 DashBoard`}
+          </p>
           <button
             onClick={handleSave}
-            className="v2-btn-primary text-sm px-4 py-1.5"
+            className="v2-btn-primary text-[11px] px-3 py-1.5 flex-shrink-0"
           >
             保存
           </button>
@@ -86,137 +117,148 @@ export function NormalBlockEditDashboard({ block, onSave, onClose }: Props) {
       </div>
 
       {/* ===== スクロール可能フォーム ===== */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5">
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5">
 
-        {/* --- 基本情報 --- */}
-        <Section title="基本情報">
-          <FormRow label="実G数">
-            <input
-              type="number"
-              inputMode="numeric"
-              className="form-input max-w-[140px] text-right"
-              placeholder="例: 300"
-              value={form.jisshuG ?? ""}
-              onChange={(e) =>
-                setField("jisshuG", e.target.value === "" ? null : Number(e.target.value))
-              }
-            />
-          </FormRow>
-          <FormRow label="ゾーン">
-            <Sel
-              value={form.zone}
-              onChange={(v) => setField("zone", v)}
-              options={[...TG_ZONES]}
-            />
-          </FormRow>
-          <FormRow label="推定モード">
-            <Sel
-              value={form.estimatedMode}
-              onChange={(v) => setField("estimatedMode", v)}
-              options={[...TG_MODES]}
-            />
-          </FormRow>
-        </Section>
+        {/* ── Section 1: 前兆履歴 ── */}
+        <ChipSection
+          title="前兆履歴"
+          titleCls="bg-red-500 text-white"
+          options={[...TG_ZENCHO]}
+          selected={form.zencho}
+          onToggle={(v) => toggleField("zencho", v)}
+          abbrevFn={abbrevZencho}
+          selectedCls="bg-red-100 text-red-800 border-red-400"
+        />
 
-        {/* --- 当選情報 --- */}
-        <Section title="当選情報">
-          <FormRow label="当選契機">
-            <Sel
-              value={form.winTrigger}
-              onChange={(v) => setField("winTrigger", v)}
-              options={[...TG_WIN_TRIGGERS]}
-            />
-          </FormRow>
-          <FormRow label="AT初当り">
-            <button
-              onClick={() => setField("atWin", !form.atWin)}
-              className={`px-4 py-2 rounded text-sm font-mono font-bold border transition-colors ${
-                form.atWin
-                  ? "bg-green-700 text-white border-green-700"
-                  : "bg-white text-v2-text-muted border-v2-border"
-              }`}
-            >
-              {form.atWin ? "AT Get ✓" : "AT なし"}
-            </button>
-          </FormRow>
-        </Section>
+        {/* ── Section 2: 特殊演出 (赫眼 + 精神世界) ── */}
+        <div className="v2-card px-3 pt-2.5 pb-3">
+          <span className="inline-block text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-teal-500 text-white mb-2">
+            特殊演出
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-[9px] font-mono text-v2-text-muted self-center mr-1">赫眼</span>
+            {[...TG_KAKUGAN].map((opt) => (
+              <Chip
+                key={opt}
+                label={opt}
+                selected={form.kakugan === opt}
+                onToggle={() => toggleField("kakugan", opt)}
+                selectedCls="bg-teal-100 text-teal-800 border-teal-400"
+              />
+            ))}
+            <span className="w-full" />
+            <span className="text-[9px] font-mono text-v2-text-muted self-center mr-1">精神世界</span>
+            {[...TG_SHINSEKAI].map((opt) => (
+              <Chip
+                key={opt}
+                label={opt}
+                selected={form.shinsekai === opt}
+                onToggle={() => toggleField("shinsekai", opt)}
+                selectedCls="bg-teal-100 text-teal-800 border-teal-400"
+              />
+            ))}
+          </div>
+        </div>
 
-        {/* --- イベント --- */}
-        <Section title="イベント">
-          <FormRow label="イベント1">
-            <Sel
-              value={form.event1}
-              onChange={(v) => setField("event1", v)}
-              options={["", ...TG_EVENTS]}
-              emptyLabel="なし"
-            />
-          </FormRow>
-          <FormRow label="イベント2">
-            <Sel
-              value={form.event2}
-              onChange={(v) => setField("event2", v)}
-              options={["", ...TG_EVENTS]}
-              emptyLabel="なし"
-            />
-          </FormRow>
-        </Section>
+        {/* ── Section 3: 招待状 ── */}
+        <ChipSection
+          title="招待状"
+          titleCls="bg-purple-500 text-white"
+          options={[...TG_INVITATIONS]}
+          selected={form.invitation}
+          onToggle={(v) => toggleField("invitation", v)}
+          abbrevFn={abbrevInvitation}
+          selectedCls="bg-purple-100 text-purple-800 border-purple-400"
+          getChipColor={(v) => {
+            if (!v) return undefined;
+            const c = getSuggestionColors(v);
+            const isSelected = form.invitation === v;
+            return isSelected ? "bg-purple-100 text-purple-800 border-purple-400" : undefined;
+          }}
+        />
 
-        {/* --- 終了画面 --- */}
-        <Section title="終了画面">
-          <FormRow label="終了画面示唆">
-            <SuggestionSel
-              value={form.endingSuggestion}
-              onChange={(v) => setField("endingSuggestion", v)}
-              options={["", ...TG_ENDING_SUGGESTIONS]}
-            />
-          </FormRow>
-          <FormRow label="トロフィー">
-            <SuggestionSel
-              value={form.trophy}
-              onChange={(v) => setField("trophy", v)}
-              options={["", ...TG_TROPHIES]}
-            />
-          </FormRow>
-        </Section>
+        {/* ── メインフォームグリッド ── */}
+        <div className="v2-card px-3 pt-2.5 pb-3 space-y-3">
 
-        {/* --- 特殊演出 --- */}
-        <Section title="特殊演出">
-          <FormRow label="赫眼状態">
-            <Sel
-              value={form.kakugan}
-              onChange={(v) => setField("kakugan", v)}
-              options={["", ...TG_KAKUGAN]}
-              emptyLabel="なし"
-            />
-          </FormRow>
-          <FormRow label="精神世界">
-            <Sel
-              value={form.shinsekai}
-              onChange={(v) => setField("shinsekai", v)}
-              options={["", ...TG_SHINSEKAI]}
-              emptyLabel="なし"
-            />
-          </FormRow>
-        </Section>
+          {/* Row 1: 実G数 / ゾーン / 推定モード */}
+          <div className="grid grid-cols-3 gap-2">
+            <FormCell label="実G数">
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="G数"
+                className="w-full text-[11px] font-mono border border-v2-border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-v2-red bg-white"
+                value={form.jisshuG ?? ""}
+                onChange={(e) =>
+                  setField("jisshuG", e.target.value === "" ? null : Number(e.target.value))
+                }
+              />
+            </FormCell>
+            <FormCell label="ゾーン">
+              <CompactSel
+                value={form.zone}
+                onChange={(v) => setField("zone", v)}
+                options={[...TG_ZONES]}
+              />
+            </FormCell>
+            <FormCell label="推定モード">
+              <CompactSel
+                value={form.estimatedMode}
+                onChange={(v) => setField("estimatedMode", v)}
+                options={[...TG_MODES]}
+              />
+            </FormCell>
+          </div>
 
-        {/* --- その他 --- */}
-        <Section title="その他">
-          <FormRow label="招待状">
-            <SuggestionSel
-              value={form.invitation}
-              onChange={(v) => setField("invitation", v)}
-              options={["", ...TG_INVITATIONS]}
-            />
-          </FormRow>
-          <FormRow label="前兆履歴">
-            <Sel
-              value={form.zencho}
-              onChange={(v) => setField("zencho", v)}
-              options={["", ...TG_ZENCHO]}
-              emptyLabel="なし"
-            />
-          </FormRow>
-        </Section>
+          {/* Row 2: 当選契機 / イベント / AT初当り */}
+          <div className="grid grid-cols-3 gap-2">
+            <FormCell label="当選契機">
+              <CompactSel
+                value={form.winTrigger}
+                onChange={(v) => setField("winTrigger", v)}
+                options={[...TG_WIN_TRIGGERS]}
+              />
+            </FormCell>
+            <FormCell label="イベント">
+              <CompactSel
+                value={form.event}
+                onChange={(v) => setField("event", v)}
+                options={["", ...TG_EVENTS]}
+                emptyLabel="なし"
+              />
+            </FormCell>
+            <FormCell label="AT初当り">
+              <button
+                onClick={() => setField("atWin", !form.atWin)}
+                className={`w-full text-[11px] font-mono font-bold py-1.5 rounded border transition-colors ${
+                  form.atWin
+                    ? "bg-green-700 text-white border-green-700"
+                    : "bg-white text-v2-text-muted border-v2-border"
+                }`}
+              >
+                {form.atWin ? "AT Get ✓" : "なし"}
+              </button>
+            </FormCell>
+          </div>
+
+          {/* Row 3: 終了画面示唆 / トロフィー */}
+          <div className="grid grid-cols-2 gap-2">
+            <FormCell label="終了画面示唆">
+              <SuggestionSel
+                value={form.endingSuggestion}
+                onChange={(v) => setField("endingSuggestion", v)}
+                options={["", ...TG_ENDING_SUGGESTIONS]}
+              />
+            </FormCell>
+            <FormCell label="トロフィー">
+              <SuggestionSel
+                value={form.trophy}
+                onChange={(v) => setField("trophy", v)}
+                options={["", ...TG_TROPHIES]}
+              />
+            </FormCell>
+          </div>
+        </div>
 
         <div className="h-8" />
       </div>
@@ -224,33 +266,75 @@ export function NormalBlockEditDashboard({ block, onSave, onClose }: Props) {
   );
 }
 
-// --- サブコンポーネント ---
+// ─── サブコンポーネント ───────────────────────────────────────────────────────
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+interface ChipSectionProps {
+  title: string;
+  titleCls: string;
+  options: readonly string[];
+  selected: string;
+  onToggle: (v: string) => void;
+  abbrevFn?: (v: string) => string;
+  selectedCls: string;
+  getChipColor?: (v: string) => string | undefined;
+}
+
+function ChipSection({
+  title, titleCls, options, selected, onToggle, abbrevFn, selectedCls,
+}: ChipSectionProps) {
   return (
-    <div>
-      <h3 className="text-[10px] font-mono text-v2-text-muted uppercase tracking-widest mb-2 px-1">
+    <div className="v2-card px-3 pt-2.5 pb-3">
+      <span className={`inline-block text-[10px] font-mono font-bold px-2 py-0.5 rounded mb-2 ${titleCls}`}>
         {title}
-      </h3>
-      <div className="v2-card divide-y divide-v2-border">{children}</div>
+      </span>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((opt) => (
+          <Chip
+            key={opt}
+            label={abbrevFn ? abbrevFn(opt) : opt}
+            selected={selected === opt}
+            onToggle={() => onToggle(opt)}
+            selectedCls={selectedCls}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 
-function FormRow({ label, children }: { label: string; children: React.ReactNode }) {
+function Chip({
+  label, selected, onToggle, selectedCls,
+}: {
+  label: string;
+  selected: boolean;
+  onToggle: () => void;
+  selectedCls?: string;
+}) {
   return (
-    <div className="flex items-center justify-between px-3 py-2.5 gap-3 min-h-[48px]">
-      <span className="text-sm font-mono text-v2-text-secondary flex-shrink-0 w-24">{label}</span>
-      <div className="flex-1 flex justify-end items-center">{children}</div>
+    <button
+      onClick={onToggle}
+      className={`text-[10px] font-mono px-2 py-1 rounded border transition-colors ${
+        selected
+          ? (selectedCls ?? "bg-v2-red text-white border-v2-red")
+          : "bg-white text-v2-text-secondary border-v2-border active:bg-v2-black-50"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function FormCell({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[10px] font-mono text-v2-text-muted">{label}</span>
+      {children}
     </div>
   );
 }
 
-function Sel({
-  value,
-  onChange,
-  options,
-  emptyLabel,
+function CompactSel({
+  value, onChange, options, emptyLabel,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -259,7 +343,7 @@ function Sel({
 }) {
   return (
     <select
-      className="form-select max-w-[200px] text-right"
+      className="w-full text-[11px] font-mono border border-v2-border rounded px-1.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-v2-red bg-white"
       value={value}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -273,28 +357,23 @@ function Sel({
 }
 
 function SuggestionSel({
-  value,
-  onChange,
-  options,
+  value, onChange, options,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: string[];
 }) {
   const colors = value ? getSuggestionColors(value) : null;
-  const hint = value ? getHintText(value) : null;
-
+  const hint   = value ? getHintText(value) : null;
   return (
-    <div className="flex items-center gap-2 flex-1 justify-end min-w-0">
+    <div className="flex flex-col gap-1">
       {hint && colors && (
-        <span
-          className={`text-[10px] font-mono px-1.5 py-0.5 rounded flex-shrink-0 ${colors.bg} ${colors.text}`}
-        >
+        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded self-start ${colors.bg} ${colors.text}`}>
           {hint}
         </span>
       )}
       <select
-        className="form-select max-w-[180px] text-right min-w-0"
+        className="w-full text-[11px] font-mono border border-v2-border rounded px-1.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-v2-red bg-white"
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
