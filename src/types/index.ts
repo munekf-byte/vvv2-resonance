@@ -26,14 +26,14 @@ export interface TGNormalBlock {
   endingSuggestion: string;
   /** トロフィー (TG_TROPHIES | "") */
   trophy: string;
-  /** 赫眼状態 (TG_KAKUGAN | "") */
-  kakugan: string;
-  /** 精神世界 (TG_SHINSEKAI | "") */
-  shinsekai: string;
-  /** 招待状 (TG_INVITATIONS | "") */
-  invitation: string;
-  /** 前兆履歴 (TG_ZENCHO | "") */
-  zencho: string;
+  /** 赫眼状態 — 複数記録可 (TG_KAKUGAN values) */
+  kakugan: string[];
+  /** 精神世界 — 複数記録可 (TG_SHINSEKAI values) */
+  shinsekai: string[];
+  /** 招待状 — 複数記録可 (TG_INVITATIONS values) */
+  invitation: string[];
+  /** 前兆履歴 — 複数記録可 (TG_ZENCHO values) */
+  zencho: string[];
 }
 
 /** Store 互換エイリアス */

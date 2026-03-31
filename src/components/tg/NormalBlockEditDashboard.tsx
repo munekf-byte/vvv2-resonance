@@ -1,7 +1,8 @@
 "use client";
 // =============================================================================
 // TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード
-// レイアウト: 上部チップ3グループ（前兆履歴/特殊演出/招待状）+ 下部3列フォームグリッド
+// 構成: ヘッダー (一覧へ戻る) → スクロール可能フォーム → 最下部 保存ボタン (全幅大)
+// 前兆履歴/赫眼/精神世界/招待状: 複数ドロップダウン対応
 // =============================================================================
 
 import { useState } from "react";
@@ -11,16 +12,19 @@ import {
   TG_ENDING_SUGGESTIONS, TG_TROPHIES, TG_KAKUGAN,
   TG_SHINSEKAI, TG_INVITATIONS, TG_ZENCHO,
 } from "@/lib/engine/constants";
-import { getSuggestionColors, getHintText } from "@/lib/tg/suggestionColors";
+import { getHintText, getSuggestionColors } from "@/lib/tg/suggestionColors";
 
 interface Props {
-  block: NormalBlock | null; // null = 新規追加
-  blockIndex: number;        // 表示用行番号 (1始まり)
+  block: NormalBlock | null;
+  blockIndex: number;
   onSave: (block: NormalBlock) => void;
   onClose: () => void;
 }
 
 type FormState = Omit<NormalBlock, "id">;
+
+const ZENCHO_SLOTS  = 4;
+const MULTI_SLOTS   = 3;
 
 function emptyForm(): FormState {
   return {
@@ -32,40 +36,25 @@ function emptyForm(): FormState {
     atWin: false,
     endingSuggestion: "",
     trophy: "",
-    kakugan: "",
-    shinsekai: "",
-    invitation: "",
-    zencho: "",
+    kakugan:    [],
+    shinsekai:  [],
+    invitation: [],
+    zencho:     [],
   };
 }
 
-// ─── 省略ヘルパー (チップ表示用) ──────────────────────────────────────────────
+// ─── 配列ヘルパー ─────────────────────────────────────────────────────────────
 
-function abbrevZencho(v: string): string {
-  return v.replace("-前兆ステージ", "前S").replace("-前兆", "前");
-}
-
-function abbrevInvitation(v: string): string {
-  const hint = getHintText(v);
-  const map: Record<string, string> = {
-    "デフォルト": "デフォ",
-    "規定G数を示唆": "規定G",
-    "残り100G or 300G or 500G以内示唆": "残100/300/500",
-    "残り200G or 400G or 600G以内示唆": "残200/400/600",
-    "600G否定": "600G否",
-    "残り200G以内or 500G以上示唆": "残200↓/500↑",
-    "残り300G以内濃厚": "残300↓",
-    "残り200G以内濃厚": "残200↓",
-    "残り100G以内濃厚": "残100↓",
-    "偶数設定期待度UP": "偶数UP",
-    "設定1否定": "設1否",
-    "設定2否定": "設2否",
-    "設定3否定": "設3否",
-    "設定4否定": "設4否",
-    "設定4以上濃厚": "設定4↑",
-    "設定6濃厚": "設定6!",
-  };
-  return map[hint] ?? hint;
+/** 配列の index 番目を value に変更 (空文字 → 除去) */
+function setAt(arr: string[], index: number, value: string): string[] {
+  const next = [...arr];
+  if (value === "") {
+    next.splice(index, 1);
+  } else {
+    next[index] = value;
+  }
+  // 末尾の空文字を除去して正規化
+  return next.filter((v) => v !== "");
 }
 
 // ─── メインコンポーネント ──────────────────────────────────────────────────────
@@ -80,12 +69,8 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  // チップトグル: 同じ値を再タップで解除
-  function toggleField(
-    field: "zencho" | "kakugan" | "shinsekai" | "invitation",
-    value: string
-  ) {
-    setField(field, form[field] === value ? "" : value);
+  function setArraySlot(field: "kakugan" | "shinsekai" | "invitation" | "zencho", index: number, value: string) {
+    setField(field, setAt(form[field] as string[], index, value));
   }
 
   function handleSave() {
@@ -105,77 +90,13 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
             一覧へ戻る
           </button>
           <p className="flex-1 text-[11px] font-mono font-bold text-v2-text-primary text-center truncate px-1">
-            {isNew ? "新規追加" : `[通常時] 行No.${blockIndex} 編集 DashBoard`}
+            {isNew ? "新規追加" : `[通常時] 行No.${blockIndex} 編集`}
           </p>
-          <button
-            onClick={handleSave}
-            className="v2-btn-primary text-[11px] px-3 py-1.5 flex-shrink-0"
-          >
-            保存
-          </button>
         </div>
       </div>
 
       {/* ===== スクロール可能フォーム ===== */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5">
-
-        {/* ── Section 1: 前兆履歴 ── */}
-        <ChipSection
-          title="前兆履歴"
-          titleCls="bg-red-500 text-white"
-          options={[...TG_ZENCHO]}
-          selected={form.zencho}
-          onToggle={(v) => toggleField("zencho", v)}
-          abbrevFn={abbrevZencho}
-          selectedCls="bg-red-100 text-red-800 border-red-400"
-        />
-
-        {/* ── Section 2: 特殊演出 (赫眼 + 精神世界) ── */}
-        <div className="v2-card px-3 pt-2.5 pb-3">
-          <span className="inline-block text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-teal-500 text-white mb-2">
-            特殊演出
-          </span>
-          <div className="flex flex-wrap gap-1.5">
-            <span className="text-[9px] font-mono text-v2-text-muted self-center mr-1">赫眼</span>
-            {[...TG_KAKUGAN].map((opt) => (
-              <Chip
-                key={opt}
-                label={opt}
-                selected={form.kakugan === opt}
-                onToggle={() => toggleField("kakugan", opt)}
-                selectedCls="bg-teal-100 text-teal-800 border-teal-400"
-              />
-            ))}
-            <span className="w-full" />
-            <span className="text-[9px] font-mono text-v2-text-muted self-center mr-1">精神世界</span>
-            {[...TG_SHINSEKAI].map((opt) => (
-              <Chip
-                key={opt}
-                label={opt}
-                selected={form.shinsekai === opt}
-                onToggle={() => toggleField("shinsekai", opt)}
-                selectedCls="bg-teal-100 text-teal-800 border-teal-400"
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* ── Section 3: 招待状 ── */}
-        <ChipSection
-          title="招待状"
-          titleCls="bg-purple-500 text-white"
-          options={[...TG_INVITATIONS]}
-          selected={form.invitation}
-          onToggle={(v) => toggleField("invitation", v)}
-          abbrevFn={abbrevInvitation}
-          selectedCls="bg-purple-100 text-purple-800 border-purple-400"
-          getChipColor={(v) => {
-            if (!v) return undefined;
-            const c = getSuggestionColors(v);
-            const isSelected = form.invitation === v;
-            return isSelected ? "bg-purple-100 text-purple-800 border-purple-400" : undefined;
-          }}
-        />
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-28">
 
         {/* ── メインフォームグリッド ── */}
         <div className="v2-card px-3 pt-2.5 pb-3 space-y-3">
@@ -260,69 +181,110 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
           </div>
         </div>
 
-        <div className="h-8" />
+        {/* ── 前兆履歴 (4スロット) ── */}
+        <MultiSelectSection
+          title="前兆履歴"
+          titleCls="bg-red-500 text-white"
+          options={[...TG_ZENCHO]}
+          values={form.zencho}
+          slots={ZENCHO_SLOTS}
+          onChange={(i, v) => setArraySlot("zencho", i, v)}
+        />
+
+        {/* ── 赫眼 (3スロット) ── */}
+        <MultiSelectSection
+          title="赫眼状態"
+          titleCls="bg-teal-500 text-white"
+          options={[...TG_KAKUGAN]}
+          values={form.kakugan}
+          slots={MULTI_SLOTS}
+          onChange={(i, v) => setArraySlot("kakugan", i, v)}
+        />
+
+        {/* ── 精神世界 (3スロット) ── */}
+        <MultiSelectSection
+          title="精神世界"
+          titleCls="bg-teal-500 text-white"
+          options={[...TG_SHINSEKAI]}
+          values={form.shinsekai}
+          slots={MULTI_SLOTS}
+          onChange={(i, v) => setArraySlot("shinsekai", i, v)}
+        />
+
+        {/* ── 招待状 (3スロット) ── */}
+        <MultiSelectSection
+          title="招待状"
+          titleCls="bg-purple-500 text-white"
+          options={[...TG_INVITATIONS]}
+          values={form.invitation}
+          slots={MULTI_SLOTS}
+          onChange={(i, v) => setArraySlot("invitation", i, v)}
+          renderValue={(v) => v ? getHintText(v) : "なし"}
+        />
+      </div>
+
+      {/* ===== 保存ボタン (最下部・全幅・大) ===== */}
+      <div className="flex-shrink-0 bg-white border-t border-v2-border safe-area-bottom px-4 py-3">
+        <button
+          onClick={handleSave}
+          className="w-full bg-v2-red text-white font-mono font-bold text-base py-4 rounded-xl shadow-md active:scale-95 transition-transform"
+        >
+          保存
+        </button>
       </div>
     </div>
   );
 }
 
-// ─── サブコンポーネント ───────────────────────────────────────────────────────
+// ─── MultiSelectSection ───────────────────────────────────────────────────────
 
-interface ChipSectionProps {
+interface MultiSelectSectionProps {
   title: string;
   titleCls: string;
   options: readonly string[];
-  selected: string;
-  onToggle: (v: string) => void;
-  abbrevFn?: (v: string) => string;
-  selectedCls: string;
-  getChipColor?: (v: string) => string | undefined;
+  values: string[];
+  slots: number;
+  onChange: (index: number, value: string) => void;
+  renderValue?: (v: string) => string;
 }
 
-function ChipSection({
-  title, titleCls, options, selected, onToggle, abbrevFn, selectedCls,
-}: ChipSectionProps) {
+function MultiSelectSection({
+  title, titleCls, options, values, slots, onChange, renderValue,
+}: MultiSelectSectionProps) {
+  // スロット配列: values で埋め、残りは ""
+  const slotValues = Array.from({ length: slots }, (_, i) => values[i] ?? "");
+
   return (
     <div className="v2-card px-3 pt-2.5 pb-3">
       <span className={`inline-block text-[10px] font-mono font-bold px-2 py-0.5 rounded mb-2 ${titleCls}`}>
         {title}
       </span>
-      <div className="flex flex-wrap gap-1.5">
-        {options.map((opt) => (
-          <Chip
-            key={opt}
-            label={abbrevFn ? abbrevFn(opt) : opt}
-            selected={selected === opt}
-            onToggle={() => onToggle(opt)}
-            selectedCls={selectedCls}
-          />
+      <div className="flex flex-col gap-1.5">
+        {slotValues.map((val, i) => (
+          <div key={i} className="flex items-center gap-1.5">
+            <span className="text-[9px] font-mono text-v2-text-muted w-5 text-right flex-shrink-0">
+              {i + 1}.
+            </span>
+            <select
+              className="flex-1 text-[11px] font-mono border border-v2-border rounded px-1.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-v2-red bg-white"
+              value={val}
+              onChange={(e) => onChange(i, e.target.value)}
+            >
+              <option value="">なし</option>
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {renderValue ? renderValue(opt) : opt}
+                </option>
+              ))}
+            </select>
+          </div>
         ))}
       </div>
     </div>
   );
 }
 
-function Chip({
-  label, selected, onToggle, selectedCls,
-}: {
-  label: string;
-  selected: boolean;
-  onToggle: () => void;
-  selectedCls?: string;
-}) {
-  return (
-    <button
-      onClick={onToggle}
-      className={`text-[10px] font-mono px-2 py-1 rounded border transition-colors ${
-        selected
-          ? (selectedCls ?? "bg-v2-red text-white border-v2-red")
-          : "bg-white text-v2-text-secondary border-v2-border active:bg-v2-black-50"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
+// ─── サブコンポーネント ───────────────────────────────────────────────────────
 
 function FormCell({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -379,7 +341,7 @@ function SuggestionSel({
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
-            {opt === "" ? "なし" : opt}
+            {opt === "" ? "なし" : getHintText(opt)}
           </option>
         ))}
       </select>
