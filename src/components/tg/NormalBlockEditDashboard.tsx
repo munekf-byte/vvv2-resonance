@@ -1,8 +1,8 @@
 "use client";
 // =============================================================================
 // TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード
-// 構成: ヘッダー (一覧へ戻る) → スクロール可能フォーム → 最下部 保存ボタン (全幅大)
-// 前兆履歴/赫眼/精神世界/招待状: 複数ドロップダウン対応
+// フォーム要素: 全て 2倍以上の縦幅 / カラーインジケータ付きセレクト
+// 保存ボタン: 最下部 全幅・大
 // =============================================================================
 
 import { useState } from "react";
@@ -12,7 +12,12 @@ import {
   TG_ENDING_SUGGESTIONS, TG_TROPHIES, TG_KAKUGAN,
   TG_SHINSEKAI, TG_INVITATIONS, TG_ZENCHO,
 } from "@/lib/engine/constants";
-import { getHintText, getSuggestionColors } from "@/lib/tg/suggestionColors";
+import {
+  getZoneCellColor, getModeCellColor, getTriggerCellColor, getEventCellColor,
+  getEndingCellColor, getTrophyCellColor, getKakuganCellColor, getShinsekaiCellColor,
+  getSuggestionDropdownLabel, getHintFromValue,
+  type CellColor,
+} from "@/lib/tg/cellColors";
 
 interface Props {
   block: NormalBlock | null;
@@ -23,8 +28,8 @@ interface Props {
 
 type FormState = Omit<NormalBlock, "id">;
 
-const ZENCHO_SLOTS  = 4;
-const MULTI_SLOTS   = 3;
+const ZENCHO_SLOTS = 4;
+const MULTI_SLOTS  = 3;
 
 function emptyForm(): FormState {
   return {
@@ -43,9 +48,6 @@ function emptyForm(): FormState {
   };
 }
 
-// ─── 配列ヘルパー ─────────────────────────────────────────────────────────────
-
-/** 配列の index 番目を value に変更 (空文字 → 除去) */
 function setAt(arr: string[], index: number, value: string): string[] {
   const next = [...arr];
   if (value === "") {
@@ -53,7 +55,6 @@ function setAt(arr: string[], index: number, value: string): string[] {
   } else {
     next[index] = value;
   }
-  // 末尾の空文字を除去して正規化
   return next.filter((v) => v !== "");
 }
 
@@ -69,7 +70,11 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function setArraySlot(field: "kakugan" | "shinsekai" | "invitation" | "zencho", index: number, value: string) {
+  function setArraySlot(
+    field: "kakugan" | "shinsekai" | "invitation" | "zencho",
+    index: number,
+    value: string
+  ) {
     setField(field, setAt(form[field] as string[], index, value));
   }
 
@@ -78,37 +83,40 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-v2-black-50">
+    <div className="fixed inset-0 z-50 flex flex-col bg-gray-100">
 
       {/* ===== ヘッダー ===== */}
-      <div className="sticky top-0 bg-white border-b border-v2-border safe-area-top shadow-sm flex-shrink-0">
-        <div className="flex items-center px-3 h-12 gap-2">
+      <div
+        className="sticky top-0 flex-shrink-0 border-b-2 border-gray-500 safe-area-top shadow-sm"
+        style={{ backgroundColor: "#1f2937" }}
+      >
+        <div className="flex items-center px-3 h-14 gap-2">
           <button
             onClick={onClose}
-            className="text-[11px] font-mono text-v2-text-secondary border border-v2-border rounded px-2 py-1 flex-shrink-0 whitespace-nowrap"
+            className="text-[12px] font-mono text-gray-300 border border-gray-500 rounded px-3 py-1.5 flex-shrink-0 whitespace-nowrap hover:bg-gray-700 transition-colors"
           >
             一覧へ戻る
           </button>
-          <p className="flex-1 text-[11px] font-mono font-bold text-v2-text-primary text-center truncate px-1">
+          <p className="flex-1 text-[12px] font-mono font-bold text-white text-center truncate px-1">
             {isNew ? "新規追加" : `[通常時] 行No.${blockIndex} 編集`}
           </p>
         </div>
       </div>
 
       {/* ===== スクロール可能フォーム ===== */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-28">
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-32">
 
         {/* ── メインフォームグリッド ── */}
-        <div className="v2-card px-3 pt-2.5 pb-3 space-y-3">
+        <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4 space-y-4">
 
           {/* Row 1: 実G数 / ゾーン / 推定モード */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-3">
             <FormCell label="実G数">
               <input
                 type="number"
                 inputMode="numeric"
                 placeholder="G数"
-                className="w-full text-[11px] font-mono border border-v2-border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-v2-red bg-white"
+                className="w-full text-sm font-mono border-2 border-gray-300 rounded px-3 py-3 focus:outline-none focus:border-gray-500 bg-white"
                 value={form.jisshuG ?? ""}
                 onChange={(e) =>
                   setField("jisshuG", e.target.value === "" ? null : Number(e.target.value))
@@ -116,46 +124,52 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
               />
             </FormCell>
             <FormCell label="ゾーン">
-              <CompactSel
+              <ColoredSel
                 value={form.zone}
                 onChange={(v) => setField("zone", v)}
                 options={[...TG_ZONES]}
+                colorFn={getZoneCellColor}
               />
             </FormCell>
             <FormCell label="推定モード">
-              <CompactSel
+              <ColoredSel
                 value={form.estimatedMode}
                 onChange={(v) => setField("estimatedMode", v)}
                 options={[...TG_MODES]}
+                colorFn={getModeCellColor}
+                labelFn={(v) => v === "不明" ? v : v.split(":")[0].trim()}
               />
             </FormCell>
           </div>
 
           {/* Row 2: 当選契機 / イベント / AT初当り */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-3">
             <FormCell label="当選契機">
-              <CompactSel
+              <ColoredSel
                 value={form.winTrigger}
                 onChange={(v) => setField("winTrigger", v)}
                 options={[...TG_WIN_TRIGGERS]}
+                colorFn={getTriggerCellColor}
               />
             </FormCell>
             <FormCell label="イベント">
-              <CompactSel
+              <ColoredSel
                 value={form.event}
                 onChange={(v) => setField("event", v)}
                 options={["", ...TG_EVENTS]}
+                colorFn={getEventCellColor}
                 emptyLabel="なし"
               />
             </FormCell>
             <FormCell label="AT初当り">
               <button
                 onClick={() => setField("atWin", !form.atWin)}
-                className={`w-full text-[11px] font-mono font-bold py-1.5 rounded border transition-colors ${
+                className="w-full text-sm font-mono font-bold py-3 rounded border-2 transition-colors"
+                style={
                   form.atWin
-                    ? "bg-green-700 text-white border-green-700"
-                    : "bg-white text-v2-text-muted border-v2-border"
-                }`}
+                    ? { backgroundColor: "#38761d", color: "#ffffff", borderColor: "#38761d" }
+                    : { backgroundColor: "#ffffff", color: "#9ca3af", borderColor: "#d1d5db" }
+                }
               >
                 {form.atWin ? "AT Get ✓" : "なし"}
               </button>
@@ -163,19 +177,25 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
           </div>
 
           {/* Row 3: 終了画面示唆 / トロフィー */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <FormCell label="終了画面示唆">
-              <SuggestionSel
+              <ColoredSel
                 value={form.endingSuggestion}
                 onChange={(v) => setField("endingSuggestion", v)}
                 options={["", ...TG_ENDING_SUGGESTIONS]}
+                colorFn={getEndingCellColor}
+                emptyLabel="なし"
+                labelFn={(v) => v ? getSuggestionDropdownLabel(v) : "なし"}
               />
             </FormCell>
             <FormCell label="トロフィー">
-              <SuggestionSel
+              <ColoredSel
                 value={form.trophy}
                 onChange={(v) => setField("trophy", v)}
                 options={["", ...TG_TROPHIES]}
+                colorFn={getTrophyCellColor}
+                emptyLabel="なし"
+                labelFn={(v) => v ? getSuggestionDropdownLabel(v) : "なし"}
               />
             </FormCell>
           </div>
@@ -184,50 +204,52 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
         {/* ── 前兆履歴 (4スロット) ── */}
         <MultiSelectSection
           title="前兆履歴"
-          titleCls="bg-red-500 text-white"
+          titleColor={{ backgroundColor: "#ef4444", color: "#ffffff" }}
           options={[...TG_ZENCHO]}
           values={form.zencho}
           slots={ZENCHO_SLOTS}
           onChange={(i, v) => setArraySlot("zencho", i, v)}
         />
 
-        {/* ── 赫眼 (3スロット) ── */}
+        {/* ── 赫眼状態 (3スロット) ── */}
         <MultiSelectSection
           title="赫眼状態"
-          titleCls="bg-teal-500 text-white"
+          titleColor={{ backgroundColor: "#b10202", color: "#ffffff" }}
           options={[...TG_KAKUGAN]}
           values={form.kakugan}
           slots={MULTI_SLOTS}
           onChange={(i, v) => setArraySlot("kakugan", i, v)}
+          colorFn={getKakuganCellColor}
         />
 
         {/* ── 精神世界 (3スロット) ── */}
         <MultiSelectSection
           title="精神世界"
-          titleCls="bg-teal-500 text-white"
+          titleColor={{ backgroundColor: "#5a3286", color: "#ffffff" }}
           options={[...TG_SHINSEKAI]}
           values={form.shinsekai}
           slots={MULTI_SLOTS}
           onChange={(i, v) => setArraySlot("shinsekai", i, v)}
+          colorFn={getShinsekaiCellColor}
         />
 
         {/* ── 招待状 (3スロット) ── */}
         <MultiSelectSection
           title="招待状"
-          titleCls="bg-purple-500 text-white"
+          titleColor={{ backgroundColor: "#7c3aed", color: "#ffffff" }}
           options={[...TG_INVITATIONS]}
           values={form.invitation}
           slots={MULTI_SLOTS}
           onChange={(i, v) => setArraySlot("invitation", i, v)}
-          renderValue={(v) => v ? getHintText(v) : "なし"}
         />
       </div>
 
       {/* ===== 保存ボタン (最下部・全幅・大) ===== */}
-      <div className="flex-shrink-0 bg-white border-t border-v2-border safe-area-bottom px-4 py-3">
+      <div className="flex-shrink-0 bg-white border-t-2 border-gray-400 safe-area-bottom px-4 py-3">
         <button
           onClick={handleSave}
-          className="w-full bg-v2-red text-white font-mono font-bold text-base py-4 rounded-xl shadow-md active:scale-95 transition-transform"
+          className="w-full font-mono font-bold text-lg py-5 rounded-xl shadow-lg active:scale-95 transition-transform text-white"
+          style={{ backgroundColor: "#b91c1c" }}
         >
           保存
         </button>
@@ -240,111 +262,114 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
 
 interface MultiSelectSectionProps {
   title: string;
-  titleCls: string;
+  titleColor: CellColor;
   options: readonly string[];
   values: string[];
   slots: number;
   onChange: (index: number, value: string) => void;
-  renderValue?: (v: string) => string;
+  colorFn?: (v: string) => CellColor;
 }
 
 function MultiSelectSection({
-  title, titleCls, options, values, slots, onChange, renderValue,
+  title, titleColor, options, values, slots, onChange, colorFn,
 }: MultiSelectSectionProps) {
-  // スロット配列: values で埋め、残りは ""
   const slotValues = Array.from({ length: slots }, (_, i) => values[i] ?? "");
 
   return (
-    <div className="v2-card px-3 pt-2.5 pb-3">
-      <span className={`inline-block text-[10px] font-mono font-bold px-2 py-0.5 rounded mb-2 ${titleCls}`}>
+    <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
+      <span
+        className="inline-block text-[11px] font-mono font-bold px-3 py-1 rounded mb-3"
+        style={titleColor}
+      >
         {title}
       </span>
-      <div className="flex flex-col gap-1.5">
-        {slotValues.map((val, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <span className="text-[9px] font-mono text-v2-text-muted w-5 text-right flex-shrink-0">
-              {i + 1}.
-            </span>
-            <select
-              className="flex-1 text-[11px] font-mono border border-v2-border rounded px-1.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-v2-red bg-white"
-              value={val}
-              onChange={(e) => onChange(i, e.target.value)}
-            >
-              <option value="">なし</option>
-              {options.map((opt) => (
-                <option key={opt} value={opt}>
-                  {renderValue ? renderValue(opt) : opt}
-                </option>
-              ))}
-            </select>
-          </div>
-        ))}
+      <div className="flex flex-col gap-2">
+        {slotValues.map((val, i) => {
+          const indicatorColor = val && colorFn ? colorFn(val) : null;
+          return (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-gray-400 w-5 text-right flex-shrink-0">
+                {i + 1}.
+              </span>
+              <div className="flex-1">
+                {indicatorColor && (
+                  <div
+                    className="text-[9px] font-mono px-2 py-0.5 rounded-t truncate"
+                    style={indicatorColor}
+                  >
+                    {val}
+                  </div>
+                )}
+                <select
+                  className="w-full text-sm font-mono border-2 border-gray-300 rounded px-2 py-3 focus:outline-none focus:border-gray-500 bg-white"
+                  style={indicatorColor ? { borderRadius: "0 0 0.375rem 0.375rem" } : {}}
+                  value={val}
+                  onChange={(e) => onChange(i, e.target.value)}
+                >
+                  <option value="">なし</option>
+                  {options.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// ─── サブコンポーネント ───────────────────────────────────────────────────────
+// ─── ColoredSel ──────────────────────────────────────────────────────────────
 
-function FormCell({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[10px] font-mono text-v2-text-muted">{label}</span>
-      {children}
-    </div>
-  );
-}
-
-function CompactSel({
-  value, onChange, options, emptyLabel,
+function ColoredSel({
+  value, onChange, options, colorFn, emptyLabel, labelFn,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: string[];
+  colorFn: (v: string) => CellColor;
   emptyLabel?: string;
+  labelFn?: (v: string) => string;
 }) {
-  return (
-    <select
-      className="w-full text-[11px] font-mono border border-v2-border rounded px-1.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-v2-red bg-white"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt === "" ? (emptyLabel ?? "なし") : opt}
-        </option>
-      ))}
-    </select>
-  );
-}
+  const indicatorColor = value ? colorFn(value) : null;
+  const hint = value ? getHintFromValue(value) : null;
 
-function SuggestionSel({
-  value, onChange, options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-}) {
-  const colors = value ? getSuggestionColors(value) : null;
-  const hint   = value ? getHintText(value) : null;
   return (
-    <div className="flex flex-col gap-1">
-      {hint && colors && (
-        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded self-start ${colors.bg} ${colors.text}`}>
-          {hint}
-        </span>
+    <div>
+      {indicatorColor && (
+        <div
+          className="text-[10px] font-mono px-2 py-1 rounded-t text-center truncate font-medium"
+          style={indicatorColor}
+        >
+          {hint ?? value}
+        </div>
       )}
       <select
-        className="w-full text-[11px] font-mono border border-v2-border rounded px-1.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-v2-red bg-white"
+        className="w-full text-sm font-mono border-2 border-gray-300 px-2 py-3 focus:outline-none focus:border-gray-500 bg-white"
+        style={{
+          ...(indicatorColor ? { borderRadius: "0 0 0.375rem 0.375rem" } : { borderRadius: "0.375rem" }),
+        }}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
         {options.map((opt) => (
           <option key={opt} value={opt}>
-            {opt === "" ? "なし" : getHintText(opt)}
+            {opt === "" ? (emptyLabel ?? "なし") : (labelFn ? labelFn(opt) : opt)}
           </option>
         ))}
       </select>
+    </div>
+  );
+}
+
+// ─── FormCell ────────────────────────────────────────────────────────────────
+
+function FormCell({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[11px] font-mono text-gray-500 font-medium">{label}</span>
+      {children}
     </div>
   );
 }

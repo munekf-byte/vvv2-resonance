@@ -1,45 +1,61 @@
 // =============================================================================
-// TOKYO GHOUL RESONANCE: セル全体背景色マッピング
-// 色彩: ゾーン(浅→青/深→赤), モード(A=ピンク/B=黄/C=水/チャンス天国=濃青)
-//       契機・イベント各色, AT=濃緑, 示唆=設定6金/456赤/高設定淡赤/偶数淡黄/奇数淡青
+// TOKYO GHOUL RESONANCE: セル配色 (hex ベース inline style)
 // =============================================================================
 
-import { getHintText } from "./suggestionColors";
-
-/** Tailwind bg+text クラス文字列 */
-type CellStyle = string;
-
-// ─── ゾーン (浅い=青系, 深い=赤系) ──────────────────────────────────────────
-
-export function getZoneCellStyle(zone: string): CellStyle {
-  if (!zone || zone === "不明") return "bg-gray-100 text-gray-500";
-  const n = parseInt(zone);
-  if (!isNaN(n)) {
-    if (n <= 100) return "bg-sky-200 text-sky-900";
-    if (n <= 250) return "bg-blue-200 text-blue-900";
-    if (n <= 400) return "bg-violet-200 text-violet-900";
-    return "bg-red-300 text-red-900"; // 500, 600
-  }
-  // 範囲値
-  if (zone.includes("50") && !zone.includes("500")) return "bg-sky-200 text-sky-900";
-  if (zone.includes("200") && !zone.includes("400") && !zone.includes("600")) return "bg-blue-200 text-blue-900";
-  if (zone.includes("300")) return "bg-violet-200 text-violet-900";
-  if (zone.includes("400") || zone.includes("500") || zone.includes("600")) return "bg-red-300 text-red-900";
-  return "bg-gray-100 text-gray-500";
+export interface CellColor {
+  backgroundColor: string;
+  color: string;
 }
 
-// ─── 推定モード ───────────────────────────────────────────────────────────────
+const BLK  = "#1a1a1a";
+const WHT  = "#ffffff";
+const DARK_BLUE = "#1a237e";
+const GRAY_DEFAULT: CellColor = { backgroundColor: "#d1d1d1", color: BLK };
+const EMPTY_CELL: CellColor   = { backgroundColor: "#f3f4f6", color: "#9ca3af" };
 
-export function getModeCellStyle(mode: string): CellStyle {
-  if (!mode || mode === "不明") return "bg-gray-100 text-gray-500";
-  if (mode.startsWith("通常A")) return "bg-pink-200 text-pink-900";
-  if (mode.startsWith("通常B")) return "bg-yellow-200 text-yellow-900";
-  if (mode.startsWith("通常C")) return "bg-cyan-200 text-cyan-900";
-  if (mode.startsWith("チャンス")) return "bg-blue-500 text-white";
-  if (mode.startsWith("天国準備")) return "bg-blue-600 text-white";
-  if (mode.startsWith("天国")) return "bg-blue-800 text-white";
-  if (mode.startsWith("朝一")) return "bg-gray-300 text-gray-800";
-  return "bg-gray-100 text-gray-500";
+// ─── ゾーン ──────────────────────────────────────────────────────────────────
+
+const ZONE_MAP: Record<string, CellColor> = {
+  "不明":         { backgroundColor: "#d1d1d1", color: BLK },
+  "50":           { backgroundColor: "#5ec0fc", color: "#0a53a8" },
+  "100":          { backgroundColor: "#5ec0fc", color: "#0a53a8" },
+  "150":          { backgroundColor: "#ffe5a0", color: BLK },
+  "200":          { backgroundColor: "#ffe5a0", color: BLK },
+  "250":          { backgroundColor: "#ffe5a0", color: BLK },
+  "300":          { backgroundColor: "#ffe5a0", color: BLK },
+  "400":          { backgroundColor: "#fdb68f", color: BLK },
+  "500":          { backgroundColor: "#fdb68f", color: BLK },
+  "600":          { backgroundColor: "#ffbdb4", color: BLK },
+  "50or100":      { backgroundColor: "#5ec0fc", color: "#0a53a8" },
+  "200以内":      { backgroundColor: "#ffe5a0", color: BLK },
+  "300以内":      { backgroundColor: "#ffe5a0", color: BLK },
+  "200以上":      { backgroundColor: "#ffe5a0", color: BLK },
+  "300以上":      { backgroundColor: "#fdb68f", color: BLK },
+  "300 or 400":   { backgroundColor: "#fdb68f", color: BLK },
+  "400 or 500":   { backgroundColor: "#fdb68f", color: BLK },
+  "500 or 600":   { backgroundColor: "#ffbdb4", color: BLK },
+  "600否定":      { backgroundColor: "#ffbdb4", color: BLK },
+};
+
+export function getZoneCellColor(zone: string): CellColor {
+  return ZONE_MAP[zone] ?? GRAY_DEFAULT;
+}
+
+// ─── モード ──────────────────────────────────────────────────────────────────
+
+const MODE_MAP: Record<string, CellColor> = {
+  "不明":                    { backgroundColor: "#d1d1d1", color: BLK },
+  "朝一モード":              { backgroundColor: "#b6d7a8", color: BLK },
+  "通常A: 最大天井 600G":    { backgroundColor: "#f4cccc", color: BLK },
+  "通常B: 最大天井 600G":    { backgroundColor: "#fff2cc", color: BLK },
+  "通常C: 最大天井 500G":    { backgroundColor: "#fff2cc", color: BLK },
+  "チャンス: 最大天井 600G": { backgroundColor: "#cfe2f3", color: BLK },
+  "天国準備: 最大天井 300G": { backgroundColor: "#cfe2f3", color: BLK },
+  "天国: 最大天井 100G":     { backgroundColor: "#a4c2f4", color: DARK_BLUE },
+};
+
+export function getModeCellColor(mode: string): CellColor {
+  return MODE_MAP[mode] ?? GRAY_DEFAULT;
 }
 
 export function abbrevMode(mode: string): string {
@@ -54,21 +70,24 @@ export function abbrevMode(mode: string): string {
   return mode.slice(0, 4);
 }
 
-// ─── 当選契機 ─────────────────────────────────────────────────────────────────
+// ─── 当選契機 ────────────────────────────────────────────────────────────────
 
-export function getTriggerCellStyle(trigger: string): CellStyle {
-  if (!trigger || trigger === "不明") return "bg-gray-100 text-gray-500";
-  if (trigger === "確定チェリー")       return "bg-red-600 text-white";
-  if (trigger === "強チェリー")         return "bg-red-400 text-white";
-  if (trigger === "弱チェリー")         return "bg-pink-200 text-pink-900";
-  if (trigger === "チャンス目")          return "bg-orange-300 text-orange-900";
-  if (trigger === "精神世界 [赫眼]")    return "bg-teal-500 text-white";
-  if (trigger === "精神世界")           return "bg-teal-300 text-teal-900";
-  if (trigger === "直撃")              return "bg-purple-500 text-white";
-  if (trigger.includes("🍉"))          return "bg-green-300 text-green-900";
-  if (trigger === "ゲーム数orレア役")   return "bg-gray-300 text-gray-800";
-  if (trigger === "ゲーム数")           return "bg-gray-200 text-gray-700";
-  return "bg-gray-100 text-gray-500";
+const TRIGGER_MAP: Record<string, CellColor> = {
+  "不明":               { backgroundColor: "#d1d1d1", color: BLK },
+  "ゲーム数":           { backgroundColor: "#ffe5a0", color: BLK },
+  "ゲーム数orレア役":   { backgroundColor: "#fdf485", color: BLK },
+  "🍉加算 ゲーム数":    { backgroundColor: "#fdf485", color: BLK },
+  "強チェリー":         { backgroundColor: "#f9cb9c", color: BLK },
+  "チャンス目":         { backgroundColor: "#f9cb9c", color: BLK },
+  "弱チェリー":         { backgroundColor: "#cc0000", color: WHT },
+  "確定チェリー":       { backgroundColor: "#351c75", color: WHT },
+  "精神世界":           { backgroundColor: "#d9d2e9", color: BLK },
+  "精神世界 [赫眼]":    { backgroundColor: "#d9d2e9", color: BLK },
+  "直撃":               { backgroundColor: "#cc0000", color: WHT },
+};
+
+export function getTriggerCellColor(trigger: string): CellColor {
+  return TRIGGER_MAP[trigger] ?? GRAY_DEFAULT;
 }
 
 export function abbrevTrigger(t: string): string {
@@ -88,17 +107,20 @@ export function abbrevTrigger(t: string): string {
   return map[t] ?? t;
 }
 
-// ─── イベント ─────────────────────────────────────────────────────────────────
+// ─── イベント ────────────────────────────────────────────────────────────────
 
-export function getEventCellStyle(event: string): CellStyle {
-  if (!event) return "bg-gray-100 text-gray-400";
-  if (event === "ロングフリーズ")     return "bg-yellow-400 text-yellow-950";
-  if (event === "直撃AT")            return "bg-red-500 text-white";
-  if (event === "レミニセンス")       return "bg-purple-300 text-purple-900";
-  if (event === "大喰いの利世")       return "bg-teal-300 text-teal-900";
-  if (event === "エピソードボーナス") return "bg-blue-300 text-blue-900";
-  if (event === "引き戻し")          return "bg-orange-200 text-orange-800";
-  return "bg-gray-100 text-gray-500";
+const EVENT_MAP: Record<string, CellColor> = {
+  "レミニセンス":       { backgroundColor: "#0f913c", color: WHT },
+  "大喰いの利世":       { backgroundColor: "#cf5858", color: WHT },
+  "エピソードボーナス": { backgroundColor: "#fdff00", color: BLK },
+  "直撃AT":            { backgroundColor: "#cc0000", color: WHT },
+  "引き戻し":          { backgroundColor: "#e06666", color: WHT },
+  "ロングフリーズ":    { backgroundColor: "#000000", color: WHT },
+};
+
+export function getEventCellColor(event: string): CellColor {
+  if (!event) return EMPTY_CELL;
+  return EVENT_MAP[event] ?? GRAY_DEFAULT;
 }
 
 export function abbrevEvent(e: string): string {
@@ -114,33 +136,127 @@ export function abbrevEvent(e: string): string {
   return map[e] ?? e;
 }
 
-// ─── 終了画面示唆 / トロフィー ────────────────────────────────────────────────
+// ─── AT初当り ────────────────────────────────────────────────────────────────
 
-export function getSuggestionCellStyle(value: string): CellStyle {
-  if (!value) return "bg-gray-100 text-gray-400";
-  const hint = getHintText(value);
-  if (hint.includes("設定6"))              return "bg-yellow-400 text-yellow-950";
-  if (hint.includes("設定5以上"))          return "bg-red-700 text-white";
-  if (hint.includes("設定4以上"))          return "bg-red-500 text-white";
-  if (hint.includes("設定3以上"))          return "bg-red-300 text-red-900";
-  if (hint.includes("設定2以上"))          return "bg-red-200 text-red-800";
-  if (hint.includes("高設定示唆［強］"))   return "bg-red-200 text-red-800";
-  if (hint.includes("高設定示唆［弱］"))   return "bg-red-100 text-red-700";
-  if (hint.includes("偶数設定濃厚"))       return "bg-yellow-300 text-yellow-900";
-  if (hint.includes("偶数設定示唆"))       return "bg-yellow-200 text-yellow-800";
-  if (hint.includes("偶数設定期待度UP"))   return "bg-yellow-100 text-yellow-700";
-  if (hint.includes("奇数設定濃厚"))       return "bg-blue-300 text-blue-900";
-  if (hint.includes("奇数設定示唆"))       return "bg-blue-100 text-blue-700";
-  if (hint.includes("天国濃厚"))           return "bg-teal-400 text-teal-900";
-  if (hint.includes("天国準備以上濃厚"))   return "bg-teal-200 text-teal-800";
-  if (hint.includes("チャンス以上濃厚"))   return "bg-cyan-200 text-cyan-900";
-  if (hint.includes("通常C以上"))          return "bg-blue-200 text-blue-800";
-  if (hint.includes("通常B以上"))          return "bg-blue-100 text-blue-700";
-  if (hint.includes("次回トロフィー"))     return "bg-gray-900 text-gray-100";
-  if (hint.includes("設定1否定") || hint.includes("設定2否定") ||
-      hint.includes("設定3否定") || hint.includes("設定4否定"))
-                                          return "bg-lime-100 text-lime-700";
-  if (hint.includes("600G否定"))          return "bg-gray-100 text-gray-500";
-  if (hint.includes("残り") || hint.includes("規定G数")) return "bg-sky-100 text-sky-700";
-  return "bg-gray-100 text-gray-400";
+export const AT_WIN_COLOR:  CellColor = { backgroundColor: "#38761d", color: WHT };
+export const AT_NONE_COLOR: CellColor = EMPTY_CELL;
+
+// ─── 終了画面示唆 ────────────────────────────────────────────────────────────
+
+const ENDING_MAP: Record<string, CellColor> = {
+  "[cz失敗] 金木研 - デフォルト":                        { backgroundColor: "#d1d1d1", color: BLK },
+  "[cz失敗] 霧嶋董香 - 通常B以上示唆":                  { backgroundColor: "#d1d1d1", color: BLK },
+  "[cz失敗] 笛口雛実 - 通常B以上示唆":                  { backgroundColor: "#d1d1d1", color: BLK },
+  "[cz失敗] 亜門鋼太朗 - 通常B以上濃厚":                { backgroundColor: "#d1d1d1", color: BLK },
+  "[cz失敗] 真戸呉緒 - 通常C以上濃厚":                  { backgroundColor: "#d1d1d1", color: BLK },
+  "[cz失敗] 金木研（喰種） - チャンス以上濃厚":          { backgroundColor: "#d1d1d1", color: BLK },
+  "[cz失敗] 霧嶋董香（喰種） - チャンス以上濃厚":        { backgroundColor: "#d1d1d1", color: BLK },
+  "[cz失敗] 月山習 - 天国準備以上濃厚":                  { backgroundColor: "#d1d1d1", color: BLK },
+  "[cz失敗] 神代利世 - 天国濃厚":                        { backgroundColor: "#d1d1d1", color: BLK },
+  "[cz失敗] 鈴屋什造 - 偶数設定濃厚":                   { backgroundColor: "#fce5cd", color: BLK },
+  "[cz失敗] 梟 - 設定4以上濃厚":                        { backgroundColor: "#ff0000", color: WHT },
+  "[cz失敗] 有馬貴将 - 設定6濃厚":                      { backgroundColor: "#ffff00", color: BLK },
+  "[終了画面] 金木研 - デフォルト":                      { backgroundColor: "#d1d1d1", color: BLK },
+  "[終了画面] 亜門鋼太朗＆真戸暁 - 奇数設定示唆":        { backgroundColor: "#c9daf8", color: BLK },
+  "[終了画面] 鈴屋什造＆篠原幸紀 - 偶数設定示唆":        { backgroundColor: "#fce5cd", color: BLK },
+  "[終了画面] 神代利世 - 設定1否定":                     { backgroundColor: "#b4a7d6", color: BLK },
+  "[終了画面] 笛口雛実＆笛口リョーコ - 高設定示唆［弱］": { backgroundColor: "#f4cccc", color: BLK },
+  "[終了画面] 四方蓮示＆イトリ＆ウタ - 高設定示唆［強］": { backgroundColor: "#e06666", color: WHT },
+  "[終了画面] 金木研＆霧嶋董香 - 設定4以上濃厚":         { backgroundColor: "#ff0000", color: WHT },
+  "[終了画面] あんていく全員集合 - 設定6濃厚":           { backgroundColor: "#ffff00", color: BLK },
+};
+
+export function getEndingCellColor(value: string): CellColor {
+  return ENDING_MAP[value] ?? GRAY_DEFAULT;
+}
+
+// ─── トロフィー ───────────────────────────────────────────────────────────────
+
+const TROPHY_MAP: Record<string, CellColor> = {
+  "[終了画面] 銅トロフィー - 設定2以上濃厚":          { backgroundColor: "#b4a7d6", color: BLK },
+  "[終了画面] 銀トロフィー - 設定3以上濃厚":          { backgroundColor: "#e06666", color: WHT },
+  "[終了画面] 金トロフィー - 設定4以上濃厚":          { backgroundColor: "#ff0000", color: WHT },
+  "[終了画面] 喰種柄トロフィー - 設定5以上濃厚":      { backgroundColor: "#ff0000", color: WHT },
+  "[終了画面] 虹トロフィー - 設定6濃厚":             { backgroundColor: "#ffff00", color: BLK },
+  "[終了画面] 黒トロフィー - 次回トロフィー出現濃厚": { backgroundColor: "#d1d1d1", color: BLK },
+};
+
+export function getTrophyCellColor(value: string): CellColor {
+  return TROPHY_MAP[value] ?? GRAY_DEFAULT;
+}
+
+/** 終了画面示唆またはトロフィーのどちらか存在する方の色を返す */
+export function getSuggestionOrTrophyColor(ending: string, trophy: string): CellColor {
+  if (ending) return getEndingCellColor(ending);
+  if (trophy) return getTrophyCellColor(trophy);
+  return EMPTY_CELL;
+}
+
+// ─── 赫眼 ────────────────────────────────────────────────────────────────────
+
+export const KAKUGAN_COLOR: CellColor = { backgroundColor: "#b10202", color: WHT };
+
+export function getKakuganCellColor(_value: string): CellColor {
+  return KAKUGAN_COLOR;
+}
+
+// ─── 精神世界 ────────────────────────────────────────────────────────────────
+
+const SHINSEKAI_MAP: Record<string, CellColor> = {
+  "精神13G": { backgroundColor: "#e6cff2", color: BLK },
+  "精神23G": { backgroundColor: "#e6cff2", color: BLK },
+  "精神33G": { backgroundColor: "#5a3286", color: WHT },
+};
+
+export function getShinsekaiCellColor(value: string): CellColor {
+  return SHINSEKAI_MAP[value] ?? GRAY_DEFAULT;
+}
+
+// ─── 招待状 (ヒントベース) ────────────────────────────────────────────────────
+
+export function getInvitationCellColor(value: string): CellColor {
+  if (!value) return EMPTY_CELL;
+  const hint = getHintFromValue(value);
+  if (hint.includes("設定6")) return { backgroundColor: "#ffff00", color: BLK };
+  if (hint.includes("設定4以上")) return { backgroundColor: "#ff0000", color: WHT };
+  if (hint.includes("設定4否定") || hint.includes("設定3否定") ||
+      hint.includes("設定2否定") || hint.includes("設定1否定")) {
+    return { backgroundColor: "#b4a7d6", color: BLK };
+  }
+  if (hint.includes("偶数設定期待度UP")) return { backgroundColor: "#fce5cd", color: BLK };
+  if (hint.includes("残り")) return { backgroundColor: "#cfe2f3", color: BLK };
+  if (hint.includes("600G否定")) return { backgroundColor: "#d1d1d1", color: BLK };
+  if (hint.includes("規定G数")) return { backgroundColor: "#cfe2f3", color: BLK };
+  return GRAY_DEFAULT;
+}
+
+// ─── 表示ヘルパー ─────────────────────────────────────────────────────────────
+
+/** " - " 以降をヒントとして返す */
+export function getHintFromValue(value: string): string {
+  const idx = value.indexOf(" - ");
+  return idx !== -1 ? value.slice(idx + 3).trim() : value.trim();
+}
+
+/**
+ * プルダウン表示ラベル: " - " より前の部分のみ
+ * 例) "[cz失敗] 金木研 - デフォルト" → "[cz失敗] 金木研"
+ */
+export function getSuggestionDropdownLabel(value: string): string {
+  if (!value) return "なし";
+  const idx = value.indexOf(" - ");
+  return idx !== -1 ? value.slice(0, idx).trim() : value;
+}
+
+/**
+ * 一覧表示用 2行データ: 括弧プレフィックスを除去
+ * 例) "[cz失敗] 金木研 - デフォルト" → { name: "金木研", hint: "デフォルト" }
+ */
+export function getSuggestionListLines(value: string): { name: string; hint: string } | null {
+  if (!value) return null;
+  const idx = value.indexOf(" - ");
+  const hint = idx !== -1 ? value.slice(idx + 3).trim() : "";
+  const withoutHint = idx !== -1 ? value.slice(0, idx) : value;
+  const name = withoutHint.replace(/^\[.*?\]\s*/, "").trim();
+  return { name, hint };
 }

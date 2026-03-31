@@ -93,24 +93,27 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
     <div className="min-h-screen bg-v2-black flex flex-col">
 
       {/* ===== Sticky ヘッダー ===== */}
-      <header className="sticky top-0 z-40 bg-white border-b border-v2-border safe-area-top shadow-sm">
+      <header
+        className="sticky top-0 z-40 border-b-2 border-gray-600 safe-area-top shadow-md"
+        style={{ backgroundColor: "#1f2937" }}
+      >
         <div className="max-w-2xl mx-auto px-3 h-14 flex items-center gap-3">
           <button
             onClick={() => router.push("/dashboard")}
-            className="text-v2-text-secondary text-sm font-mono flex-shrink-0"
+            className="text-gray-300 hover:text-white text-sm font-mono flex-shrink-0 transition-colors"
           >
             ← 戻る
           </button>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-mono font-bold text-v2-text-primary truncate">
+            <p className="text-sm font-mono font-bold text-white truncate">
               {session?.machineName ?? "セッション"}
             </p>
-            <p className="text-[10px] font-mono text-v2-text-muted">
+            <p className="text-[10px] font-mono text-gray-400">
               通常時 · {blocks.length} 周期
             </p>
           </div>
           {atCount > 0 && (
-            <span className="text-xs font-mono font-bold text-green-700 flex-shrink-0">
+            <span className="text-xs font-mono font-bold text-green-400 flex-shrink-0">
               AT ×{atCount}
             </span>
           )}
