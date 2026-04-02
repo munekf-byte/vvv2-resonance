@@ -1,8 +1,9 @@
 "use client";
 // =============================================================================
-// TOKYO GHOUL RESONANCE: AT記録 編集ダッシュボード v1.1
+// TOKYO GHOUL RESONANCE: AT記録 編集ダッシュボード v1.2
 // SET行: 対決（契機+成績 統合10枠） / 直乗せ（契機+枚数 10枠）
 // 有馬ジャッジメント行: 成否 / 役 / CCGの死神
+// セクション順: AT種別 → 敵キャラ → 対決 → 直乗せ → 不利益 → BITES種別 → BITES獲得
 // =============================================================================
 
 import { useState } from "react";
@@ -112,6 +113,14 @@ function SetForm({ initial, onSave }: { initial: TGATSet | null; onSave: (r: TGA
     initial ? { ...initial, battles: initial.battles ?? [], directAdds: initial.directAdds ?? [] }
             : emptySet()
   );
+  const [bitesFreeInput, setBitesFreeInput] = useState(
+    () => {
+      if (!initial?.bitesCoins) return "";
+      // プリセット値でなければフリー入力とみなす
+      const presets = TG_BITES_COINS.map(String);
+      return presets.includes(initial.bitesCoins) ? "" : initial.bitesCoins;
+    }
+  );
 
   function setField<K extends keyof typeof form>(k: K, v: typeof form[K]) {
     setForm((p) => ({ ...p, [k]: v }));
@@ -126,8 +135,8 @@ function SetForm({ initial, onSave }: { initial: TGATSet | null; onSave: (r: TGA
 
   function toggleBattleResult(i: number) {
     const next = [...form.battles];
-    const cur = next[i]?.result ?? "";
-    const nxt = cur === "" ? "×" : cur === "×" ? "○" : "";
+    const cur  = next[i]?.result ?? "";
+    const nxt  = cur === "" ? "×" : cur === "×" ? "○" : "";
     next[i] = { trigger: next[i]?.trigger ?? "", result: nxt };
     setField("battles", next.slice(0, TG_MAX_BATTLE_RESULTS));
   }
@@ -146,7 +155,6 @@ function SetForm({ initial, onSave }: { initial: TGATSet | null; onSave: (r: TGA
   }
 
   function handleSave() {
-    // 空スロットをトリム
     const battles    = form.battles.filter((b) => b.trigger || b.result);
     const directAdds = form.directAdds.filter((d) => d.trigger || d.coins != null);
     onSave({ id: initial?.id ?? crypto.randomUUID(), ...form, battles, directAdds });
@@ -193,6 +201,50 @@ function SetForm({ initial, onSave }: { initial: TGATSet | null; onSave: (r: TGA
           </div>
         </Section>
 
+        {/* 対決（契機+成績 統合10枠） */}
+        <Section title="対決（契機 + 成績）">
+          <div className="grid grid-cols-5 gap-1.5">
+            {Array.from({ length: TG_MAX_BATTLE_RESULTS }, (_, i) => {
+              const battle = form.battles[i] ?? { trigger: "", result: "" };
+              return (
+                <BattleSlot
+                  key={i}
+                  index={i}
+                  trigger={battle.trigger}
+                  result={battle.result}
+                  onTriggerChange={(v) => setBattleTrigger(i, v)}
+                  onResultToggle={() => toggleBattleResult(i)}
+                />
+              );
+            })}
+          </div>
+          <p className="text-[8px] text-gray-400 font-mono mt-1.5">
+            上段: 対決契機を選択　下段: タップで × → ○ → 空
+          </p>
+        </Section>
+
+        {/* 直乗せ（契機+枚数 10枠） */}
+        <Section title="直乗せ（契機 + 枚数）">
+          <div className="grid grid-cols-5 gap-1.5">
+            {Array.from({ length: TG_MAX_DIRECT_ADDS }, (_, i) => {
+              const d = form.directAdds[i] ?? { id: "", trigger: "", coins: null };
+              return (
+                <DirectAddSlot
+                  key={i}
+                  index={i}
+                  trigger={d.trigger}
+                  coins={d.coins}
+                  onTriggerChange={(v) => setDirectTrigger(i, v)}
+                  onCoinsChange={(v) => setDirectCoins(i, v)}
+                />
+              );
+            })}
+          </div>
+          <p className="text-[8px] text-gray-400 font-mono mt-1.5">
+            上段: 役を選択　下段: 獲得枚数を選択
+          </p>
+        </Section>
+
         {/* 不利益 */}
         <Section title="不利益">
           <div className="flex gap-2">
@@ -236,62 +288,39 @@ function SetForm({ initial, onSave }: { initial: TGATSet | null; onSave: (r: TGA
 
         {/* BITES獲得 */}
         <Section title="BITES獲得">
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-5 gap-2 mb-3">
             {TG_BITES_COINS.map((c) => (
-              <button key={c} onClick={() => setField("bitesCoins", String(c))}
+              <button key={c}
+                onClick={() => {
+                  setField("bitesCoins", String(c));
+                  setBitesFreeInput("");
+                }}
                 className="py-3 rounded text-[11px] font-mono font-bold border-2 transition-colors"
                 style={
-                  form.bitesCoins === String(c)
+                  form.bitesCoins === String(c) && !bitesFreeInput
                     ? { backgroundColor: "#1f2937", color: "#f9fafb", borderColor: "#1f2937" }
                     : { backgroundColor: "#fff", color: "#374151", borderColor: "#d1d5db" }
                 }
               >{c === "ED" ? "ED" : `${c}枚`}</button>
             ))}
           </div>
-        </Section>
-
-        {/* 対決（契機+成績 統合10枠） */}
-        <Section title="対決（契機 + 成績）">
-          <div className="grid grid-cols-5 gap-1.5">
-            {Array.from({ length: TG_MAX_BATTLE_RESULTS }, (_, i) => {
-              const battle = form.battles[i] ?? { trigger: "", result: "" };
-              return (
-                <BattleSlot
-                  key={i}
-                  index={i}
-                  trigger={battle.trigger}
-                  result={battle.result}
-                  onTriggerChange={(v) => setBattleTrigger(i, v)}
-                  onResultToggle={() => toggleBattleResult(i)}
-                />
-              );
-            })}
+          {/* フリー入力（百足覚醒など枚数が変動する場合） */}
+          <div className="flex items-center gap-2 border-t border-gray-200 pt-3">
+            <span className="text-[9px] font-mono text-gray-500 shrink-0">フリー入力</span>
+            <input
+              type="number"
+              min={0}
+              placeholder="枚数を直接入力"
+              value={bitesFreeInput}
+              onChange={(e) => {
+                const v = e.target.value;
+                setBitesFreeInput(v);
+                setField("bitesCoins", v);
+              }}
+              className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-[12px] font-mono text-center focus:outline-none focus:border-gray-500"
+            />
+            <span className="text-[10px] font-mono text-gray-500 shrink-0">枚</span>
           </div>
-          <p className="text-[8px] text-gray-400 font-mono mt-1.5">
-            ↑ 上段: 対決契機を選択　下段: タップで × → ○ → 空
-          </p>
-        </Section>
-
-        {/* 直乗せ（契機+枚数 10枠） */}
-        <Section title="直乗せ（契機 + 枚数）">
-          <div className="grid grid-cols-5 gap-1.5">
-            {Array.from({ length: TG_MAX_DIRECT_ADDS }, (_, i) => {
-              const d = form.directAdds[i] ?? { id: "", trigger: "", coins: null };
-              return (
-                <DirectAddSlot
-                  key={i}
-                  index={i}
-                  trigger={d.trigger}
-                  coins={d.coins}
-                  onTriggerChange={(v) => setDirectTrigger(i, v)}
-                  onCoinsChange={(v) => setDirectCoins(i, v)}
-                />
-              );
-            })}
-          </div>
-          <p className="text-[8px] text-gray-400 font-mono mt-1.5">
-            ↑ 上段: 役を選択　下段: 獲得枚数を選択
-          </p>
         </Section>
       </div>
 
@@ -321,13 +350,17 @@ function BattleSlot({
       style={active ? { borderColor: "#374151" } : { borderColor: "#e5e7eb" }}
     >
       {/* スロット番号 */}
-      <div className="text-center text-[8px] font-mono text-gray-400 pt-0.5 leading-none">
+      <div className="text-center text-[8px] font-mono text-gray-400 pt-0.5 leading-none bg-gray-50">
         {index + 1}
       </div>
-      {/* 上段: 契機セレクト */}
+      {/* 上段: 契機セレクト（下段と同等の高さ） */}
       <select
-        className="w-full text-[9px] font-mono border-0 border-b border-gray-200 bg-gray-50 text-center py-1.5 focus:outline-none"
-        style={{ color: hasTrigger ? "#1f2937" : "#9ca3af" }}
+        className="w-full text-[9px] font-mono border-0 border-b border-gray-200 bg-gray-50 text-center focus:outline-none"
+        style={{
+          color: hasTrigger ? "#1f2937" : "#9ca3af",
+          minHeight: "44px",
+          padding: "0 2px",
+        }}
         value={trigger}
         onChange={(e) => onTriggerChange(e.target.value)}
       >
@@ -336,17 +369,18 @@ function BattleSlot({
           <option key={t} value={t}>{t}</option>
         ))}
       </select>
-      {/* 下段: 成績トグル */}
+      {/* 下段: 成績トグル（上段と同等の高さ） */}
       <button
         onClick={onResultToggle}
-        className="flex-1 flex items-center justify-center py-2 text-sm font-bold transition-colors"
-        style={
-          result === "○"
+        className="flex items-center justify-center text-sm font-bold transition-colors"
+        style={{
+          minHeight: "44px",
+          ...(result === "○"
             ? { backgroundColor: "#1b5e20", color: "#ffffff" }
             : result === "×"
             ? { backgroundColor: "#b71c1c", color: "#ffffff" }
-            : { backgroundColor: "#f9fafb", color: "#d1d5db" }
-        }
+            : { backgroundColor: "#f9fafb", color: "#d1d5db" }),
+        }}
       >
         {result || "—"}
       </button>
@@ -372,13 +406,17 @@ function DirectAddSlot({
       className="flex flex-col rounded border-2 overflow-hidden"
       style={active ? { borderColor: "#1565c0" } : { borderColor: "#e5e7eb" }}
     >
-      <div className="text-center text-[8px] font-mono text-gray-400 pt-0.5 leading-none">
+      <div className="text-center text-[8px] font-mono text-gray-400 pt-0.5 leading-none bg-gray-50">
         {index + 1}
       </div>
-      {/* 上段: 役 */}
+      {/* 上段: 役（下段と同等の高さ） */}
       <select
-        className="w-full text-[9px] font-mono border-0 border-b border-gray-200 bg-gray-50 text-center py-1.5 focus:outline-none"
-        style={{ color: trigger ? "#1f2937" : "#9ca3af" }}
+        className="w-full text-[9px] font-mono border-0 border-b border-gray-200 bg-gray-50 text-center focus:outline-none"
+        style={{
+          color: trigger ? "#1f2937" : "#9ca3af",
+          minHeight: "44px",
+          padding: "0 2px",
+        }}
         value={trigger}
         onChange={(e) => onTriggerChange(e.target.value)}
       >
@@ -387,10 +425,15 @@ function DirectAddSlot({
           <option key={t} value={t}>{t}</option>
         ))}
       </select>
-      {/* 下段: 枚数 */}
+      {/* 下段: 枚数（上段と同等の高さ） */}
       <select
-        className="w-full text-[9px] font-mono border-0 bg-white text-center py-1.5 focus:outline-none"
-        style={{ color: coins != null ? "#1565c0" : "#9ca3af", fontWeight: coins != null ? "bold" : "normal" }}
+        className="w-full text-[9px] font-mono border-0 bg-white text-center focus:outline-none"
+        style={{
+          color: coins != null ? "#1565c0" : "#9ca3af",
+          fontWeight: coins != null ? "bold" : "normal",
+          minHeight: "44px",
+          padding: "0 2px",
+        }}
         value={coins ?? ""}
         onChange={(e) => onCoinsChange(e.target.value === "" ? null : Number(e.target.value))}
       >
@@ -419,6 +462,7 @@ function ArimaForm({ initial, onSave }: { initial: TGArimaJudgment | null; onSav
   return (
     <>
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-32">
+
         <Section title="成否">
           <div className="flex gap-3">
             {TG_ARIMA_RESULTS.map((r) => (
@@ -451,23 +495,25 @@ function ArimaForm({ initial, onSave }: { initial: TGArimaJudgment | null; onSav
           </div>
         </Section>
 
-        {form.result === "成功" && (
-          <Section title="CCGの死神（獲得枚数）">
-            <div className="flex gap-3">
-              {TG_CCG_COINS.map((c) => (
-                <button key={c}
-                  onClick={() => setField("ccgCoins", form.ccgCoins === c ? null : c)}
-                  className="flex-1 py-4 rounded text-sm font-mono font-bold border-2 transition-colors"
-                  style={
-                    form.ccgCoins === c
-                      ? { backgroundColor: "#b91c1c", color: "#fff", borderColor: "#b91c1c" }
-                      : { backgroundColor: "#fff", color: "#374151", borderColor: "#d1d5db" }
-                  }
-                >{c.toLocaleString()}枚</button>
-              ))}
-            </div>
-          </Section>
-        )}
+        {/* CCGの死神（常時表示） */}
+        <Section title="CCGの死神（獲得枚数）">
+          <p className="text-[9px] font-mono text-gray-400 mb-2">
+            ジャッジメント成功時に権利獲得。獲得枚数を選択してください。
+          </p>
+          <div className="flex gap-3">
+            {TG_CCG_COINS.map((c) => (
+              <button key={c}
+                onClick={() => setField("ccgCoins", form.ccgCoins === c ? null : c)}
+                className="flex-1 py-4 rounded text-sm font-mono font-bold border-2 transition-colors"
+                style={
+                  form.ccgCoins === c
+                    ? { backgroundColor: "#b91c1c", color: "#fff", borderColor: "#b91c1c" }
+                    : { backgroundColor: "#fff", color: "#374151", borderColor: "#d1d5db" }
+                }
+              >{c.toLocaleString()}枚</button>
+            ))}
+          </div>
+        </Section>
       </div>
 
       <SaveBar

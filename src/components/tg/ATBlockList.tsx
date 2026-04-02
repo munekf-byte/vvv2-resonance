@@ -304,6 +304,79 @@ function BattleResultGrid({ battles }: { battles: TGATSet["battles"] }) {
   );
 }
 
+// ─── BattleIconCard ──────────────────────────────────────────────────────────
+
+function BattleIconCard({ num, trigger, result }: { num: number; trigger: string; result: string }) {
+  const resultBg =
+    result === "○" ? { backgroundColor: "#1b5e20", color: "#fff" }
+    : result === "×" ? { backgroundColor: "#b71c1c", color: "#fff" }
+    : { backgroundColor: "#e5e7eb", color: "#9ca3af" };
+
+  return (
+    <div
+      className="flex flex-col rounded overflow-hidden border border-gray-300"
+      style={{ width: "38px", minHeight: "58px" }}
+    >
+      {/* 番号 */}
+      <div className="text-center text-[7px] font-mono text-gray-400 leading-none pt-0.5"
+        style={{ backgroundColor: "#f9fafb" }}>
+        {num}
+      </div>
+      {/* 上半分: 契機 */}
+      <div
+        className="flex flex-1 items-center justify-center text-center px-0.5 border-b border-gray-300"
+        style={{ backgroundColor: "#f3f4f6", minHeight: "26px" }}
+      >
+        <span className="text-[7px] font-mono text-gray-700 leading-tight break-all">
+          {trigger || "—"}
+        </span>
+      </div>
+      {/* 下半分: 成績 */}
+      <div
+        className="flex items-center justify-center font-bold"
+        style={{ ...resultBg, minHeight: "26px", fontSize: "12px" }}
+      >
+        {result || ""}
+      </div>
+    </div>
+  );
+}
+
+// ─── DirectAddIconCard ────────────────────────────────────────────────────────
+
+function DirectAddIconCard({ num, trigger, coins }: { num: number; trigger: string; coins: number | null }) {
+  return (
+    <div
+      className="flex flex-col rounded overflow-hidden border border-blue-200"
+      style={{ width: "42px", minHeight: "58px" }}
+    >
+      {/* 番号 */}
+      <div className="text-center text-[7px] font-mono text-blue-300 leading-none pt-0.5"
+        style={{ backgroundColor: "#eff6ff" }}>
+        {num}
+      </div>
+      {/* 上半分: 役 */}
+      <div
+        className="flex flex-1 items-center justify-center text-center px-0.5 border-b border-blue-200"
+        style={{ backgroundColor: "#dbeafe", minHeight: "26px" }}
+      >
+        <span className="text-[7px] font-mono text-blue-800 leading-tight break-all">
+          {trigger || "—"}
+        </span>
+      </div>
+      {/* 下半分: 枚数 */}
+      <div
+        className="flex items-center justify-center"
+        style={{ backgroundColor: "#1e40af", minHeight: "26px" }}
+      >
+        <span className="text-[9px] font-mono font-bold text-white">
+          {coins != null ? `${coins}` : "—"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── SetRow ──────────────────────────────────────────────────────────────────
 
 function SetRow({
@@ -405,41 +478,27 @@ function SetRow({
 
       {/* アコーディオン: 詳細 */}
       {isExpanded && (
-        <div className="bg-gray-50 border-t border-gray-300 px-3 py-2.5 space-y-2">
+        <div className="bg-gray-50 border-t border-gray-300 px-3 py-3 space-y-3">
 
-          {/* 対決一覧 */}
+          {/* 対決アイコン一覧 */}
           {row.battles.length > 0 && (
-            <div className="flex gap-2 items-start">
-              <span className="text-[9px] font-mono text-gray-500 w-14 shrink-0">対決</span>
-              <div className="flex flex-wrap gap-1">
+            <div>
+              <span className="text-[9px] font-mono text-gray-500 block mb-1.5">対決</span>
+              <div className="flex flex-wrap gap-1.5">
                 {row.battles.map((b, i) => (
-                  <span
-                    key={i}
-                    className="text-[8px] font-mono px-1 py-0.5 rounded border"
-                    style={
-                      b.result === "○"
-                        ? { backgroundColor: "#1b5e20", color: "#fff", borderColor: "#2e7d32" }
-                        : b.result === "×"
-                        ? { backgroundColor: "#b71c1c", color: "#fff", borderColor: "#c62828" }
-                        : { backgroundColor: "#f3f4f6", color: "#374151", borderColor: "#d1d5db" }
-                    }
-                  >
-                    {i + 1}. {b.trigger || "—"} {b.result || ""}
-                  </span>
+                  <BattleIconCard key={i} num={i + 1} trigger={b.trigger} result={b.result} />
                 ))}
               </div>
             </div>
           )}
 
-          {/* 直乗せ内訳 */}
+          {/* 直乗せアイコン一覧 */}
           {row.directAdds.length > 0 && (
-            <div className="flex gap-2 items-start">
-              <span className="text-[9px] font-mono text-gray-500 w-14 shrink-0">直乗せ</span>
-              <div className="flex flex-wrap gap-1">
-                {row.directAdds.map((d) => (
-                  <span key={d.id} className="text-[9px] font-mono px-1.5 py-0.5 bg-blue-50 border border-blue-200 text-blue-800 rounded">
-                    {d.trigger} +{d.coins}枚
-                  </span>
+            <div>
+              <span className="text-[9px] font-mono text-gray-500 block mb-1.5">直乗せ</span>
+              <div className="flex flex-wrap gap-1.5">
+                {row.directAdds.map((d, i) => (
+                  <DirectAddIconCard key={d.id} num={i + 1} trigger={d.trigger} coins={d.coins} />
                 ))}
               </div>
             </div>
@@ -492,7 +551,7 @@ function ArimaRow({
         </button>
 
         {/* ラベル + 成否 */}
-        <div className="flex-1 flex items-center px-3 gap-3">
+        <div className="flex-1 flex items-center px-3 gap-2">
           <span className="text-[9px] font-mono font-bold opacity-70 leading-tight whitespace-nowrap">
             有馬貴将<br />ジャッジメント
           </span>
@@ -502,9 +561,12 @@ function ArimaRow({
           {row.role && (
             <span className="text-[10px] font-mono opacity-80">{row.role}</span>
           )}
-          {row.result === "成功" && row.ccgCoins && (
-            <span className="text-[11px] font-mono font-bold ml-auto">
-              CCGの死神 {row.ccgCoins.toLocaleString()}枚
+          {row.ccgCoins != null && (
+            <span
+              className="text-[10px] font-mono font-bold ml-auto px-2 py-0.5 rounded"
+              style={{ backgroundColor: "#b91c1c", color: "#fff" }}
+            >
+              CCG {row.ccgCoins.toLocaleString()}枚
             </span>
           )}
         </div>
