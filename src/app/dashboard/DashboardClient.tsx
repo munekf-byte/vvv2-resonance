@@ -2,10 +2,10 @@
 // =============================================================================
 // TOKYO GHOUL RESONANCE: ダッシュボード Client
 // localStorage のセッション一覧を表示 / 新規セッション作成 / 削除
-// 新規セッション = 新しいブラウザタブで開く
 // =============================================================================
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { lsGetSessionList, lsCreateSession, lsDeleteSession, type SessionMeta } from "@/lib/tg/localStore";
 
 function formatDate(iso: string): string {
@@ -14,12 +14,12 @@ function formatDate(iso: string): string {
 }
 
 export function DashboardClient() {
+  const router = useRouter();
   const [sessions, setSessions] = useState<SessionMeta[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [sessionName, setSessionName] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // localStorage からセッション一覧を読み込む
   useEffect(() => {
     setSessions(lsGetSessionList());
   }, []);
@@ -30,12 +30,11 @@ export function DashboardClient() {
     setSessions(lsGetSessionList());
     setShowModal(false);
     setSessionName("");
-    // 新しいタブで開く
-    window.open(`/play/${session.id}`, "_blank");
+    router.push(`/play/${session.id}`);
   }
 
   function handleOpen(id: string) {
-    window.open(`/play/${id}`, "_blank");
+    router.push(`/play/${id}`);
   }
 
   function handleDelete(id: string) {
@@ -83,7 +82,7 @@ export function DashboardClient() {
                     onClick={() => handleOpen(s.id)}
                     className="flex-1 px-3 text-[11px] font-mono font-bold text-blue-600 hover:bg-blue-50 transition-colors border-b border-gray-200 whitespace-nowrap"
                   >
-                    再開 ↗
+                    再開
                   </button>
                   {deleteConfirmId === s.id ? (
                     <div className="flex">
@@ -164,7 +163,7 @@ export function DashboardClient() {
                   className="flex-1 py-3 rounded-lg text-white font-mono text-sm font-bold transition-colors"
                   style={{ backgroundColor: "#b91c1c" }}
                 >
-                  開始 ↗
+                  開始
                 </button>
               </div>
             </div>

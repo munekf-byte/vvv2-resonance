@@ -67,8 +67,17 @@ function buildSetNumbers(rows: TGATRow[]): Map<string, number> {
 // ─── メインコンポーネント ─────────────────────────────────────────────────────
 
 export function ATBlockList({ atKeyList, atEntries, onAddRow, onEditRow, onDeleteRow }: Props) {
-  const [expandedRow,   setExpandedRow]   = useState<string | null>(null);
+  const [expandedRows,  setExpandedRows]  = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<{ atKey: string; rowId: string } | null>(null);
+
+  function toggleRow(id: string) {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   if (atKeyList.length === 0) {
     return (
@@ -95,8 +104,8 @@ export function ATBlockList({ atKeyList, atEntries, onAddRow, onEditRow, onDelet
               entry={entry}
               summary={summary}
               setNumbers={setNumbers}
-              expandedRow={expandedRow}
-              setExpandedRow={setExpandedRow}
+              expandedRows={expandedRows}
+              toggleRow={toggleRow}
               onAddRow={onAddRow}
               onEditRow={onEditRow}
               onDeleteRow={(rowId) => setDeleteConfirm({ atKey, rowId })}
@@ -150,15 +159,15 @@ interface ATBlockProps {
   entry: TGATEntry;
   summary: ReturnType<typeof computeSummary>;
   setNumbers: Map<string, number>;
-  expandedRow: string | null;
-  setExpandedRow: (id: string | null) => void;
+  expandedRows: Set<string>;
+  toggleRow: (id: string) => void;
   onAddRow: (atKey: string, rowType: "set" | "arima") => void;
   onEditRow: (atKey: string, row: TGATRow, rowIndex: number) => void;
   onDeleteRow: (rowId: string) => void;
 }
 
 function ATBlock({
-  atKey, entry, summary, setNumbers, expandedRow, setExpandedRow,
+  atKey, entry, summary, setNumbers, expandedRows, toggleRow,
   onAddRow, onEditRow, onDeleteRow,
 }: ATBlockProps) {
   return (
@@ -207,7 +216,7 @@ function ATBlock({
         </div>
       ) : (
         entry.rows.map((row, idx) => {
-          const isExpanded = expandedRow === row.id;
+          const isExpanded = expandedRows.has(row.id);
           if (row.rowType === "set") {
             return (
               <SetRow
@@ -215,7 +224,7 @@ function ATBlock({
                 row={row}
                 setNum={setNumbers.get(row.id) ?? idx + 1}
                 isExpanded={isExpanded}
-                onToggle={() => setExpandedRow(isExpanded ? null : row.id)}
+                onToggle={() => toggleRow(row.id)}
                 onEdit={() => onEditRow(atKey, row, idx)}
                 onDelete={() => onDeleteRow(row.id)}
               />
@@ -226,7 +235,7 @@ function ATBlock({
                 key={row.id}
                 row={row}
                 isExpanded={isExpanded}
-                onToggle={() => setExpandedRow(isExpanded ? null : row.id)}
+                onToggle={() => toggleRow(row.id)}
                 onEdit={() => onEditRow(atKey, row, idx)}
                 onDelete={() => onDeleteRow(row.id)}
               />
@@ -248,7 +257,7 @@ function ATBlock({
           className="flex-1 text-[11px] font-mono font-bold py-2 rounded border border-yellow-500 text-yellow-700 hover:bg-yellow-50 transition-colors"
           style={{ backgroundColor: "#fffde7" }}
         >
-          ＋ 有馬行追加
+          ＋ ジャッジメント行追加
         </button>
       </div>
     </div>

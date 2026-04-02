@@ -22,6 +22,7 @@ interface Props {
   row: TGATRow | null;
   defaultRowType?: "set" | "arima";
   onSave: (row: TGATRow) => void;
+  onTempSave: (row: TGATRow) => void;
   onClose: () => void;
 }
 
@@ -52,7 +53,7 @@ function getBitesDesc(bt: string): string {
 // メインコンポーネント
 // =============================================================================
 
-export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", onSave, onClose }: Props) {
+export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", onSave, onTempSave, onClose }: Props) {
   const isNew    = row === null;
   const initType = row?.rowType ?? defaultRowType;
   const [rowType, setRowType] = useState<"set" | "arima">(initType);
@@ -96,9 +97,9 @@ export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", onSav
       </div>
 
       {rowType === "set" ? (
-        <SetForm initial={row?.rowType === "set" ? row : null} onSave={onSave} />
+        <SetForm initial={row?.rowType === "set" ? row : null} onSave={onSave} onTempSave={onTempSave} />
       ) : (
-        <ArimaForm initial={row?.rowType === "arima" ? row : null} onSave={onSave} />
+        <ArimaForm initial={row?.rowType === "arima" ? row : null} onSave={onSave} onTempSave={onTempSave} />
       )}
     </div>
   );
@@ -108,7 +109,7 @@ export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", onSav
 // SET行フォーム
 // =============================================================================
 
-function SetForm({ initial, onSave }: { initial: TGATSet | null; onSave: (r: TGATRow) => void }) {
+function SetForm({ initial, onSave, onTempSave }: { initial: TGATSet | null; onSave: (r: TGATRow) => void; onTempSave: (r: TGATRow) => void }) {
   const [form, setForm] = useState<Omit<TGATSet, "id">>(() =>
     initial ? { ...initial, battles: initial.battles ?? [], directAdds: initial.directAdds ?? [] }
             : emptySet()
@@ -154,11 +155,14 @@ function SetForm({ initial, onSave }: { initial: TGATSet | null; onSave: (r: TGA
     setField("directAdds", next.slice(0, TG_MAX_DIRECT_ADDS));
   }
 
-  function handleSave() {
+  function buildRow(): TGATRow {
     const battles    = form.battles.filter((b) => b.trigger || b.result);
     const directAdds = form.directAdds.filter((d) => d.trigger || d.coins != null);
-    onSave({ id: initial?.id ?? crypto.randomUUID(), ...form, battles, directAdds });
+    return { id: initial?.id ?? crypto.randomUUID(), ...form, battles, directAdds };
   }
+
+  function handleSave()     { onSave(buildRow()); }
+  function handleTempSave() { onTempSave(buildRow()); }
 
   return (
     <>
@@ -324,7 +328,7 @@ function SetForm({ initial, onSave }: { initial: TGATSet | null; onSave: (r: TGA
         </Section>
       </div>
 
-      <SaveBar onSave={handleSave} color="#b91c1c" />
+      <SaveBar onTempSave={handleTempSave} onSave={handleSave} color="#b91c1c" />
     </>
   );
 }
@@ -425,13 +429,13 @@ function DirectAddSlot({
           <option key={t} value={t}>{t}</option>
         ))}
       </select>
-      {/* 下段: 枚数（対決スロットと同じ44px） */}
+      {/* 下段: 枚数（対決スロットの下段と同じ66px） */}
       <select
         className="w-full text-[9px] font-mono border-0 bg-white text-center focus:outline-none"
         style={{
           color: coins != null ? "#1565c0" : "#9ca3af",
           fontWeight: coins != null ? "bold" : "normal",
-          minHeight: "44px",
+          minHeight: "66px",
           padding: "0 2px",
         }}
         value={coins ?? ""}
@@ -450,7 +454,7 @@ function DirectAddSlot({
 // 有馬ジャッジメント フォーム
 // =============================================================================
 
-function ArimaForm({ initial, onSave }: { initial: TGArimaJudgment | null; onSave: (r: TGATRow) => void }) {
+function ArimaForm({ initial, onSave, onTempSave }: { initial: TGArimaJudgment | null; onSave: (r: TGATRow) => void; onTempSave: (r: TGATRow) => void }) {
   const [form, setForm] = useState<Omit<TGArimaJudgment, "id">>(() =>
     initial ? { ...initial } : emptyArima()
   );
@@ -517,6 +521,7 @@ function ArimaForm({ initial, onSave }: { initial: TGArimaJudgment | null; onSav
       </div>
 
       <SaveBar
+        onTempSave={() => onTempSave({ id: initial?.id ?? crypto.randomUUID(), ...form })}
         onSave={() => onSave({ id: initial?.id ?? crypto.randomUUID(), ...form })}
         color="#f9a825"
         textColor="#000000"
@@ -538,8 +543,9 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function SaveBar({
-  onSave, color, textColor = "#ffffff", disabled = false,
+  onTempSave, onSave, color, textColor = "#ffffff", disabled = false,
 }: {
+  onTempSave: () => void;
   onSave: () => void;
   color: string;
   textColor?: string;
@@ -547,14 +553,23 @@ function SaveBar({
 }) {
   return (
     <div className="flex-shrink-0 bg-white border-t-2 border-gray-400 safe-area-bottom px-4 py-3">
-      <button
-        onClick={onSave}
-        disabled={disabled}
-        className="w-full font-mono font-bold text-lg py-5 rounded-xl shadow-lg active:scale-95 transition-transform disabled:opacity-40"
-        style={{ backgroundColor: color, color: textColor }}
-      >
-        保存
-      </button>
+      <div className="flex gap-2">
+        <button
+          onClick={onTempSave}
+          disabled={disabled}
+          className="flex-1 font-mono font-bold text-base py-5 rounded-xl border-2 border-gray-400 text-gray-700 bg-white active:scale-95 transition-transform disabled:opacity-40"
+        >
+          一時保存
+        </button>
+        <button
+          onClick={onSave}
+          disabled={disabled}
+          className="flex-1 font-mono font-bold text-base py-5 rounded-xl shadow-lg active:scale-95 transition-transform disabled:opacity-40"
+          style={{ backgroundColor: color, color: textColor }}
+        >
+          保存
+        </button>
+      </div>
     </div>
   );
 }

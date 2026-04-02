@@ -24,6 +24,7 @@ interface Props {
   block: NormalBlock | null;
   blockIndex: number;
   onSave: (block: NormalBlock) => void;
+  onTempSave: (block: NormalBlock) => void;
   onClose: () => void;
 }
 
@@ -60,7 +61,7 @@ function setAt(arr: string[], index: number, value: string): string[] {
 
 // ─── メインコンポーネント ──────────────────────────────────────────────────────
 
-export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }: Props) {
+export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave, onClose }: Props) {
   const isNew = block === null;
   const [form, setForm] = useState<FormState>(() =>
     block ? { ...block } : emptyForm()
@@ -78,9 +79,12 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
     setField(field, setAt(form[field] as string[], index, value));
   }
 
-  function handleSave() {
-    onSave({ id: block?.id ?? crypto.randomUUID(), ...form });
+  function buildBlock(): NormalBlock {
+    return { id: block?.id ?? crypto.randomUUID(), ...form };
   }
+
+  function handleSave()     { onSave(buildBlock()); }
+  function handleTempSave() { onTempSave(buildBlock()); }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-gray-100">
@@ -240,15 +244,23 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onClose }:
         />
       </div>
 
-      {/* ===== 保存ボタン (最下部・全幅・大) ===== */}
+      {/* ===== 保存ボタン (最下部・2分割) ===== */}
       <div className="flex-shrink-0 bg-white border-t-2 border-gray-400 safe-area-bottom px-4 py-3">
-        <button
-          onClick={handleSave}
-          className="w-full font-mono font-bold text-lg py-5 rounded-xl shadow-lg active:scale-95 transition-transform text-white"
-          style={{ backgroundColor: "#b91c1c" }}
-        >
-          保存
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleTempSave}
+            className="flex-1 font-mono font-bold text-base py-5 rounded-xl border-2 border-gray-400 text-gray-700 bg-white active:scale-95 transition-transform"
+          >
+            一時保存
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex-1 font-mono font-bold text-base py-5 rounded-xl shadow-lg active:scale-95 transition-transform text-white"
+            style={{ backgroundColor: "#b91c1c" }}
+          >
+            保存
+          </button>
+        </div>
       </div>
     </div>
   );

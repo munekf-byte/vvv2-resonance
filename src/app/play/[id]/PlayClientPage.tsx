@@ -105,6 +105,14 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   function handleNormalOpenNew() {
     setNormalEdit({ open: true, block: null, index: blocks.length + 1 });
   }
+  function handleNormalTempSave(block: NormalBlock) {
+    if (normalEdit.block === null) {
+      appendNormalBlock(block);
+      setNormalEdit((prev) => ({ ...prev, block })); // ID確定後に参照を更新
+    } else {
+      updateNormalBlock(block.id, block);
+    }
+  }
   function handleNormalSave(block: NormalBlock) {
     if (normalEdit.block === null) appendNormalBlock(block);
     else updateNormalBlock(block.id, block);
@@ -124,9 +132,20 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
     setATEdit({ open: true, atKey, row, defaultRowType: row.rowType });
   }
 
+  function handleATTempSave(row: TGATRow) {
+    const { atKey } = atEdit;
+    if (!atEntries.find((e) => e.atKey === atKey)) {
+      appendTGATEntry({ atKey, rows: [row] });
+      setATEdit((prev) => ({ ...prev, row }));
+    } else if (atEdit.row === null) {
+      appendTGATRow(atKey, row);
+      setATEdit((prev) => ({ ...prev, row }));
+    } else {
+      updateTGATRow(atKey, row.id, row);
+    }
+  }
   function handleATSave(row: TGATRow) {
     const { atKey } = atEdit;
-    // ATEntryが存在しない場合は自動生成してから行追加
     if (!atEntries.find((e) => e.atKey === atKey)) {
       const newEntry: TGATEntry = { atKey, rows: [row] };
       appendTGATEntry(newEntry);
@@ -249,6 +268,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           block={normalEdit.block}
           blockIndex={normalEdit.index}
           onSave={handleNormalSave}
+          onTempSave={handleNormalTempSave}
           onClose={() => setNormalEdit(NORMAL_CLOSED)}
         />
       )}
@@ -260,6 +280,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           row={atEdit.row}
           defaultRowType={atEdit.defaultRowType}
           onSave={handleATSave}
+          onTempSave={handleATTempSave}
           onClose={() => setATEdit(AT_CLOSED)}
         />
       )}
