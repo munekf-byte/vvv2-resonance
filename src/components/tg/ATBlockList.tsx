@@ -308,8 +308,8 @@ function BattleResultGrid({ battles }: { battles: TGATSet["battles"] }) {
 
 function BattleIconCard({ num, trigger, result }: { num: number; trigger: string; result: string }) {
   const resultBg =
-    result === "○" ? { backgroundColor: "#1b5e20", color: "#fff" }
-    : result === "×" ? { backgroundColor: "#b71c1c", color: "#fff" }
+    result === "○" ? { backgroundColor: "#388e3c", color: "#fff" }   // 淡い緑
+    : result === "×" ? { backgroundColor: "#e53935", color: "#fff" } // 淡い赤
     : { backgroundColor: "#e5e7eb", color: "#9ca3af" };
 
   return (
@@ -394,23 +394,40 @@ function SetRow({
   const disadvColor = getDisadvantageCellColor(row.disadvantage);
   const dTotal     = directTotalCoins(row);
 
+  // AT種別による行背景色
+  const rowBg =
+    row.atType === "裏AT"             ? "#fff5f5" :
+    row.atType === "隠れ裏AT（推測）" ? "#f5f0ff" :
+    "#fffde7"; // 通常AT: 薄いクリーム色
+
+  // AT種別によるセット欄色
+  const setBg =
+    row.atType === "裏AT"
+      ? { backgroundColor: "#fca5a5", color: "#9b1c1c" }
+      : row.atType === "隠れ裏AT（推測）"
+      ? { backgroundColor: "#c4b5fd", color: "#5b21b6" }
+      : { backgroundColor: "#fef08a", color: "#713f12" }; // 通常AT: 薄い黄色
+
   return (
-    <div className={`${ROW_BR} bg-white`}>
+    <div className={`${ROW_BR}`} style={{ backgroundColor: rowBg }}>
       <div className={`grid ${COLS}`}>
 
         {/* 編集 */}
         <button
           onClick={onEdit}
           className={`flex items-center justify-center min-h-[44px] transition-colors active:bg-blue-100 ${COL_BR}`}
-          style={{ backgroundColor: "#eef2f7" }}
+          style={{ backgroundColor: "rgba(0,0,0,0.04)" }}
         >
           <span className="text-lg text-gray-500">✎</span>
         </button>
 
-        {/* セット番号 (2行) */}
-        <div className={`flex flex-col items-center justify-center px-0.5 min-h-[44px] ${COL_BR}`}>
-          <span className="text-[8px] font-mono text-gray-500 leading-tight">SET</span>
-          <span className="text-[11px] font-mono font-bold text-gray-700">{setNum}</span>
+        {/* セット番号 (2行) - AT種別で色変え */}
+        <div
+          className={`flex flex-col items-center justify-center px-0.5 min-h-[44px] ${COL_BR}`}
+          style={setBg}
+        >
+          <span className="text-[8px] font-mono leading-tight opacity-70">SET</span>
+          <span className="text-[11px] font-mono font-bold">{setNum}</span>
         </div>
 
         {/* キャラ + ATタイプ */}
@@ -563,8 +580,8 @@ function ArimaRow({
           )}
           {row.ccgCoins != null && (
             <span
-              className="text-[10px] font-mono font-bold ml-auto px-2 py-0.5 rounded"
-              style={{ backgroundColor: "#b91c1c", color: "#fff" }}
+              className="font-mono font-bold ml-auto px-3 py-1.5 rounded-lg"
+              style={{ backgroundColor: "#b91c1c", color: "#fff", fontSize: "13px" }}
             >
               CCG {row.ccgCoins.toLocaleString()}枚
             </span>

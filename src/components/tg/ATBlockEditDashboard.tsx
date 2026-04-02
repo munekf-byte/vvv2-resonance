@@ -353,12 +353,12 @@ function BattleSlot({
       <div className="text-center text-[8px] font-mono text-gray-400 pt-0.5 leading-none bg-gray-50">
         {index + 1}
       </div>
-      {/* 上段: 契機セレクト（下段と同等の高さ） */}
+      {/* 上段: 契機セレクト（縦幅1.5倍 = 66px） */}
       <select
         className="w-full text-[9px] font-mono border-0 border-b border-gray-200 bg-gray-50 text-center focus:outline-none"
         style={{
           color: hasTrigger ? "#1f2937" : "#9ca3af",
-          minHeight: "44px",
+          minHeight: "66px",
           padding: "0 2px",
         }}
         value={trigger}
@@ -369,7 +369,7 @@ function BattleSlot({
           <option key={t} value={t}>{t}</option>
         ))}
       </select>
-      {/* 下段: 成績トグル（上段と同等の高さ） */}
+      {/* 下段: 成績トグル */}
       <button
         onClick={onResultToggle}
         className="flex items-center justify-center text-sm font-bold transition-colors"
@@ -409,12 +409,12 @@ function DirectAddSlot({
       <div className="text-center text-[8px] font-mono text-gray-400 pt-0.5 leading-none bg-gray-50">
         {index + 1}
       </div>
-      {/* 上段: 役（下段と同等の高さ） */}
+      {/* 上段: 役（対決スロットと同じ66px） */}
       <select
         className="w-full text-[9px] font-mono border-0 border-b border-gray-200 bg-gray-50 text-center focus:outline-none"
         style={{
           color: trigger ? "#1f2937" : "#9ca3af",
-          minHeight: "44px",
+          minHeight: "66px",
           padding: "0 2px",
         }}
         value={trigger}
@@ -425,7 +425,7 @@ function DirectAddSlot({
           <option key={t} value={t}>{t}</option>
         ))}
       </select>
-      {/* 下段: 枚数（上段と同等の高さ） */}
+      {/* 下段: 枚数（対決スロットと同じ44px） */}
       <select
         className="w-full text-[9px] font-mono border-0 bg-white text-center focus:outline-none"
         style={{

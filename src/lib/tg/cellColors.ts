@@ -255,13 +255,13 @@ export function getSuggestionDropdownLabel(value: string): string {
 // ─── 敵キャラ ────────────────────────────────────────────────────────────────
 
 const AT_CHAR_MAP: Record<string, CellColor> = {
-  "鯱":    { backgroundColor: "#546e7a", color: "#ffffff" },
-  "絢都":  { backgroundColor: "#2e7d32", color: "#ffffff" },
-  "ヤモリ":{ backgroundColor: "#e65100", color: "#ffffff" },
-  "特等ら":{ backgroundColor: "#c62828", color: "#ffffff" },
-  "亜門":  { backgroundColor: "#1565c0", color: "#ffffff" },
-  "有馬":  { backgroundColor: "#f9a825", color: "#000000" },
-  "EDボナ":{ backgroundColor: "#6a1b9a", color: "#ffffff" },
+  "鯱":    { backgroundColor: "#1565c0", color: "#ffffff" },  // 元・亜門の青
+  "絢都":  { backgroundColor: "#e65100", color: "#ffffff" },  // 元・ヤモリのオレンジ
+  "ヤモリ":{ backgroundColor: "#2e7d32", color: "#ffffff" },  // 元・絢都の緑
+  "特等ら":{ backgroundColor: "#c62828", color: "#ffffff" },  // 変更なし
+  "亜門":  { backgroundColor: "#6a1b9a", color: "#ffffff" },  // 元・EDボナの紫
+  "有馬":  { backgroundColor: "#fdd835", color: "#000000" },  // 真っ黄色
+  "EDボナ":{ backgroundColor: "#00695c", color: "#ffffff" },  // ダークティール（新規）
 };
 
 export function getATCharColor(char: string): CellColor {
@@ -329,8 +329,8 @@ export function getArimaResultColor(result: string): CellColor {
 
 // ─── 対決成績 ────────────────────────────────────────────────────────────────
 
-export const BATTLE_WIN_COLOR:  CellColor = { backgroundColor: "#1b5e20", color: "#ffffff" };
-export const BATTLE_LOSE_COLOR: CellColor = { backgroundColor: "#c62828", color: "#ffffff" };
+export const BATTLE_WIN_COLOR:  CellColor = { backgroundColor: "#388e3c", color: "#ffffff" };  // 少し淡い緑
+export const BATTLE_LOSE_COLOR: CellColor = { backgroundColor: "#e53935", color: "#ffffff" };  // 少し淡い赤
 export const BATTLE_EMPTY_COLOR:CellColor = { backgroundColor: "#f5f5f5", color: "#d1d5db" };
 
 export function getBattleResultColor(result: string): CellColor {
