@@ -248,6 +248,97 @@ export function getSuggestionDropdownLabel(value: string): string {
   return idx !== -1 ? value.slice(0, idx).trim() : value;
 }
 
+// =============================================================================
+// AT記録 配色
+// =============================================================================
+
+// ─── 敵キャラ ────────────────────────────────────────────────────────────────
+
+const AT_CHAR_MAP: Record<string, CellColor> = {
+  "鯱":    { backgroundColor: "#546e7a", color: "#ffffff" },
+  "絢都":  { backgroundColor: "#2e7d32", color: "#ffffff" },
+  "ヤモリ":{ backgroundColor: "#e65100", color: "#ffffff" },
+  "特等ら":{ backgroundColor: "#c62828", color: "#ffffff" },
+  "亜門":  { backgroundColor: "#1565c0", color: "#ffffff" },
+  "有馬":  { backgroundColor: "#f9a825", color: "#000000" },
+  "EDボナ":{ backgroundColor: "#6a1b9a", color: "#ffffff" },
+};
+
+export function getATCharColor(char: string): CellColor {
+  return AT_CHAR_MAP[char] ?? { backgroundColor: "#9e9e9e", color: "#ffffff" };
+}
+
+// ─── BITES種別 ────────────────────────────────────────────────────────────────
+
+const BITES_TYPE_MAP: Record<string, CellColor> = {
+  "Table:A [50/100/200/300/500]":    { backgroundColor: "#e0e0e0", color: "#424242" },
+  "Table:B [50/50/500/500/1000]":    { backgroundColor: "#bbdefb", color: "#1565c0" },
+  "Table:C [100/200/300/500/1000]":  { backgroundColor: "#c8e6c9", color: "#1b5e20" },
+  "Table:D [100/100/500/1000/2000]": { backgroundColor: "#ffe0b2", color: "#e65100" },
+  "Table:E [200/300/500/1000/2000]": { backgroundColor: "#ffccbc", color: "#bf360c" },
+  "Table:超 [300/500/1000/2000/3000]":{ backgroundColor: "#e1bee7", color: "#4a148c" },
+  "Table:極 [2000/ED]":              { backgroundColor: "#fff176", color: "#827717" },
+  "百足覚醒":                         { backgroundColor: "#b2dfdb", color: "#00695c" },
+  "隻眼の梟":                         { backgroundColor: "#1a1a1a", color: "#ffffff" },
+};
+
+export function getBitesTypeCellColor(bitesType: string): CellColor {
+  return BITES_TYPE_MAP[bitesType] ?? { backgroundColor: "#f3f4f6", color: "#9ca3af" };
+}
+
+/** "Table:A [50/...]" → "Table:A" に短縮 */
+export function getBitesTypeShort(bitesType: string): string {
+  const idx = bitesType.indexOf(" [");
+  return idx !== -1 ? bitesType.slice(0, idx) : bitesType;
+}
+
+// ─── AT種別 ──────────────────────────────────────────────────────────────────
+
+const AT_TYPE_MAP: Record<string, CellColor> = {
+  "通常AT":           { backgroundColor: "#f5f5f5", color: "#424242" },
+  "裏AT":             { backgroundColor: "#b71c1c", color: "#ffffff" },
+  "隠れ裏AT（推測）": { backgroundColor: "#4a148c", color: "#ffffff" },
+};
+
+export function getATTypeCellColor(atType: string): CellColor {
+  return AT_TYPE_MAP[atType] ?? { backgroundColor: "#e0e0e0", color: "#616161" };
+}
+
+// ─── 不利益 ──────────────────────────────────────────────────────────────────
+
+const DISADVANTAGE_MAP: Record<string, CellColor> = {
+  "-":        { backgroundColor: "#f5f5f5", color: "#9e9e9e" },
+  "不利益⭕️": { backgroundColor: "#e8f5e9", color: "#2e7d32" },
+  "不利益❌": { backgroundColor: "#ffebee", color: "#c62828" },
+};
+
+export function getDisadvantageCellColor(val: string): CellColor {
+  return DISADVANTAGE_MAP[val] ?? { backgroundColor: "#f5f5f5", color: "#9e9e9e" };
+}
+
+// ─── 有馬ジャッジメント ───────────────────────────────────────────────────────
+
+export const ARIMA_SUCCESS_COLOR: CellColor = { backgroundColor: "#f9a825", color: "#000000" };
+export const ARIMA_FAIL_COLOR:    CellColor = { backgroundColor: "#bdbdbd", color: "#424242" };
+
+export function getArimaResultColor(result: string): CellColor {
+  if (result === "成功") return ARIMA_SUCCESS_COLOR;
+  if (result === "失敗") return ARIMA_FAIL_COLOR;
+  return { backgroundColor: "#f5f5f5", color: "#9ca3af" };
+}
+
+// ─── 対決成績 ────────────────────────────────────────────────────────────────
+
+export const BATTLE_WIN_COLOR:  CellColor = { backgroundColor: "#1b5e20", color: "#ffffff" };
+export const BATTLE_LOSE_COLOR: CellColor = { backgroundColor: "#c62828", color: "#ffffff" };
+export const BATTLE_EMPTY_COLOR:CellColor = { backgroundColor: "#f5f5f5", color: "#d1d5db" };
+
+export function getBattleResultColor(result: string): CellColor {
+  if (result === "○") return BATTLE_WIN_COLOR;
+  if (result === "×") return BATTLE_LOSE_COLOR;
+  return BATTLE_EMPTY_COLOR;
+}
+
 /**
  * 一覧表示用 2行データ: 括弧プレフィックスを除去
  * 例) "[cz失敗] 金木研 - デフォルト" → { name: "金木研", hint: "デフォルト" }

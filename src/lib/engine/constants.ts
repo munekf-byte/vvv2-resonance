@@ -114,6 +114,66 @@ export const TG_INVITATIONS = [
   "特別な夜 - 設定6濃厚",
 ] as const;
 
+// =============================================================================
+// AT記録 定数
+// =============================================================================
+
+export const TG_AT_TYPES = [
+  "通常AT",
+  "裏AT",
+  "隠れ裏AT（推測）",
+] as const;
+
+export const TG_AT_CHARACTERS = [
+  "鯱", "絢都", "ヤモリ", "特等ら", "亜門", "有馬", "EDボナ",
+] as const;
+
+export const TG_BATTLE_TRIGGERS = [
+  "15G", "30G", "45G", "60G", "75G", "90G", "150G",
+  "強🍒・チャ目", "弱🍒", "🍉", "[赫眼]レア役", "[喰ポイント]解放",
+] as const;
+
+export const TG_DISADVANTAGE = ["-", "不利益⭕️", "不利益❌"] as const;
+
+export const TG_BITES_TYPES = [
+  "Table:A [50/100/200/300/500]",
+  "Table:B [50/50/500/500/1000]",
+  "Table:C [100/200/300/500/1000]",
+  "Table:D [100/100/500/1000/2000]",
+  "Table:E [200/300/500/1000/2000]",
+  "Table:超 [300/500/1000/2000/3000]",
+  "Table:極 [2000/ED]",
+  "百足覚醒",
+  "隻眼の梟",
+] as const;
+
+export const TG_BITES_COINS = [
+  "50", "100", "200", "300", "500", "1000", "2000", "3000", "ED",
+] as const;
+
+export const TG_DIRECT_ADD_TRIGGERS = [
+  "弱🍒", "🍉", "チャ目", "強🍒", "確定🍒",
+] as const;
+
+export const TG_DIRECT_ADD_COINS = [10, 20, 30, 50, 100, 200, 300, 500] as const;
+
+export const TG_ARIMA_RESULTS = ["成功", "失敗"] as const;
+
+export const TG_ARIMA_ROLES = ["小役ナシ", "リプレイ", "レア役"] as const;
+
+export const TG_CCG_COINS = [500, 1000, 2000] as const;
+
+/** 対決成績の最大枠数 */
+export const TG_MAX_BATTLE_RESULTS = 10;
+
+/** 直乗せの最大スロット数 */
+export const TG_MAX_DIRECT_ADDS = 4;
+
+/** 対決成績列ヘッダー (15G刻み × 10回) */
+export const TG_BATTLE_RESULT_HEADERS = [
+  "15", "30", "45", "60", "75", "90", "105", "120", "135", "150",
+] as const;
+
 // 前兆履歴: ゾーンごとのスロット方式
 // 格納値フォーマット: "ゾーン:タイプ" (例: "100:東京上空")
 export const TG_ZENCHO_ZONES = [

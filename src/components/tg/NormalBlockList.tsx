@@ -1,9 +1,8 @@
 "use client";
 // =============================================================================
 // TOKYO GHOUL RESONANCE: 通常時ブロック一覧
-// グリッド: [編集52px] [ゾーン1fr] [モード1fr] [契機46px] [イベント46px] [AT46px] [示唆56px] [▼26px]
-// 編集セル: 実G数 + ✎ 編集 の2行表示 — 大きくタップしやすい
-// アコーディオントグル: 最右端の独立した26px列
+// グリッド: [編集52px] [実G 1fr] [ゾーン 1fr] [モード 1fr] [契機46] [イベント46] [AT46] [示唆56] [▼26]
+// 削除: アコーディオン内「この行を削除」→ 確認ポップアップ → OK で実行
 // =============================================================================
 
 import { useState } from "react";
@@ -31,17 +30,17 @@ interface Props {
 }
 
 // ─── グリッド ─────────────────────────────────────────────────────────────────
-const COLS = "grid-cols-[52px_1fr_1fr_46px_46px_46px_56px_26px]";
+// 編集(52px固定) | 実G・ゾーン・モード (等幅1fr×3) | 契機・イベント・AT (46px×3) | 示唆(56px) | ▼(26px)
+const COLS = "grid-cols-[52px_1fr_1fr_1fr_46px_46px_46px_56px_26px]";
 
 const HDR_BG       = "#1f2937";
 const HDR_TEXT     = "#f9fafb";
 const COL_BORDER_R = "border-r border-gray-400";
 const ROW_BORDER   = "border-b border-gray-400";
 
-// ─── コンポーネント ───────────────────────────────────────────────────────────
-
 export function NormalBlockList({ blocks, atLabels, onEdit, onDelete }: Props) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId,    setExpandedId]    = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null); // 削除確認中の blockId
 
   if (blocks.length === 0) {
     return (
@@ -53,164 +52,228 @@ export function NormalBlockList({ blocks, atLabels, onEdit, onDelete }: Props) {
     );
   }
 
+  // 削除確認対象ブロック
+  const confirmBlock = deleteConfirm ? blocks.find((b) => b.id === deleteConfirm) : null;
+
+  function commitDelete() {
+    if (!deleteConfirm) return;
+    onDelete(deleteConfirm);
+    setDeleteConfirm(null);
+    setExpandedId(null);
+  }
+
   return (
-    <div className="border-x border-gray-400">
+    <>
+      <div className="border-x border-gray-400">
 
-      {/* ===== スティッキー列ヘッダー ===== */}
-      <div
-        className={`sticky top-0 z-30 grid ${COLS} border-b-2 border-gray-500`}
-        style={{ backgroundColor: HDR_BG }}
-      >
-        {["編集", "ゾーン", "モード", "契機", "イベント", "AT", "示唆", ""].map((h, i) => (
-          <div
-            key={i}
-            style={{ color: HDR_TEXT }}
-            className={`text-[8px] font-mono font-bold text-center px-0.5 py-1.5 leading-tight ${i < 7 ? COL_BORDER_R : ""}`}
-          >
-            {h}
-          </div>
-        ))}
-      </div>
-
-      {/* ===== データ行 ===== */}
-      <div>
-        {blocks.map((block, index) => {
-          const isExpanded = expandedId === block.id;
-          const atLabel    = atLabels.get(block.id);
-
-          const suggColor = getSuggestionOrTrophyColor(block.endingSuggestion, block.trophy);
-          const suggValue = block.endingSuggestion || block.trophy;
-          const suggLines = suggValue ? getSuggestionListLines(suggValue) : null;
-
-          const hasExtras =
-            block.kakugan.length > 0 ||
-            block.shinsekai.length > 0 ||
-            block.invitation.length > 0 ||
-            block.zencho.length > 0;
-
-          return (
-            <div key={block.id} className={`${ROW_BORDER} bg-white`}>
-
-              {/* ── メイン行 ── */}
-              <div className={`grid ${COLS}`}>
-
-                {/* 編集ボタン (52px): 実G数 + ✎ 編集 */}
-                <button
-                  onClick={() => onEdit(block, index)}
-                  className={`flex flex-col items-center justify-center py-1.5 min-h-[42px] transition-colors ${COL_BORDER_R}`}
-                  style={{ backgroundColor: "#eef2f7", color: "#374151" }}
-                >
-                  <span className="text-[11px] font-mono font-bold leading-tight">
-                    {block.jisshuG != null ? `${block.jisshuG}G` : "—"}
-                  </span>
-                  <span className="text-[8px] font-mono text-gray-400 leading-tight">✎ 編集</span>
-                </button>
-
-                {/* ゾーン */}
-                <Cell color={getZoneCellColor(block.zone)} borderR>
-                  {block.zone || "—"}
-                </Cell>
-
-                {/* 推定モード */}
-                <Cell color={getModeCellColor(block.estimatedMode)} borderR>
-                  {abbrevMode(block.estimatedMode)}
-                </Cell>
-
-                {/* 当選契機 */}
-                <Cell color={getTriggerCellColor(block.winTrigger)} borderR>
-                  {abbrevTrigger(block.winTrigger)}
-                </Cell>
-
-                {/* イベント */}
-                <Cell color={getEventCellColor(block.event)} borderR>
-                  {abbrevEvent(block.event)}
-                </Cell>
-
-                {/* AT */}
-                <Cell color={atLabel ? AT_WIN_COLOR : AT_NONE_COLOR} borderR>
-                  <span className={atLabel ? "font-bold" : ""}>{atLabel ?? "—"}</span>
-                </Cell>
-
-                {/* 示唆 (2行表示) */}
-                <div
-                  className={`flex items-center justify-center py-1 px-0.5 min-h-[42px] ${COL_BORDER_R}`}
-                  style={suggColor}
-                >
-                  {suggLines ? (
-                    <span className="flex flex-col items-center leading-[1.15] text-[7px] font-mono w-full">
-                      <span className="font-bold truncate w-full text-center">{suggLines.name}</span>
-                      <span className="opacity-80 truncate w-full text-center">{suggLines.hint}</span>
-                    </span>
-                  ) : (
-                    <span className="text-[8px] font-mono opacity-40">—</span>
-                  )}
-                </div>
-
-                {/* アコーディオントグル (その他▼) */}
-                <button
-                  onClick={() => hasExtras && setExpandedId(isExpanded ? null : block.id)}
-                  className="flex items-center justify-center min-h-[42px] text-[9px] font-mono transition-colors"
-                  style={
-                    hasExtras
-                      ? { backgroundColor: "#374151", color: "#f9fafb" }
-                      : { backgroundColor: "#f3f4f6", color: "#d1d5db" }
-                  }
-                >
-                  {hasExtras ? (isExpanded ? "▲" : "▼") : ""}
-                </button>
-              </div>
-
-              {/* ── アコーディオン ── */}
-              {isExpanded && (
-                <div className="bg-gray-50 border-t border-gray-400 px-3 py-2.5">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-2.5">
-                    {block.zencho.length > 0 && (
-                      <ZenchoField values={block.zencho} />
-                    )}
-                    {block.kakugan.length > 0 && (
-                      <MultiColorField
-                        label="赫眼"
-                        values={block.kakugan}
-                        color={{ backgroundColor: "#b10202", color: "#ffffff" }}
-                      />
-                    )}
-                    {block.shinsekai.length > 0 && (
-                      <MultiField label="精神世界" values={block.shinsekai} />
-                    )}
-                    {block.invitation.length > 0 && (
-                      <div className="col-span-2">
-                        <p className="text-[9px] text-gray-500 font-mono mb-1">招待状</p>
-                        <div className="flex flex-wrap gap-1">
-                          {block.invitation.map((v, i) => (
-                            <span key={i} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-300">
-                              {v}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex gap-2 justify-end border-t border-gray-300 pt-2">
-                    <button
-                      onClick={() => onDelete(block.id)}
-                      className="text-[11px] font-mono px-3 py-1 text-red-600 border border-red-300 hover:bg-red-50 rounded transition-colors"
-                    >
-                      削除
-                    </button>
-                    <button
-                      onClick={() => onEdit(block, index)}
-                      className="text-[11px] font-mono px-4 py-1 bg-gray-700 text-white rounded hover:bg-gray-800 transition-colors"
-                    >
-                      編集
-                    </button>
-                  </div>
-                </div>
-              )}
+        {/* ===== スティッキー列ヘッダー ===== */}
+        <div
+          className={`sticky top-0 z-30 grid ${COLS} border-b-2 border-gray-500`}
+          style={{ backgroundColor: HDR_BG }}
+        >
+          {["✎", "実G数", "ゾーン", "モード", "契機", "イベント", "AT", "示唆", ""].map((h, i) => (
+            <div
+              key={i}
+              style={{ color: HDR_TEXT }}
+              className={`text-[8px] font-mono font-bold text-center px-0.5 py-1.5 leading-tight ${i < 8 ? COL_BORDER_R : ""}`}
+            >
+              {h}
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        {/* ===== データ行 ===== */}
+        <div>
+          {blocks.map((block, index) => {
+            const isExpanded = expandedId === block.id;
+            const atLabel    = atLabels.get(block.id);
+
+            const suggColor = getSuggestionOrTrophyColor(block.endingSuggestion, block.trophy);
+            const suggValue = block.endingSuggestion || block.trophy;
+            const suggLines = suggValue ? getSuggestionListLines(suggValue) : null;
+
+            const hasExtras =
+              block.kakugan.length > 0 ||
+              block.shinsekai.length > 0 ||
+              block.invitation.length > 0 ||
+              block.zencho.length > 0;
+
+            return (
+              <div key={block.id} className={`${ROW_BORDER} bg-white`}>
+
+                {/* ── メイン行 ── */}
+                <div className={`grid ${COLS}`}>
+
+                  {/* 編集ボタン: 鉛筆マークのみ */}
+                  <button
+                    onClick={() => onEdit(block, index)}
+                    className={`flex items-center justify-center min-h-[44px] transition-colors active:bg-blue-100 ${COL_BORDER_R}`}
+                    style={{ backgroundColor: "#eef2f7" }}
+                    title="タップして編集"
+                  >
+                    <span className="text-xl text-gray-500">✎</span>
+                  </button>
+
+                  {/* 実G数 */}
+                  <Cell color={{ backgroundColor: "#f9fafb", color: "#111827" }} borderR>
+                    <span className="text-[11px] font-bold">
+                      {block.jisshuG != null ? `${block.jisshuG}G` : "—"}
+                    </span>
+                  </Cell>
+
+                  {/* ゾーン */}
+                  <Cell color={getZoneCellColor(block.zone)} borderR>
+                    <span className="text-[11px] font-bold">{block.zone || "—"}</span>
+                  </Cell>
+
+                  {/* 推定モード */}
+                  <Cell color={getModeCellColor(block.estimatedMode)} borderR>
+                    <span className="text-[11px] font-bold">{abbrevMode(block.estimatedMode)}</span>
+                  </Cell>
+
+                  {/* 当選契機 */}
+                  <Cell color={getTriggerCellColor(block.winTrigger)} borderR>
+                    <span className="text-[10px] font-bold">{abbrevTrigger(block.winTrigger)}</span>
+                  </Cell>
+
+                  {/* イベント */}
+                  <Cell color={getEventCellColor(block.event)} borderR>
+                    <span className="text-[10px] font-bold">{abbrevEvent(block.event)}</span>
+                  </Cell>
+
+                  {/* AT */}
+                  <Cell color={atLabel ? AT_WIN_COLOR : AT_NONE_COLOR} borderR>
+                    <span className={`text-[10px] ${atLabel ? "font-black" : "font-normal"}`}>
+                      {atLabel ?? "—"}
+                    </span>
+                  </Cell>
+
+                  {/* 示唆 (2行) */}
+                  <div
+                    className={`flex items-center justify-center py-1 px-0.5 min-h-[44px] ${COL_BORDER_R}`}
+                    style={suggColor}
+                  >
+                    {suggLines ? (
+                      <span className="flex flex-col items-center leading-[1.15] w-full">
+                        <span className="text-[8px] font-bold truncate w-full text-center">{suggLines.name}</span>
+                        <span className="text-[7px] opacity-80 truncate w-full text-center">{suggLines.hint}</span>
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-mono opacity-40">—</span>
+                    )}
+                  </div>
+
+                  {/* アコーディオントグル */}
+                  <button
+                    onClick={() => hasExtras && setExpandedId(isExpanded ? null : block.id)}
+                    className="flex items-center justify-center min-h-[44px] text-[10px] font-bold transition-colors"
+                    style={
+                      hasExtras
+                        ? { backgroundColor: "#374151", color: "#f9fafb" }
+                        : { backgroundColor: "#f3f4f6", color: "#d1d5db" }
+                    }
+                  >
+                    {hasExtras ? (isExpanded ? "▲" : "▼") : ""}
+                  </button>
+                </div>
+
+                {/* ── アコーディオン ── */}
+                {isExpanded && (
+                  <div className="bg-gray-50 border-t border-gray-400 px-3 py-2.5">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
+                      {block.zencho.length > 0 && <ZenchoField values={block.zencho} />}
+                      {block.kakugan.length > 0 && (
+                        <MultiColorField
+                          label="赫眼"
+                          values={block.kakugan}
+                          color={{ backgroundColor: "#b10202", color: "#ffffff" }}
+                        />
+                      )}
+                      {block.shinsekai.length > 0 && <MultiField label="精神世界" values={block.shinsekai} />}
+                      {block.invitation.length > 0 && (
+                        <div className="col-span-2">
+                          <p className="text-[9px] text-gray-500 font-mono mb-1">招待状</p>
+                          <div className="flex flex-wrap gap-1">
+                            {block.invitation.map((v, i) => (
+                              <span key={i} className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-300">
+                                {v}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* アクションボタン */}
+                    <div className="flex gap-2 justify-end border-t border-gray-300 pt-2">
+                      <button
+                        onClick={() => setDeleteConfirm(block.id)}
+                        className="text-[11px] font-mono px-3 py-1.5 text-red-600 border border-red-300 hover:bg-red-50 rounded transition-colors"
+                      >
+                        🗑 この行イベントを削除
+                      </button>
+                      <button
+                        onClick={() => onEdit(block, index)}
+                        className="text-[11px] font-mono px-4 py-1.5 bg-gray-700 text-white rounded hover:bg-gray-800 transition-colors"
+                      >
+                        編集
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      {/* ===== 削除確認ポップアップ ===== */}
+      {deleteConfirm && confirmBlock && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 flex items-end justify-center pb-8 px-4"
+          onClick={(e) => e.target === e.currentTarget && setDeleteConfirm(null)}
+        >
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            {/* ヘッダー */}
+            <div className="bg-red-700 px-5 py-4">
+              <p className="text-white font-mono font-bold text-sm">⚠ 削除の確認</p>
+            </div>
+            {/* 本文 */}
+            <div className="px-5 py-4 space-y-2">
+              <p className="text-gray-900 font-mono text-sm font-bold">
+                この行全体が削除されます。
+              </p>
+              <p className="text-gray-500 font-mono text-xs">
+                よろしいですか？この操作は元に戻せません。
+              </p>
+              {/* 対象行プレビュー */}
+              <div className="bg-gray-100 rounded-lg px-3 py-2 text-[11px] font-mono text-gray-700 space-y-0.5">
+                <p>周期 No.{blocks.indexOf(confirmBlock) + 1}
+                  {confirmBlock.jisshuG != null ? ` · ${confirmBlock.jisshuG}G` : ""}
+                  {confirmBlock.zone !== "不明" ? ` · ゾーン${confirmBlock.zone}` : ""}
+                </p>
+                {confirmBlock.atWin && <p className="text-green-700 font-bold">AT 初当り あり</p>}
+              </div>
+            </div>
+            {/* ボタン */}
+            <div className="flex border-t border-gray-200">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 py-4 text-sm font-mono font-bold text-gray-600 hover:bg-gray-50 transition-colors border-r border-gray-200"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={commitDelete}
+                className="flex-1 py-4 text-sm font-mono font-bold text-white bg-red-600 hover:bg-red-700 transition-colors"
+              >
+                OK（削除する）
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -226,7 +289,7 @@ function Cell({
   return (
     <div
       style={color}
-      className={`flex items-center justify-center py-2 px-0.5 text-[9px] font-mono text-center leading-tight min-h-[42px] overflow-hidden ${borderR ? COL_BORDER_R : ""}`}
+      className={`flex items-center justify-center py-2 px-0.5 text-center min-h-[44px] overflow-hidden ${borderR ? COL_BORDER_R : ""}`}
     >
       <span className="truncate w-full text-center">{children}</span>
     </div>
@@ -239,7 +302,7 @@ function ZenchoField({ values }: { values: string[] }) {
       <p className="text-[9px] text-gray-500 font-mono mb-1">前兆履歴</p>
       <div className="flex flex-wrap gap-1">
         {values.map((v, i) => {
-          const col = v.indexOf(":");
+          const col  = v.indexOf(":");
           const zone = col !== -1 ? v.slice(0, col) : v;
           const type = col !== -1 ? v.slice(col + 1) : "";
           return (

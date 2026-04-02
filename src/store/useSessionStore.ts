@@ -1,10 +1,9 @@
 // =============================================================================
 // TOKYO GHOUL RESONANCE: セッション状態管理 (Zustand)
-// エンジン計算なし — データ保持・操作のみ
 // =============================================================================
 
 import { create } from "zustand";
-import type { PlaySession, NormalBlock, ATEntry, ATRound } from "@/types";
+import type { PlaySession, NormalBlock, TGATEntry, TGATRow } from "@/types";
 
 // -----------------------------------------------------------------------------
 // Store 型定義
@@ -23,13 +22,13 @@ interface SessionActions {
   updateNormalBlock: (blockId: string, updated: NormalBlock) => void;
   deleteNormalBlock: (blockId: string) => void;
 
-  appendATEntry: (entry: ATEntry) => void;
-  updateATEntry: (atKey: string, updated: ATEntry) => void;
-  deleteATEntry: (atKey: string) => void;
+  appendTGATEntry: (entry: TGATEntry) => void;
+  updateTGATEntry: (atKey: string, updated: TGATEntry) => void;
+  deleteTGATEntry: (atKey: string) => void;
 
-  appendATRound: (atKey: string, round: ATRound) => void;
-  updateATRound: (atKey: string, roundId: string, updated: ATRound) => void;
-  deleteATRound: (atKey: string, roundId: string) => void;
+  appendTGATRow: (atKey: string, row: TGATRow) => void;
+  updateTGATRow: (atKey: string, rowId: string, updated: TGATRow) => void;
+  deleteTGATRow: (atKey: string, rowId: string) => void;
 
   updateStartDiff: (newStartDiff: number) => void;
   updateInitialThroughCount: (count: number) => void;
@@ -41,7 +40,6 @@ interface SessionActions {
 type SetFn = (partial: Partial<SessionState & SessionActions>) => void;
 type GetFn = () => SessionState & SessionActions;
 
-// セッションを直接更新するヘルパー (エンジン計算なし)
 function mutateSession(
   set: SetFn,
   get: GetFn,
@@ -89,50 +87,50 @@ export const useSessionStore = create<SessionState & SessionActions>(
         normalBlocks: s.normalBlocks.filter((b) => b.id !== blockId),
       })),
 
-    // ---- ATエントリ ----
-    appendATEntry: (entry) =>
+    // ---- TG ATエントリ ----
+    appendTGATEntry: (entry) =>
       mutateSession(set, get, (s) => ({
         ...s,
         atEntries: [...s.atEntries, entry],
       })),
 
-    updateATEntry: (atKey, updated) =>
+    updateTGATEntry: (atKey, updated) =>
       mutateSession(set, get, (s) => ({
         ...s,
         atEntries: s.atEntries.map((e) => (e.atKey === atKey ? updated : e)),
       })),
 
-    deleteATEntry: (atKey) =>
+    deleteTGATEntry: (atKey) =>
       mutateSession(set, get, (s) => ({
         ...s,
         atEntries: s.atEntries.filter((e) => e.atKey !== atKey),
       })),
 
-    // ---- ATラウンド ----
-    appendATRound: (atKey, round) =>
+    // ---- TG ATRow ----
+    appendTGATRow: (atKey, row) =>
       mutateSession(set, get, (s) => ({
         ...s,
         atEntries: s.atEntries.map((e) =>
-          e.atKey === atKey ? { ...e, rounds: [...e.rounds, round] } : e
+          e.atKey === atKey ? { ...e, rows: [...e.rows, row] } : e
         ),
       })),
 
-    updateATRound: (atKey, roundId, updated) =>
+    updateTGATRow: (atKey, rowId, updated) =>
       mutateSession(set, get, (s) => ({
         ...s,
         atEntries: s.atEntries.map((e) =>
           e.atKey === atKey
-            ? { ...e, rounds: e.rounds.map((r) => (r.id === roundId ? updated : r)) }
+            ? { ...e, rows: e.rows.map((r) => (r.id === rowId ? updated : r)) }
             : e
         ),
       })),
 
-    deleteATRound: (atKey, roundId) =>
+    deleteTGATRow: (atKey, rowId) =>
       mutateSession(set, get, (s) => ({
         ...s,
         atEntries: s.atEntries.map((e) =>
           e.atKey === atKey
-            ? { ...e, rounds: e.rounds.filter((r) => r.id !== roundId) }
+            ? { ...e, rows: e.rows.filter((r) => r.id !== rowId) }
             : e
         ),
       })),
@@ -154,22 +152,8 @@ export const useSessionStore = create<SessionState & SessionActions>(
 // セレクター
 // -----------------------------------------------------------------------------
 
-export const selectTotalDiff = (s: SessionState): number =>
-  s.session?.summary?.totalDiff ?? 0;
-
-export const selectTotalGames = (s: SessionState): number =>
-  s.session?.summary?.totalGames ?? 0;
-
 export const selectNormalBlocks = (s: SessionState): NormalBlock[] =>
   s.session?.normalBlocks ?? [];
 
-export const selectATEntries = (s: SessionState): ATEntry[] =>
+export const selectATEntries = (s: SessionState): TGATEntry[] =>
   s.session?.atEntries ?? [];
-
-export const selectLatestModeInference = (s: SessionState) => {
-  const inferences = s.session?.modeInferences ?? [];
-  for (let i = inferences.length - 1; i >= 0; i--) {
-    if (inferences[i] !== null) return inferences[i];
-  }
-  return null;
-};

@@ -40,27 +40,45 @@ export interface TGNormalBlock {
 export type NormalBlock = TGNormalBlock;
 
 // -----------------------------------------------------------------------------
-// ATRound / ATEntry
+// TG AT System: TGATEntry / TGATRow
 // -----------------------------------------------------------------------------
 
-export interface ATRound {
+/** 直乗せ1件 */
+export interface TGDirectAdd {
   id: string;
-  atKey: string;
-  roundIndex: number;
-  roundType: string;
-  cutFlag: string;
-  midBonusGames: number;
-  returnGames: number;
-  specialGames: number;
-  continueTrigger: string;
-  stateText: string;
-  stampInput: number | null;
-  calculatedDiff: number | null;
+  trigger: string;  // 弱🍒 / 🍉 / チャ目 / 強🍒 / 確定🍒
+  coins: number | null;
 }
 
-export interface ATEntry {
-  atKey: string;
-  rounds: ATRound[];
+/** SET行 — 喰種対決1SET分 */
+export interface TGATSet {
+  id: string;
+  rowType: "set";
+  atType: string;        // 通常AT / 裏AT / 隠れ裏AT（推測）
+  character: string;     // 敵キャラ
+  battleTrigger: string; // 対決契機
+  disadvantage: string;  // - / 不利益⭕️ / 不利益❌
+  bitesType: string;     // BITES種別
+  bitesCoins: string;    // BITES獲得: "50"〜"3000" | "ED" | ""
+  directAdds: TGDirectAdd[];
+  battleResults: string[]; // max 10, "○" | "×"
+}
+
+/** 有馬貴将ジャッジメント行 */
+export interface TGArimaJudgment {
+  id: string;
+  rowType: "arima";
+  result: string;          // 成功 / 失敗
+  role: string;            // 小役ナシ / リプレイ / レア役
+  ccgCoins: number | null; // 500 / 1000 / 2000
+}
+
+export type TGATRow = TGATSet | TGArimaJudgment;
+
+/** AT初当たり1回分（連チャン継続分も含む） */
+export interface TGATEntry {
+  atKey: string;    // "AT1", "AT2" ...
+  rows: TGATRow[];
 }
 
 // -----------------------------------------------------------------------------
@@ -84,7 +102,7 @@ export interface PlaySession {
   startDiff: number;
   initialThroughCount: number;
   normalBlocks: NormalBlock[];
-  atEntries: ATEntry[];
+  atEntries: TGATEntry[];
   summary: SessionSummary | null;
   modeInferences: null[];
   memo: string | null;

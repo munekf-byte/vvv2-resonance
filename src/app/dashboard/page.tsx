@@ -16,7 +16,10 @@ export default function DashboardPage() {
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-mono font-black text-red-400 text-lg tracking-wider">TGR</span>
-            <span className="font-mono text-gray-400 text-xs tracking-widest">RESONANCE</span>
+            <div className="flex flex-col leading-none">
+              <span className="font-mono text-gray-400 text-xs tracking-widest">RESONANCE</span>
+              <span className="font-mono text-gray-600 text-[9px] tracking-wider">v1.1</span>
+            </div>
           </div>
           <span className="text-gray-400 text-xs font-mono">稼働管理</span>
         </div>
