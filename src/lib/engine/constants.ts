@@ -167,7 +167,7 @@ export const TG_CCG_COINS = [500, 1000, 2000] as const;
 export const TG_MAX_BATTLE_RESULTS = 10;
 
 /** 直乗せの最大スロット数 */
-export const TG_MAX_DIRECT_ADDS = 4;
+export const TG_MAX_DIRECT_ADDS = 10;
 
 /** 対決成績列ヘッダー (15G刻み × 10回) */
 export const TG_BATTLE_RESULT_HEADERS = [

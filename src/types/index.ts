@@ -50,18 +50,23 @@ export interface TGDirectAdd {
   coins: number | null;
 }
 
+/** 対決1回分（契機 + 勝敗） */
+export interface TGBattle {
+  trigger: string;  // 15G / 30G / 強🍒・チャ目 / etc.
+  result: string;   // "○" | "×" | ""
+}
+
 /** SET行 — 喰種対決1SET分 */
 export interface TGATSet {
   id: string;
   rowType: "set";
-  atType: string;        // 通常AT / 裏AT / 隠れ裏AT（推測）
-  character: string;     // 敵キャラ
-  battleTrigger: string; // 対決契機
-  disadvantage: string;  // - / 不利益⭕️ / 不利益❌
-  bitesType: string;     // BITES種別
-  bitesCoins: string;    // BITES獲得: "50"〜"3000" | "ED" | ""
-  directAdds: TGDirectAdd[];
-  battleResults: string[]; // max 10, "○" | "×"
+  atType: string;       // 通常AT / 裏AT / 隠れ裏AT（推測）
+  character: string;    // 敵キャラ
+  disadvantage: string; // - / 不利益⭕️ / 不利益❌
+  bitesType: string;    // BITES種別
+  bitesCoins: string;   // BITES獲得: "50"〜"3000" | "ED" | ""
+  directAdds: TGDirectAdd[]; // 直乗せ max 10
+  battles: TGBattle[];       // 対決（契機+成績） max 10
 }
 
 /** 有馬貴将ジャッジメント行 */

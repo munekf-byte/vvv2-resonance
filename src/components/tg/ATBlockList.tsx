@@ -1,8 +1,8 @@
 "use client";
 // =============================================================================
 // TOKYO GHOUL RESONANCE: AT記録 閲覧画面
-// グリッド: [編集36] [セット48] [キャラ68] [不利益38] [BITES78] [直乗せ50] [対決成績×10 各20px] [▼24]
-// 横スクロール対応 / モデル画像忠実再現
+// グリッド: [✎36][セット36][キャラ48][不利益26][BITES50][直乗せ36][対決minmax(90px,1fr)][▼24]
+// 横スクロール禁止 / 375px完全収納
 // =============================================================================
 
 import { useState } from "react";
@@ -15,10 +15,9 @@ import {
   getArimaResultColor,
   getBattleResultColor,
 } from "@/lib/tg/cellColors";
-import { TG_BATTLE_RESULT_HEADERS } from "@/lib/engine/constants";
 
 interface Props {
-  atKeyList: string[];       // ["AT1","AT2",...] 通常時から導出
+  atKeyList: string[];
   atEntries: TGATEntry[];
   onAddRow: (atKey: string, rowType: "set" | "arima") => void;
   onEditRow: (atKey: string, row: TGATRow, rowIndex: number) => void;
@@ -26,13 +25,12 @@ interface Props {
 }
 
 // ─── グリッド定義 ─────────────────────────────────────────────────────────────
-const COLS = "grid-cols-[36px_48px_68px_38px_78px_50px_repeat(10,20px)_24px]";
-const MIN_W = "min-w-[575px]";
+const COLS = "grid-cols-[36px_36px_48px_26px_50px_36px_minmax(90px,1fr)_24px]";
 
-const HDR_BG    = "#1f2937";
-const HDR_TEXT  = "#f9fafb";
-const COL_BR    = "border-r border-gray-400";
-const ROW_BR    = "border-b border-gray-400";
+const HDR_BG   = "#1f2937";
+const HDR_TEXT = "#f9fafb";
+const COL_BR   = "border-r border-gray-400";
+const ROW_BR   = "border-b border-gray-400";
 
 // ─── サマリー計算 ─────────────────────────────────────────────────────────────
 
@@ -53,11 +51,10 @@ function computeSummary(entry: TGATEntry) {
   return { setCount, bitesTotal, directTotal, total: bitesTotal + directTotal + ccgTotal };
 }
 
-function directTotal(s: TGATSet): number {
+function directTotalCoins(s: TGATSet): number {
   return s.directAdds.reduce((sum, d) => sum + (d.coins ?? 0), 0);
 }
 
-// SET番号カウント (arima行をスキップ)
 function buildSetNumbers(rows: TGATRow[]): Map<string, number> {
   const map = new Map<string, number>();
   let count = 0;
@@ -70,7 +67,7 @@ function buildSetNumbers(rows: TGATRow[]): Map<string, number> {
 // ─── メインコンポーネント ─────────────────────────────────────────────────────
 
 export function ATBlockList({ atKeyList, atEntries, onAddRow, onEditRow, onDeleteRow }: Props) {
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [expandedRow,   setExpandedRow]   = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ atKey: string; rowId: string } | null>(null);
 
   if (atKeyList.length === 0) {
@@ -87,8 +84,8 @@ export function ATBlockList({ atKeyList, atEntries, onAddRow, onEditRow, onDelet
     <>
       <div className="space-y-0">
         {atKeyList.map((atKey) => {
-          const entry = atEntries.find((e) => e.atKey === atKey) ?? { atKey, rows: [] };
-          const summary   = computeSummary(entry);
+          const entry      = atEntries.find((e) => e.atKey === atKey) ?? { atKey, rows: [] };
+          const summary    = computeSummary(entry);
           const setNumbers = buildSetNumbers(entry.rows);
 
           return (
@@ -168,89 +165,75 @@ function ATBlock({
     <div className="border border-gray-400 mb-4 mx-3 rounded overflow-hidden">
 
       {/* ── ATサマリーヘッダー ── */}
-      <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] border-b-2 border-gray-500"
-        style={{ backgroundColor: HDR_BG }}>
-        {/* ATキー */}
+      <div
+        className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] border-b-2 border-gray-500"
+        style={{ backgroundColor: HDR_BG }}
+      >
         <div className="px-3 py-2 flex items-center justify-center border-r border-gray-600">
           <span className="text-white font-mono font-black text-base tracking-wider">{atKey}</span>
         </div>
-        {/* 喰種Set数 */}
-        <SummaryCell label="喰種Set数" value={`${summary.setCount}Set`} />
-        {/* BITES獲得 */}
-        <SummaryCell label="BITES獲得" value={`${summary.bitesTotal.toLocaleString()}枚`} />
-        {/* 直乗せ */}
-        <SummaryCell label="直乗せ" value={`${summary.directTotal.toLocaleString()}枚`} />
-        {/* 合計 */}
+        <SummaryCell label="喰種Set数"   value={`${summary.setCount}Set`} />
+        <SummaryCell label="BITES獲得"   value={`${summary.bitesTotal.toLocaleString()}枚`} />
+        <SummaryCell label="直乗せ"       value={`${summary.directTotal.toLocaleString()}枚`} />
         <SummaryCell label="合計獲得枚数" value={`${summary.total.toLocaleString()}枚`} highlight />
       </div>
 
       {/* ── 列ヘッダー ── */}
-      <div className="overflow-x-auto">
-        <div className={MIN_W}>
+      <div className={`grid ${COLS} border-b border-gray-400`} style={{ backgroundColor: "#374151" }}>
+        {["✎", "セット", "キャラ", "不利益", "BITES", "直乗せ"].map((h, i) => (
           <div
-            className={`grid ${COLS} border-b border-gray-400`}
-            style={{ backgroundColor: "#374151" }}
+            key={i}
+            style={{ color: HDR_TEXT }}
+            className={`text-[8px] font-mono font-bold text-center px-0.5 py-1.5 leading-tight ${COL_BR}`}
           >
-            {/* 固定列ヘッダー */}
-            {["✎", "セット", "キャラ", "不利益", "BITES", "直乗せ"].map((h, i) => (
-              <div
-                key={i}
-                style={{ color: HDR_TEXT }}
-                className={`text-[8px] font-mono font-bold text-center px-0.5 py-1.5 leading-tight ${COL_BR}`}
-              >
-                {h}
-              </div>
-            ))}
-            {/* 対決成績列ヘッダー */}
-            {TG_BATTLE_RESULT_HEADERS.map((g, i) => (
-              <div
-                key={`g${i}`}
-                style={{ color: "#9ca3af" }}
-                className={`text-[7px] font-mono font-bold text-center py-1.5 leading-tight ${i < 9 ? COL_BR : ""}`}
-              >
-                {g}
-              </div>
-            ))}
-            {/* ▼ */}
-            <div />
+            {h}
           </div>
-
-          {/* ── データ行 ── */}
-          {entry.rows.length === 0 ? (
-            <div className="py-4 text-center text-gray-400 text-xs font-mono">
-              行を追加してください
-            </div>
-          ) : (
-            entry.rows.map((row, idx) => {
-              const isExpanded = expandedRow === row.id;
-              if (row.rowType === "set") {
-                return (
-                  <SetRow
-                    key={row.id}
-                    row={row}
-                    setNum={setNumbers.get(row.id) ?? idx + 1}
-                    isExpanded={isExpanded}
-                    onToggle={() => setExpandedRow(isExpanded ? null : row.id)}
-                    onEdit={() => onEditRow(atKey, row, idx)}
-                    onDelete={() => onDeleteRow(row.id)}
-                  />
-                );
-              } else {
-                return (
-                  <ArimaRow
-                    key={row.id}
-                    row={row}
-                    isExpanded={isExpanded}
-                    onToggle={() => setExpandedRow(isExpanded ? null : row.id)}
-                    onEdit={() => onEditRow(atKey, row, idx)}
-                    onDelete={() => onDeleteRow(row.id)}
-                  />
-                );
-              }
-            })
-          )}
+        ))}
+        {/* 対決成績ヘッダー */}
+        <div
+          style={{ color: "#9ca3af" }}
+          className={`text-[8px] font-mono font-bold text-center py-1.5 leading-tight ${COL_BR}`}
+        >
+          対決
         </div>
+        {/* ▼ */}
+        <div />
       </div>
+
+      {/* ── データ行 ── */}
+      {entry.rows.length === 0 ? (
+        <div className="py-4 text-center text-gray-400 text-xs font-mono bg-white">
+          行を追加してください
+        </div>
+      ) : (
+        entry.rows.map((row, idx) => {
+          const isExpanded = expandedRow === row.id;
+          if (row.rowType === "set") {
+            return (
+              <SetRow
+                key={row.id}
+                row={row}
+                setNum={setNumbers.get(row.id) ?? idx + 1}
+                isExpanded={isExpanded}
+                onToggle={() => setExpandedRow(isExpanded ? null : row.id)}
+                onEdit={() => onEditRow(atKey, row, idx)}
+                onDelete={() => onDeleteRow(row.id)}
+              />
+            );
+          } else {
+            return (
+              <ArimaRow
+                key={row.id}
+                row={row}
+                isExpanded={isExpanded}
+                onToggle={() => setExpandedRow(isExpanded ? null : row.id)}
+                onEdit={() => onEditRow(atKey, row, idx)}
+                onDelete={() => onDeleteRow(row.id)}
+              />
+            );
+          }
+        })
+      )}
 
       {/* ── 行追加ボタン ── */}
       <div className="flex gap-2 px-3 py-2 border-t border-gray-300 bg-gray-50">
@@ -285,6 +268,42 @@ function SummaryCell({ label, value, highlight = false }: { label: string; value
   );
 }
 
+// ─── BattleResultGrid: 対決成績 2階建て ──────────────────────────────────────
+
+function BattleResultGrid({ battles }: { battles: TGATSet["battles"] }) {
+  const top    = battles.slice(0, 5);
+  const bottom = battles.slice(5, 10);
+
+  function ResultCell({ result }: { result: string }) {
+    const color = getBattleResultColor(result);
+    return (
+      <div
+        className="flex items-center justify-center flex-1 text-[9px] font-bold"
+        style={{ ...color, minHeight: "18px" }}
+      >
+        {result || ""}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col w-full h-full divide-y divide-gray-300">
+      {/* 上段: 対決1〜5 */}
+      <div className="flex flex-1 divide-x divide-gray-300">
+        {Array.from({ length: 5 }, (_, i) => (
+          <ResultCell key={i} result={top[i]?.result ?? ""} />
+        ))}
+      </div>
+      {/* 下段: 対決6〜10 */}
+      <div className="flex flex-1 divide-x divide-gray-300">
+        {Array.from({ length: 5 }, (_, i) => (
+          <ResultCell key={i} result={bottom[i]?.result ?? ""} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── SetRow ──────────────────────────────────────────────────────────────────
 
 function SetRow({
@@ -297,15 +316,15 @@ function SetRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const charColor = getATCharColor(row.character);
+  const charColor  = getATCharColor(row.character);
   const bitesColor = getBitesTypeCellColor(row.bitesType);
   const disadvColor = getDisadvantageCellColor(row.disadvantage);
-  const dTotal = directTotal(row);
+  const dTotal     = directTotalCoins(row);
 
   return (
     <div className={`${ROW_BR} bg-white`}>
-      {/* メイン行 */}
-      <div className={`grid ${COLS} ${MIN_W}`}>
+      <div className={`grid ${COLS}`}>
+
         {/* 編集 */}
         <button
           onClick={onEdit}
@@ -315,17 +334,18 @@ function SetRow({
           <span className="text-lg text-gray-500">✎</span>
         </button>
 
-        {/* セット番号 */}
-        <div className={`flex items-center justify-center px-0.5 min-h-[44px] ${COL_BR}`}>
-          <span className="text-[10px] font-mono font-bold text-gray-700">SET{setNum}</span>
+        {/* セット番号 (2行) */}
+        <div className={`flex flex-col items-center justify-center px-0.5 min-h-[44px] ${COL_BR}`}>
+          <span className="text-[8px] font-mono text-gray-500 leading-tight">SET</span>
+          <span className="text-[11px] font-mono font-bold text-gray-700">{setNum}</span>
         </div>
 
-        {/* キャラ */}
+        {/* キャラ + ATタイプ */}
         <div
           className={`flex flex-col items-center justify-center px-0.5 py-1 min-h-[44px] ${COL_BR}`}
           style={charColor}
         >
-          <span className="text-[9px] font-mono font-black leading-tight text-center truncate w-full text-center">
+          <span className="text-[9px] font-mono font-black leading-tight text-center w-full truncate text-center">
             {row.character || "—"}
           </span>
           {row.atType && (
@@ -346,12 +366,12 @@ function SetRow({
           </span>
         </div>
 
-        {/* BITES (2行) */}
+        {/* BITES */}
         <div
           className={`flex flex-col items-center justify-center px-0.5 py-1 min-h-[44px] ${COL_BR}`}
           style={bitesColor}
         >
-          <span className="text-[8px] font-mono font-bold leading-tight text-center truncate w-full text-center">
+          <span className="text-[8px] font-mono font-bold leading-tight text-center w-full truncate text-center">
             {row.bitesType ? getBitesTypeShort(row.bitesType) : "—"}
           </span>
           {row.bitesCoins && (
@@ -361,32 +381,19 @@ function SetRow({
           )}
         </div>
 
-        {/* 直乗せTOTAL */}
+        {/* 直乗せ合計 */}
         <div className={`flex items-center justify-center px-0.5 min-h-[44px] ${COL_BR}`}>
           <span className="text-[10px] font-mono font-bold text-gray-700">
             {dTotal > 0 ? `${dTotal}枚` : "—"}
           </span>
         </div>
 
-        {/* 対決成績 10枠 */}
-        {Array.from({ length: 10 }, (_, i) => {
-          const result = row.battleResults[i] ?? "";
-          const color  = getBattleResultColor(result);
-          const isLast = i === 9;
-          return (
-            <div
-              key={i}
-              className={`flex items-center justify-center min-h-[44px] ${!isLast ? COL_BR : ""}`}
-              style={color}
-            >
-              <span className="text-[10px] font-bold">
-                {result || ""}
-              </span>
-            </div>
-          );
-        })}
+        {/* 対決成績 2階建て */}
+        <div className={`min-h-[44px] ${COL_BR}`}>
+          <BattleResultGrid battles={row.battles} />
+        </div>
 
-        {/* アコーディオントグル ▼ */}
+        {/* ▼ */}
         <button
           onClick={onToggle}
           className="flex items-center justify-center min-h-[44px] text-[10px] font-bold transition-colors"
@@ -399,18 +406,35 @@ function SetRow({
       {/* アコーディオン: 詳細 */}
       {isExpanded && (
         <div className="bg-gray-50 border-t border-gray-300 px-3 py-2.5 space-y-2">
-          {/* 対決契機 */}
-          <div className="flex gap-2 items-center">
-            <span className="text-[9px] font-mono text-gray-500 w-16 shrink-0">対決契機</span>
-            <span className="text-[10px] font-mono font-bold text-gray-800">
-              {row.battleTrigger || "—"}
-            </span>
-          </div>
+
+          {/* 対決一覧 */}
+          {row.battles.length > 0 && (
+            <div className="flex gap-2 items-start">
+              <span className="text-[9px] font-mono text-gray-500 w-14 shrink-0">対決</span>
+              <div className="flex flex-wrap gap-1">
+                {row.battles.map((b, i) => (
+                  <span
+                    key={i}
+                    className="text-[8px] font-mono px-1 py-0.5 rounded border"
+                    style={
+                      b.result === "○"
+                        ? { backgroundColor: "#1b5e20", color: "#fff", borderColor: "#2e7d32" }
+                        : b.result === "×"
+                        ? { backgroundColor: "#b71c1c", color: "#fff", borderColor: "#c62828" }
+                        : { backgroundColor: "#f3f4f6", color: "#374151", borderColor: "#d1d5db" }
+                    }
+                  >
+                    {i + 1}. {b.trigger || "—"} {b.result || ""}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 直乗せ内訳 */}
           {row.directAdds.length > 0 && (
             <div className="flex gap-2 items-start">
-              <span className="text-[9px] font-mono text-gray-500 w-16 shrink-0">直乗せ</span>
+              <span className="text-[9px] font-mono text-gray-500 w-14 shrink-0">直乗せ</span>
               <div className="flex flex-wrap gap-1">
                 {row.directAdds.map((d) => (
                   <span key={d.id} className="text-[9px] font-mono px-1.5 py-0.5 bg-blue-50 border border-blue-200 text-blue-800 rounded">
@@ -457,8 +481,7 @@ function ArimaRow({
 
   return (
     <div className={`${ROW_BR}`}>
-      {/* メイン行: 横結合デザイン */}
-      <div className={`flex items-stretch min-h-[44px] ${MIN_W}`} style={resultColor}>
+      <div className="flex items-stretch min-h-[44px]" style={resultColor}>
         {/* 編集 */}
         <button
           onClick={onEdit}
@@ -496,7 +519,6 @@ function ArimaRow({
         </button>
       </div>
 
-      {/* アコーディオン */}
       {isExpanded && (
         <div className="bg-gray-50 border-t border-gray-300 px-3 py-2.5">
           <div className="flex gap-2 justify-end">
