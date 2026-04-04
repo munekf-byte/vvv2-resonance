@@ -371,6 +371,57 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
 // ─── スロット共通高さ定数 (対決・直乗せで統一) ───────────────────────────────
 const SLOT_HALF_H = 54; // 上段・下段それぞれ 54px (1:1)
 
+// ─── SlotPickerButton ──────────────────────────────────────────────────────────
+// UIレギュレーション1準拠: slot内単一選択
+// 外観: 色付きボタン / 動作: native picker (透明 select overlay)
+
+function SlotPickerButton({
+  value, onChange, options, labelFn, optionLabelFn,
+  height = SLOT_HALF_H,
+  bgActive = "#374151", colorActive = "#ffffff",
+  bgInactive = "#e8eaed", borderBottom,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  labelFn?: (v: string) => string;
+  optionLabelFn?: (v: string) => string;
+  height?: number;
+  bgActive?: string;
+  colorActive?: string;
+  bgInactive?: string;
+  borderBottom?: string;
+}) {
+  const hasValue = value !== "";
+  const displayLabel = hasValue ? (labelFn ? labelFn(value) : value) : "—";
+  return (
+    <div className="relative overflow-hidden" style={{ minHeight: `${height}px` }}>
+      <div
+        className="absolute inset-0 flex items-center justify-center px-0.5 pointer-events-none"
+        style={{
+          backgroundColor: hasValue ? bgActive : bgInactive,
+          color: hasValue ? colorActive : "#9ca3af",
+          ...(borderBottom ? { borderBottom } : {}),
+        }}
+      >
+        <span className="text-[8px] font-mono font-bold text-center leading-tight break-all line-clamp-3">
+          {displayLabel}
+        </span>
+      </div>
+      <select
+        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">—</option>
+        {options.map((opt) => (
+          <option key={opt} value={opt}>{optionLabelFn ? optionLabelFn(opt) : opt}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 // ─── BattleSlot ──────────────────────────────────────────────────────────────
 
 function BattleSlot({
@@ -396,23 +447,16 @@ function BattleSlot({
         style={{ backgroundColor: "#dde0e3" }}>
         {index + 1}
       </div>
-      {/* 上段: 契機セレクト — グレー背景で境界を明示 */}
-      <select
-        className="w-full text-[9px] font-mono border-0 border-b-2 border-gray-300 text-center focus:outline-none"
-        style={{
-          color: hasTrigger ? "#1f2937" : "#9ca3af",
-          backgroundColor: "#e8eaed",
-          minHeight: `${SLOT_HALF_H}px`,
-          padding: "0 2px",
-        }}
+      {/* 上段: 契機 — SlotPickerButton (UIレギュレーション1準拠) */}
+      <SlotPickerButton
         value={trigger}
-        onChange={(e) => onTriggerChange(e.target.value)}
-      >
-        <option value="">—</option>
-        {TG_BATTLE_TRIGGERS.map((t) => (
-          <option key={t} value={t}>{t}</option>
-        ))}
-      </select>
+        onChange={onTriggerChange}
+        options={[...TG_BATTLE_TRIGGERS]}
+        bgActive="#374151"
+        colorActive="#ffffff"
+        bgInactive="#e8eaed"
+        borderBottom="2px solid #9ca3af"
+      />
       {/* 下段: 成績トグル — 明るい背景で押せる感を演出 */}
       <button
         onClick={onResultToggle}
@@ -455,41 +499,27 @@ function DirectAddSlot({
         style={{ backgroundColor: "#dde8f7" }}>
         {index + 1}
       </div>
-      {/* 上段: 役 — グレー系で境界を明示 (対決の上段と同じ扱い) */}
-      <select
-        className="w-full text-[9px] font-mono border-0 border-b-2 border-blue-200 text-center focus:outline-none"
-        style={{
-          color: trigger ? "#1f2937" : "#9ca3af",
-          backgroundColor: "#dbeafe",
-          minHeight: `${SLOT_HALF_H}px`,
-          padding: "0 2px",
-        }}
+      {/* 上段: 役 — SlotPickerButton (UIレギュレーション1準拠) */}
+      <SlotPickerButton
         value={trigger}
-        onChange={(e) => onTriggerChange(e.target.value)}
-      >
-        <option value="">—</option>
-        {TG_DIRECT_ADD_TRIGGERS.map((t) => (
-          <option key={t} value={t}>{t}</option>
-        ))}
-      </select>
-      {/* 下段: 枚数 — 明るい背景で押せる感 */}
-      <select
-        className="w-full text-[9px] font-mono border-0 text-center focus:outline-none"
-        style={{
-          color: coins != null ? "#1565c0" : "#9ca3af",
-          fontWeight: coins != null ? "bold" : "normal",
-          backgroundColor: "#eff6ff",
-          minHeight: `${SLOT_HALF_H}px`,
-          padding: "0 2px",
-        }}
-        value={coins ?? ""}
-        onChange={(e) => onCoinsChange(e.target.value === "" ? null : Number(e.target.value))}
-      >
-        <option value="">—</option>
-        {TG_DIRECT_ADD_COINS.map((c) => (
-          <option key={c} value={c}>{c}枚</option>
-        ))}
-      </select>
+        onChange={onTriggerChange}
+        options={[...TG_DIRECT_ADD_TRIGGERS]}
+        bgActive="#1565c0"
+        colorActive="#ffffff"
+        bgInactive="#dbeafe"
+        borderBottom="2px solid #93c5fd"
+      />
+      {/* 下段: 枚数 — SlotPickerButton (UIレギュレーション1準拠) */}
+      <SlotPickerButton
+        value={coins != null ? String(coins) : ""}
+        onChange={(v) => onCoinsChange(v === "" ? null : Number(v))}
+        options={TG_DIRECT_ADD_COINS.map(String)}
+        labelFn={(v) => `${v}枚`}
+        optionLabelFn={(v) => `${v}枚`}
+        bgActive="#1e3a5f"
+        colorActive="#93c5fd"
+        bgInactive="#eff6ff"
+      />
     </div>
   );
 }

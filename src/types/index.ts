@@ -66,6 +66,8 @@ export interface TGATSet {
   bitesType: string;    // BITES種別
   bitesCoins: string;   // BITES獲得: "50"〜"3000" | "ED" | ""
   kakugan?: string[];        // 赫眼状態
+  endingSuggestion?: string; // 終了画面示唆 ([終了画面] prefix のみ)
+  trophy?: string;           // トロフィー
   directAdds: TGDirectAdd[]; // 直乗せ max 10
   battles: TGBattle[];       // 対決（契機+成績） max 10
 }
