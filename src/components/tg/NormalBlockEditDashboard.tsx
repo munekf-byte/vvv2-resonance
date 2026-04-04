@@ -1,8 +1,8 @@
 "use client";
 // =============================================================================
-// TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード
-// フォーム要素: 全て 2倍以上の縦幅 / カラーインジケータ付きセレクト
-// 保存ボタン: 最下部 全幅・大
+// TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード v1.3
+// UIデザインレギュレーション1準拠: 全選択肢をスクエアボタングリッド化
+// <select> ドロップダウン完全廃止 → 四角いボタン形式に統一
 // =============================================================================
 
 import { useState } from "react";
@@ -16,7 +16,8 @@ import {
 import {
   getZoneCellColor, getModeCellColor, getTriggerCellColor, getEventCellColor,
   getEndingCellColor, getTrophyCellColor, getKakuganCellColor, getShinsekaiCellColor,
-  getSuggestionDropdownLabel, getHintFromValue,
+  getInvitationCellColor, getSuggestionListLines,
+  abbrevMode, abbrevTrigger, abbrevEvent,
   type CellColor,
 } from "@/lib/tg/cellColors";
 
@@ -29,8 +30,6 @@ interface Props {
 }
 
 type FormState = Omit<NormalBlock, "id">;
-
-const MULTI_SLOTS = 4; // 赫眼・精神世界・招待状 それぞれ4スロット
 
 function emptyForm(): FormState {
   return {
@@ -49,16 +48,6 @@ function emptyForm(): FormState {
   };
 }
 
-function setAt(arr: string[], index: number, value: string): string[] {
-  const next = [...arr];
-  if (value === "") {
-    next.splice(index, 1);
-  } else {
-    next[index] = value;
-  }
-  return next.filter((v) => v !== "");
-}
-
 // ─── メインコンポーネント ──────────────────────────────────────────────────────
 
 export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave, onClose }: Props) {
@@ -71,12 +60,25 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function setArraySlot(
-    field: "kakugan" | "shinsekai" | "invitation" | "zencho",
-    index: number,
-    value: string
-  ) {
-    setField(field, setAt(form[field] as string[], index, value));
+  /** multi-toggle: 選択済みなら除去、未選択なら追加 */
+  function toggleMulti(field: "kakugan" | "shinsekai" | "invitation", value: string) {
+    const current = form[field] as string[];
+    setField(field, current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value]
+    );
+  }
+
+  /** 前兆履歴: "zone:type" 形式でセット。type="" なら削除 */
+  function setZencho(zone: string, type: string) {
+    const filtered = form.zencho.filter((v) => !v.startsWith(zone + ":"));
+    setField("zencho", type ? [...filtered, `${zone}:${type}`] : filtered);
+  }
+
+  /** 現在の前兆タイプを取得 */
+  function getZenchoType(zone: string): string {
+    const entry = form.zencho.find((v) => v.startsWith(zone + ":"));
+    return entry ? entry.split(":")[1] : "";
   }
 
   function buildBlock(): NormalBlock {
@@ -110,138 +112,282 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
       {/* ===== スクロール可能フォーム ===== */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-32">
 
-        {/* ── メインフォームグリッド ── */}
-        <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4 space-y-4">
+        {/* ── 実G数 ── */}
+        <Section title="実G数">
+          <input
+            type="number"
+            inputMode="numeric"
+            placeholder="G数を入力"
+            className="w-full text-sm font-mono border-2 border-gray-300 rounded px-3 py-4 focus:outline-none focus:border-gray-500 bg-white text-center"
+            value={form.jisshuG ?? ""}
+            onChange={(e) =>
+              setField("jisshuG", e.target.value === "" ? null : Number(e.target.value))
+            }
+          />
+        </Section>
 
-          {/* Row 1: 実G数 / ゾーン / 推定モード */}
-          <div className="grid grid-cols-3 gap-3">
-            <FormCell label="実G数">
-              <input
-                type="number"
-                inputMode="numeric"
-                placeholder="G数"
-                className="w-full text-sm font-mono border-2 border-gray-300 rounded px-3 py-3 focus:outline-none focus:border-gray-500 bg-white"
-                value={form.jisshuG ?? ""}
-                onChange={(e) =>
-                  setField("jisshuG", e.target.value === "" ? null : Number(e.target.value))
-                }
+        {/* ── ゾーン (20択) ── */}
+        <Section title="ゾーン">
+          <div className="grid grid-cols-5 gap-1">
+            {([...TG_ZONES] as string[]).map((z) => (
+              <IconBtn
+                key={z}
+                selected={form.zone === z}
+                onClick={() => setField("zone", z)}
+                color={getZoneCellColor(z)}
+                label={z}
               />
-            </FormCell>
-            <FormCell label="ゾーン">
-              <ColoredSel
-                value={form.zone}
-                onChange={(v) => setField("zone", v)}
-                options={[...TG_ZONES]}
-                colorFn={getZoneCellColor}
+            ))}
+          </div>
+        </Section>
+
+        {/* ── 推定モード (8択) ── */}
+        <Section title="推定モード">
+          <div className="grid grid-cols-4 gap-2">
+            {([...TG_MODES] as string[]).map((m) => {
+              const lbl = m === "不明" ? "不明" : abbrevMode(m);
+              return (
+                <IconBtn
+                  key={m}
+                  selected={form.estimatedMode === m}
+                  onClick={() => setField("estimatedMode", m)}
+                  color={getModeCellColor(m)}
+                  label={lbl}
+                />
+              );
+            })}
+          </div>
+        </Section>
+
+        {/* ── 当選契機 (11択) ── */}
+        <Section title="当選契機">
+          <div className="grid grid-cols-4 gap-1.5">
+            {([...TG_WIN_TRIGGERS] as string[]).map((t) => {
+              const lbl = t === "不明" ? "不明" : abbrevTrigger(t);
+              return (
+                <IconBtn
+                  key={t}
+                  selected={form.winTrigger === t}
+                  onClick={() => setField("winTrigger", t)}
+                  color={getTriggerCellColor(t)}
+                  label={lbl}
+                />
+              );
+            })}
+          </div>
+        </Section>
+
+        {/* ── イベント (6択 + なし) ── */}
+        <Section title="イベント">
+          <div className="grid grid-cols-4 gap-2">
+            <IconBtn
+              selected={form.event === ""}
+              onClick={() => setField("event", "")}
+              color={{ backgroundColor: "#e5e7eb", color: "#6b7280" }}
+              label="なし"
+            />
+            {([...TG_EVENTS] as string[]).map((e) => (
+              <IconBtn
+                key={e}
+                selected={form.event === e}
+                onClick={() => setField("event", e)}
+                color={getEventCellColor(e)}
+                label={abbrevEvent(e)}
               />
-            </FormCell>
-            <FormCell label="推定モード">
-              <ColoredSel
-                value={form.estimatedMode}
-                onChange={(v) => setField("estimatedMode", v)}
-                options={[...TG_MODES]}
-                colorFn={getModeCellColor}
-                labelFn={(v) => v === "不明" ? v : v.split(":")[0].trim()}
-              />
-            </FormCell>
+            ))}
+          </div>
+        </Section>
+
+        {/* ── AT初当り ── */}
+        <Section title="AT初当り">
+          <button
+            onClick={() => setField("atWin", !form.atWin)}
+            className="w-full py-7 rounded font-mono font-black text-lg transition-all active:scale-95"
+            style={
+              form.atWin
+                ? { backgroundColor: "#38761d", color: "#fff", border: "2px solid #38761d", boxShadow: "0 0 0 2px #1f2937" }
+                : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
+            }
+          >
+            {form.atWin ? "AT Get ✓" : "なし"}
+          </button>
+        </Section>
+
+        {/* ── 終了画面示唆 (CZ失敗 / 終了画面 2カテゴリ) ── */}
+        <Section title="終了画面示唆">
+          {/* なし */}
+          <button
+            onClick={() => setField("endingSuggestion", "")}
+            className="w-full mb-2 py-3 rounded font-mono font-bold text-[11px] transition-all active:scale-95"
+            style={
+              form.endingSuggestion === ""
+                ? { backgroundColor: "#374151", color: "#fff", border: "2px solid #374151", boxShadow: "0 0 0 2px #1f2937" }
+                : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
+            }
+          >
+            なし
+          </button>
+
+          {/* CZ失敗 カテゴリ */}
+          <p className="text-[9px] font-mono text-gray-400 mb-1.5 font-bold">— CZ失敗画面 —</p>
+          <div className="grid grid-cols-3 gap-1 mb-3">
+            {([...TG_ENDING_SUGGESTIONS] as string[])
+              .filter((s) => s.startsWith("[cz失敗]"))
+              .map((s) => {
+                const lines = getSuggestionListLines(s);
+                return (
+                  <IconBtn
+                    key={s}
+                    selected={form.endingSuggestion === s}
+                    onClick={() => setField("endingSuggestion", s)}
+                    color={getEndingCellColor(s)}
+                    label={lines?.name ?? s}
+                    subLabel={lines?.hint}
+                  />
+                );
+              })}
           </div>
 
-          {/* Row 2: 当選契機 / イベント / AT初当り */}
-          <div className="grid grid-cols-3 gap-3">
-            <FormCell label="当選契機">
-              <ColoredSel
-                value={form.winTrigger}
-                onChange={(v) => setField("winTrigger", v)}
-                options={[...TG_WIN_TRIGGERS]}
-                colorFn={getTriggerCellColor}
-              />
-            </FormCell>
-            <FormCell label="イベント">
-              <ColoredSel
-                value={form.event}
-                onChange={(v) => setField("event", v)}
-                options={["", ...TG_EVENTS]}
-                colorFn={getEventCellColor}
-                emptyLabel="なし"
-              />
-            </FormCell>
-            <FormCell label="AT初当り">
-              <button
-                onClick={() => setField("atWin", !form.atWin)}
-                className="w-full text-sm font-mono font-bold py-3 rounded border-2 transition-colors"
-                style={
-                  form.atWin
-                    ? { backgroundColor: "#38761d", color: "#ffffff", borderColor: "#38761d" }
-                    : { backgroundColor: "#ffffff", color: "#9ca3af", borderColor: "#d1d5db" }
-                }
-              >
-                {form.atWin ? "AT Get ✓" : "なし"}
-              </button>
-            </FormCell>
+          {/* 終了画面 カテゴリ */}
+          <p className="text-[9px] font-mono text-gray-400 mb-1.5 font-bold">— 終了画面 —</p>
+          <div className="grid grid-cols-3 gap-1">
+            {([...TG_ENDING_SUGGESTIONS] as string[])
+              .filter((s) => s.startsWith("[終了画面]"))
+              .map((s) => {
+                const lines = getSuggestionListLines(s);
+                return (
+                  <IconBtn
+                    key={s}
+                    selected={form.endingSuggestion === s}
+                    onClick={() => setField("endingSuggestion", s)}
+                    color={getEndingCellColor(s)}
+                    label={lines?.name ?? s}
+                    subLabel={lines?.hint}
+                  />
+                );
+              })}
           </div>
+        </Section>
 
-          {/* Row 3: 終了画面示唆 / トロフィー */}
-          <div className="grid grid-cols-2 gap-3">
-            <FormCell label="終了画面示唆">
-              <ColoredSel
-                value={form.endingSuggestion}
-                onChange={(v) => setField("endingSuggestion", v)}
-                options={["", ...TG_ENDING_SUGGESTIONS]}
-                colorFn={getEndingCellColor}
-                emptyLabel="なし"
-                labelFn={(v) => v ? getSuggestionDropdownLabel(v) : "なし"}
-              />
-            </FormCell>
-            <FormCell label="トロフィー">
-              <ColoredSel
-                value={form.trophy}
-                onChange={(v) => setField("trophy", v)}
-                options={["", ...TG_TROPHIES]}
-                colorFn={getTrophyCellColor}
-                emptyLabel="なし"
-                labelFn={(v) => v ? getSuggestionDropdownLabel(v) : "なし"}
-              />
-            </FormCell>
+        {/* ── トロフィー (6択 + なし) ── */}
+        <Section title="トロフィー">
+          <div className="grid grid-cols-4 gap-2">
+            <IconBtn
+              selected={form.trophy === ""}
+              onClick={() => setField("trophy", "")}
+              color={{ backgroundColor: "#e5e7eb", color: "#6b7280" }}
+              label="なし"
+            />
+            {([...TG_TROPHIES] as string[]).map((t) => {
+              const lines = getSuggestionListLines(t);
+              return (
+                <IconBtn
+                  key={t}
+                  selected={form.trophy === t}
+                  onClick={() => setField("trophy", t)}
+                  color={getTrophyCellColor(t)}
+                  label={lines?.name ?? t}
+                  subLabel={lines?.hint}
+                />
+              );
+            })}
           </div>
-        </div>
+        </Section>
 
-        {/* ── 前兆履歴 (ゾーン別スロット) ── */}
-        <ZenchoSection
-          values={form.zencho}
-          onChange={(next) => setField("zencho", next)}
-        />
+        {/* ── 前兆履歴 (ゾーン別 3択ボタン) ── */}
+        <Section title="前兆履歴">
+          <div className="space-y-1.5">
+            {([...TG_ZENCHO_ZONES] as string[]).map((zone) => {
+              const current = getZenchoType(zone);
+              return (
+                <div key={zone} className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono font-bold text-gray-500 w-10 text-right shrink-0">
+                    {zone}G
+                  </span>
+                  <div className="flex flex-1 gap-1.5">
+                    {/* クリアボタン */}
+                    <button
+                      onClick={() => setZencho(zone, "")}
+                      className="flex-1 py-2.5 rounded text-[10px] font-mono font-bold transition-all active:scale-95"
+                      style={
+                        current === ""
+                          ? { backgroundColor: "#374151", color: "#fff", border: "2px solid #374151", boxShadow: "0 0 0 2px #1f2937" }
+                          : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #e5e7eb" }
+                      }
+                    >—</button>
+                    {([...TG_ZENCHO_TYPES] as string[]).map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setZencho(zone, type)}
+                        className="flex-1 py-2.5 rounded text-[9px] font-mono font-bold transition-all active:scale-95"
+                        style={
+                          current === type
+                            ? type === "東京上空"
+                              ? { backgroundColor: "#c62828", color: "#fff", border: "2px solid #c62828", boxShadow: "0 0 0 2px #1f2937" }
+                              : { backgroundColor: "#1565c0", color: "#fff", border: "2px solid #1565c0", boxShadow: "0 0 0 2px #1f2937" }
+                            : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
+                        }
+                      >
+                        {type === "東京上空" ? "上空" : type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Section>
 
-        {/* ── 赫眼状態 (4スロット) ── */}
-        <MultiSelectSection
-          title="赫眼状態"
-          titleColor={{ backgroundColor: "#b10202", color: "#ffffff" }}
-          options={[...TG_KAKUGAN]}
-          values={form.kakugan}
-          slots={MULTI_SLOTS}
-          onChange={(i, v) => setArraySlot("kakugan", i, v)}
-          colorFn={getKakuganCellColor}
-        />
+        {/* ── 赫眼状態 (4択・複数選択可) ── */}
+        <Section title="赫眼状態">
+          <div className="grid grid-cols-4 gap-2">
+            {([...TG_KAKUGAN] as string[]).map((k) => (
+              <IconBtn
+                key={k}
+                selected={form.kakugan.includes(k)}
+                onClick={() => toggleMulti("kakugan", k)}
+                color={getKakuganCellColor(k)}
+                label={k}
+              />
+            ))}
+          </div>
+        </Section>
 
-        {/* ── 精神世界 (4スロット) ── */}
-        <MultiSelectSection
-          title="精神世界"
-          titleColor={{ backgroundColor: "#5a3286", color: "#ffffff" }}
-          options={[...TG_SHINSEKAI]}
-          values={form.shinsekai}
-          slots={MULTI_SLOTS}
-          onChange={(i, v) => setArraySlot("shinsekai", i, v)}
-          colorFn={getShinsekaiCellColor}
-        />
+        {/* ── 精神世界 (3択・複数選択可) ── */}
+        <Section title="精神世界">
+          <div className="grid grid-cols-3 gap-2">
+            {([...TG_SHINSEKAI] as string[]).map((s) => (
+              <IconBtn
+                key={s}
+                selected={form.shinsekai.includes(s)}
+                onClick={() => toggleMulti("shinsekai", s)}
+                color={getShinsekaiCellColor(s)}
+                label={s}
+              />
+            ))}
+          </div>
+        </Section>
 
-        {/* ── 招待状 (4スロット) ── */}
-        <MultiSelectSection
-          title="招待状"
-          titleColor={{ backgroundColor: "#7c3aed", color: "#ffffff" }}
-          options={[...TG_INVITATIONS]}
-          values={form.invitation}
-          slots={MULTI_SLOTS}
-          onChange={(i, v) => setArraySlot("invitation", i, v)}
-        />
+        {/* ── 招待状 (16択・複数選択可) ── */}
+        <Section title="招待状">
+          <div className="grid grid-cols-4 gap-1">
+            {([...TG_INVITATIONS] as string[]).map((inv) => {
+              const sep = inv.indexOf(" - ");
+              const name = sep !== -1 ? inv.slice(0, sep) : inv;
+              const hint = sep !== -1 ? inv.slice(sep + 3) : "";
+              return (
+                <IconBtn
+                  key={inv}
+                  selected={form.invitation.includes(inv)}
+                  onClick={() => toggleMulti("invitation", inv)}
+                  color={getInvitationCellColor(inv)}
+                  label={name}
+                  subLabel={hint}
+                />
+              );
+            })}
+          </div>
+        </Section>
       </div>
 
       {/* ===== 保存ボタン (最下部・2分割) ===== */}
@@ -266,174 +412,44 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
   );
 }
 
-// ─── ZenchoSection ───────────────────────────────────────────────────────────
-// ゾーンごとの固定スロット。各ゾーンに「-」「前兆」「東京上空」を選択。
-// 格納フォーマット: "ゾーン:タイプ" (例: "100:東京上空")
+// ─── 共通サブコンポーネント ───────────────────────────────────────────────────
 
-function ZenchoSection({
-  values, onChange,
-}: {
-  values: string[];
-  onChange: (next: string[]) => void;
-}) {
-  // values → ゾーンキーのマップ
-  const zoneMap: Record<string, string> = {};
-  for (const v of values) {
-    const col = v.indexOf(":");
-    if (col !== -1) zoneMap[v.slice(0, col)] = v.slice(col + 1);
-  }
-
-  function handleChange(zone: string, type: string) {
-    const filtered = values.filter((v) => !v.startsWith(zone + ":"));
-    onChange(type ? [...filtered, `${zone}:${type}`] : filtered);
-  }
-
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
-      <span
-        className="inline-block text-[11px] font-mono font-bold px-3 py-1 rounded mb-3"
-        style={{ backgroundColor: "#ef4444", color: "#ffffff" }}
-      >
-        前兆履歴
-      </span>
-      <div className="grid grid-cols-3 gap-2">
-        {([...TG_ZENCHO_ZONES] as string[]).map((zone) => {
-          const current = zoneMap[zone] ?? "";
-          return (
-            <div key={zone} className="flex flex-col gap-1">
-              <span className="text-[10px] font-mono text-gray-500 text-center font-bold">
-                {zone}
-              </span>
-              <select
-                className="w-full text-sm font-mono border-2 border-gray-300 rounded px-1 py-3 focus:outline-none focus:border-gray-500 bg-white text-center"
-                value={current}
-                onChange={(e) => handleChange(zone, e.target.value)}
-              >
-                <option value="">-</option>
-                {([...TG_ZENCHO_TYPES] as string[]).map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─── MultiSelectSection ───────────────────────────────────────────────────────
-
-interface MultiSelectSectionProps {
-  title: string;
-  titleColor: CellColor;
-  options: readonly string[];
-  values: string[];
-  slots: number;
-  onChange: (index: number, value: string) => void;
-  colorFn?: (v: string) => CellColor;
-}
-
-function MultiSelectSection({
-  title, titleColor, options, values, slots, onChange, colorFn,
-}: MultiSelectSectionProps) {
-  const slotValues = Array.from({ length: slots }, (_, i) => values[i] ?? "");
-
-  return (
-    <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
-      <span
-        className="inline-block text-[11px] font-mono font-bold px-3 py-1 rounded mb-3"
-        style={titleColor}
-      >
-        {title}
-      </span>
-      <div className="flex flex-col gap-2">
-        {slotValues.map((val, i) => {
-          const indicatorColor = val && colorFn ? colorFn(val) : null;
-          return (
-            <div key={i} className="flex items-center gap-2">
-              <span className="text-[10px] font-mono text-gray-400 w-5 text-right flex-shrink-0">
-                {i + 1}.
-              </span>
-              <div className="flex-1">
-                {indicatorColor && (
-                  <div
-                    className="text-[9px] font-mono px-2 py-0.5 rounded-t truncate"
-                    style={indicatorColor}
-                  >
-                    {val}
-                  </div>
-                )}
-                <select
-                  className="w-full text-sm font-mono border-2 border-gray-300 rounded px-2 py-3 focus:outline-none focus:border-gray-500 bg-white"
-                  style={indicatorColor ? { borderRadius: "0 0 0.375rem 0.375rem" } : {}}
-                  value={val}
-                  onChange={(e) => onChange(i, e.target.value)}
-                >
-                  <option value="">なし</option>
-                  {options.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ─── ColoredSel ──────────────────────────────────────────────────────────────
-
-function ColoredSel({
-  value, onChange, options, colorFn, emptyLabel, labelFn,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: string[];
-  colorFn: (v: string) => CellColor;
-  emptyLabel?: string;
-  labelFn?: (v: string) => string;
-}) {
-  const indicatorColor = value ? colorFn(value) : null;
-  const hint = value ? getHintFromValue(value) : null;
-
-  return (
-    <div>
-      {indicatorColor && (
-        <div
-          className="text-[10px] font-mono px-2 py-1 rounded-t text-center truncate font-medium"
-          style={indicatorColor}
-        >
-          {hint ?? value}
-        </div>
-      )}
-      <select
-        className="w-full text-sm font-mono border-2 border-gray-300 px-2 py-3 focus:outline-none focus:border-gray-500 bg-white"
-        style={{
-          ...(indicatorColor ? { borderRadius: "0 0 0.375rem 0.375rem" } : { borderRadius: "0.375rem" }),
-        }}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt === "" ? (emptyLabel ?? "なし") : (labelFn ? labelFn(opt) : opt)}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-// ─── FormCell ────────────────────────────────────────────────────────────────
-
-function FormCell({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="text-[11px] font-mono text-gray-500 font-medium">{label}</span>
+      <p className="text-[10px] font-mono text-gray-500 font-bold mb-2 uppercase tracking-wide">{title}</p>
       {children}
     </div>
+  );
+}
+
+/**
+ * UIレギュレーション1準拠スクエアボタン
+ * 選択時: 指定カラー + boxShadow / 未選択: グレー
+ */
+function IconBtn({
+  selected, onClick, color, label, subLabel,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  color: CellColor;
+  label: string;
+  subLabel?: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="py-3 rounded font-mono font-bold transition-all active:scale-95 text-center flex flex-col items-center justify-center"
+      style={
+        selected
+          ? { ...color, boxShadow: "0 0 0 2px #1f2937" }
+          : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
+      }
+    >
+      <span className="text-[10px] leading-tight">{label}</span>
+      {subLabel && (
+        <span className="text-[7px] opacity-75 mt-0.5 leading-tight text-center px-0.5">{subLabel}</span>
+      )}
+    </button>
   );
 }
