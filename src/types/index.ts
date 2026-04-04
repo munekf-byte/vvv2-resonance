@@ -34,6 +34,8 @@ export interface TGNormalBlock {
   invitation: string[];
   /** 前兆履歴 — 複数記録可 (TG_ZENCHO values) */
   zencho: string[];
+  /** アイキャッチ (TG_EYECATCH | "") */
+  eyecatch: string;
   /** フリーメモ */
   memo?: string;
 }
@@ -60,14 +62,20 @@ export interface TGBattle {
 
 /** エンディングカード記録 */
 export interface TGEndingCard {
-  whiteWeak: number;     // 白カード 奇数示唆〔弱〕回数
-  whiteStrong: number;   // 白カード 奇数示唆〔強〕回数
-  blueWeak: number;      // 青カード 奇数示唆〔弱〕回数
-  blueStrong: number;    // 青カード 奇数示唆〔強〕回数
-  redWeak: number;       // 赤カード 高設定示唆〔弱〕回数
-  redStrong: number;     // 赤カード 高設定示唆〔強〕回数
-  copperType: string;    // 銅カード種別 label (TG_COPPER_CARD_TYPES[].label | "")
-  confirmedType: string; // 確定カード種別 label (TG_CONFIRMED_CARD_TYPES[].label | "")
+  whiteWeak: number;    // 白カード 奇数設定示唆〔弱〕回数
+  whiteStrong: number;  // 白カード 奇数設定示唆〔強〕回数
+  blueWeak: number;     // 青カード 偶数設定示唆〔弱〕回数
+  blueStrong: number;   // 青カード 偶数設定示唆〔強〕回数
+  redWeak: number;      // 赤カード 高設定示唆〔弱〕回数
+  redStrong: number;    // 赤カード 高設定示唆〔強〕回数
+  copper1: number;      // 【銅】設定1否定 回数
+  copper2: number;      // 【銅】設定2否定 回数
+  copper3: number;      // 【銅】設定3否定 回数
+  copper4: number;      // 【銅】設定4否定 回数
+  confirmed1: number;   // 【銀】設定3以上濃厚 回数
+  confirmed2: number;   // 【金】設定4以上濃厚 回数
+  confirmed3: number;   // 【金】設定5以上濃厚 回数
+  confirmed4: number;   // 【虹】設定6濃厚 回数
 }
 
 /** SET行 — 喰種対決1SET分 */
@@ -83,6 +91,7 @@ export interface TGATSet {
   endingSuggestion?: string; // 終了画面示唆 ([終了画面] prefix のみ)
   trophy?: string;           // トロフィー
   endingCard?: TGEndingCard; // エンディングカード記録
+  memo?: string;             // フリーメモ
   directAdds: TGDirectAdd[]; // 直乗せ max 10
   battles: TGBattle[];       // 対決（契機+成績） max 10
 }

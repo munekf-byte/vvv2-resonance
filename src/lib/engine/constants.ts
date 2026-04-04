@@ -114,6 +114,15 @@ export const TG_INVITATIONS = [
   "特別な夜 - 設定6濃厚",
 ] as const;
 
+export const TG_EYECATCH = [
+  "金木研",
+  "霧嶋董香",
+  "笛口雛実",
+  "月山習",
+  "神代利世",
+  "赫眼/喰種ver.",
+] as const;
+
 // =============================================================================
 // AT記録 定数
 // =============================================================================
@@ -225,16 +234,16 @@ export const TG_ENDING_CARD_LABELS = [
 
 /** 銅カード (ad-22/23) */
 export const TG_COPPER_CARD_TYPES = [
-  { label: "【銅】設定1否定", character: "鈴屋什造" },
-  { label: "【銅】設定2否定", character: "高槻泉" },
-  { label: "【銅】設定3否定", character: "梟" },
-  { label: "【銅】設定4否定", character: "エト" },
+  { key: "copper1", label: "【銅】設定1否定", character: "鈴屋什造", color: "#a1887f", textColor: "#fff" },
+  { key: "copper2", label: "【銅】設定2否定", character: "高槻泉",   color: "#8d6e63", textColor: "#fff" },
+  { key: "copper3", label: "【銅】設定3否定", character: "梟",       color: "#795548", textColor: "#fff" },
+  { key: "copper4", label: "【銅】設定4否定", character: "エト",     color: "#4e342e", textColor: "#fff" },
 ] as const;
 
 /** 確定カード (ad-24〜28) */
 export const TG_CONFIRMED_CARD_TYPES = [
-  { label: "【銀】設定3以上濃厚", character: "金木研" },
-  { label: "【金】設定4以上濃厚", character: "神代利世" },
-  { label: "【金】設定5以上濃厚", character: "隻眼の梟" },
-  { label: "【虹】設定6濃厚",    character: "有馬貴将" },
+  { key: "confirmed1", label: "【銀】設定3以上濃厚", character: "金木研",   color: "#9e9e9e", textColor: "#fff", rainbow: false },
+  { key: "confirmed2", label: "【金】設定4以上濃厚", character: "神代利世", color: "#f9a825", textColor: "#000", rainbow: false },
+  { key: "confirmed3", label: "【金】設定5以上濃厚", character: "隻眼の梟", color: "#e65100", textColor: "#fff", rainbow: false },
+  { key: "confirmed4", label: "【虹】設定6濃厚",    character: "有馬貴将", color: "#9333ea", textColor: "#fff", rainbow: true  },
 ] as const;

@@ -4,7 +4,7 @@
 // タブ: 通常時 | AT記録
 // =============================================================================
 
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useEffect, useCallback, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import type { PlaySession, NormalBlock, TGATRow, TGATSet, TGATEntry } from "@/types";
 import { useSessionStore } from "@/store/useSessionStore";
@@ -13,6 +13,7 @@ import { NormalBlockEditDashboard } from "@/components/tg/NormalBlockEditDashboa
 import { ATBlockList } from "@/components/tg/ATBlockList";
 import { ATBlockEditDashboard } from "@/components/tg/ATBlockEditDashboard";
 import { lsLoadSession, lsSaveSession } from "@/lib/tg/localStore";
+import { estimateAllModes } from "@/lib/engine/modeEstimation";
 
 interface PlayClientPageProps {
   initialSession: PlaySession;
@@ -98,6 +99,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const atLabels   = computeAtLabels(blocks);
   const atKeyList  = computeAtKeyList(blocks);
   const atCount    = blocks.filter((b) => b.atWin).length;
+  const modeProbs  = useMemo(() => estimateAllModes(blocks), [blocks]);
 
   // ── 通常時ハンドラ ──────────────────────────────────────────────────────────
   function handleNormalEdit(block: NormalBlock, index: number) {
@@ -188,7 +190,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               <p className="text-sm font-mono font-bold text-white truncate">
                 {session?.machineName ?? "セッション"}
               </p>
-              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v1.5</span>
+              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v1.6</span>
             </div>
             <p className="text-[10px] font-mono text-gray-400">
               {activeTab === "normal"
@@ -238,6 +240,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           <NormalBlockList
             blocks={blocks}
             atLabels={atLabels}
+            modeProbs={modeProbs}
             onEdit={handleNormalEdit}
             onDelete={(blockId) => deleteNormalBlock(blockId)}
           />

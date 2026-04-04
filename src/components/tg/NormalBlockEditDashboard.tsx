@@ -1,9 +1,9 @@
 "use client";
 // =============================================================================
-// TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード v1.5
+// TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード v1.6
 // UIレギュレーション1準拠
 // セクション順: メインカード(3+3+2) → 前兆履歴 → 招待状 → 赫眼状態 → 精神世界 → フリーメモ
-// 終了画面示唆: CZ失敗系のみ表示 ([cz失敗] prefix)
+// nd-10/12/14: 5スロット独立プルダウン方式（最大5回入力）
 // =============================================================================
 
 import { useState } from "react";
@@ -13,11 +13,12 @@ import {
   TG_ENDING_SUGGESTIONS, TG_TROPHIES, TG_KAKUGAN,
   TG_SHINSEKAI, TG_INVITATIONS,
   TG_ZENCHO_ZONES, TG_ZENCHO_TYPES,
+  TG_EYECATCH,
 } from "@/lib/engine/constants";
 import {
   getZoneCellColor, getModeCellColor, getTriggerCellColor, getEventCellColor,
-  getEndingCellColor, getTrophyCellColor, getKakuganCellColor, getShinsekaiCellColor,
-  getInvitationCellColor, getSuggestionListLines,
+  getEndingCellColor, getTrophyCellColor,
+  getSuggestionListLines,
   abbrevMode, abbrevTrigger, abbrevEvent,
   type CellColor,
 } from "@/lib/tg/cellColors";
@@ -26,6 +27,12 @@ import {
 const ENDING_SUGGESTIONS_NORMAL = TG_ENDING_SUGGESTIONS.filter((s) =>
   s.startsWith("[cz失敗]")
 );
+
+// 招待状の短縮ラベル (アイコン表示時は説明を省略)
+function invShortLabel(full: string): string {
+  const sep = full.indexOf(" - ");
+  return sep !== -1 ? full.slice(0, sep) : full;
+}
 
 interface Props {
   block: NormalBlock | null;
@@ -51,9 +58,12 @@ function emptyForm(): FormState {
     shinsekai:  [],
     invitation: [],
     zencho:     [],
+    eyecatch: "",
     memo: "",
   };
 }
+
+const MAX_SLOTS = 5;
 
 // ─── メインコンポーネント ──────────────────────────────────────────────────────
 
@@ -67,12 +77,14 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function toggleMulti(field: "kakugan" | "shinsekai" | "invitation", value: string) {
-    const current = form[field] as string[];
-    setField(field, current.includes(value)
-      ? current.filter((v) => v !== value)
-      : [...current, value]
-    );
+  /** スロット方式の個別セット (kakugan / shinsekai / invitation) */
+  function setSlot(field: "kakugan" | "shinsekai" | "invitation", index: number, value: string) {
+    const current = [...(form[field] as string[])];
+    while (current.length <= index) current.push("");
+    current[index] = value;
+    // 末尾の空要素を除去
+    while (current.length > 0 && current[current.length - 1] === "") current.pop();
+    setField(field, current);
   }
 
   function setZencho(zone: string, type: string) {
@@ -119,7 +131,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
         {/* ── メインカード ── */}
         <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4 space-y-3">
 
-          {/* Row 1: 実G数 (nd-1) | ゾーン (nd-2) | 推定MODE (nd-3) */}
+          {/* Row 1: 実G数 | ゾーン | 推定MODE */}
           <div className="grid grid-cols-3 gap-2">
             <FormCell label="実G数">
               <input
@@ -153,7 +165,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
             </FormCell>
           </div>
 
-          {/* Row 2: 当選契機 (nd-4) | イベント (nd-5) | AT初当たり (nd-6) */}
+          {/* Row 2: 当選契機 | イベント | AT初当たり */}
           <div className="grid grid-cols-3 gap-2">
             <FormCell label="当選契機">
               <ColoredSelectIcon
@@ -190,7 +202,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
             </FormCell>
           </div>
 
-          {/* Row 3: 終了画面示唆 (nd-7) | トロフィー (nd-18) */}
+          {/* Row 3: 終了画面示唆 | トロフィー */}
           <div className="grid grid-cols-2 gap-3">
             <FormCell label="終了画面示唆">
               <ColoredSelectIcon
@@ -215,7 +227,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
           </div>
         </div>
 
-        {/* ── 前兆履歴 (nd-8) — コンパクトスロット・タップ循環 ── */}
+        {/* ── 前兆履歴 (nd-8) ── */}
         <Section title="前兆履歴">
           <div className="grid grid-cols-3 gap-2">
             {([...TG_ZENCHO_ZONES] as string[]).map((zone) => (
@@ -229,55 +241,61 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
           </div>
         </Section>
 
-        {/* ── 招待状 (nd-10) — 2列レイアウト ── */}
-        <Section title="招待状">
-          <div className="grid grid-cols-2 gap-1.5">
-            {([...TG_INVITATIONS] as string[]).map((inv) => {
-              const sep = inv.indexOf(" - ");
-              const name = sep !== -1 ? inv.slice(0, sep) : inv;
-              const hint = sep !== -1 ? inv.slice(sep + 3) : "";
-              return (
-                <IconBtn
-                  key={inv}
-                  selected={form.invitation.includes(inv)}
-                  onClick={() => toggleMulti("invitation", inv)}
-                  color={getInvitationCellColor(inv)}
-                  label={name}
-                  subLabel={hint}
-                />
-              );
-            })}
-          </div>
+        {/* ── 招待状 (nd-10) — 5スロット独立プルダウン ── */}
+        <Section title="招待状（最大5回）">
+          <MultiSlotPicker
+            values={form.invitation}
+            options={[...TG_INVITATIONS]}
+            onChange={(vals) => setField("invitation", vals)}
+            displayFn={invShortLabel}
+            accentColor="#5b21b6"
+            borderActive="#7c3aed"
+          />
+          <p className="text-[8px] text-gray-400 font-mono mt-1.5">各スロットを独立してタップ選択できます</p>
         </Section>
 
-        {/* ── 赫眼状態 (nd-12) — 4列 ── */}
-        <Section title="赫眼状態">
-          <div className="grid grid-cols-4 gap-2">
-            {([...TG_KAKUGAN] as string[]).map((k) => (
-              <IconBtn
-                key={k}
-                selected={form.kakugan.includes(k)}
-                onClick={() => toggleMulti("kakugan", k)}
-                color={getKakuganCellColor(k)}
-                label={k}
-              />
-            ))}
-          </div>
-        </Section>
-
-        {/* ── 精神世界 (nd-14) — 3列 ── */}
-        <Section title="精神世界">
+        {/* ── アイキャッチ ── */}
+        <Section title="アイキャッチ">
           <div className="grid grid-cols-3 gap-2">
-            {([...TG_SHINSEKAI] as string[]).map((s) => (
-              <IconBtn
-                key={s}
-                selected={form.shinsekai.includes(s)}
-                onClick={() => toggleMulti("shinsekai", s)}
-                color={getShinsekaiCellColor(s)}
-                label={s}
-              />
+            {(["", ...TG_EYECATCH] as string[]).map((ec) => (
+              <button
+                key={ec || "__empty__"}
+                onClick={() => setField("eyecatch", ec)}
+                className="py-3 rounded text-[10px] font-mono font-bold transition-all active:scale-95 text-center leading-tight"
+                style={
+                  form.eyecatch === ec
+                    ? ec === "赫眼/喰種ver."
+                      ? { backgroundColor: "#b91c1c", color: "#fff", boxShadow: "0 0 0 2px #1f2937" }
+                      : { backgroundColor: "#374151", color: "#fff", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
+                }
+              >
+                {ec || "なし"}
+              </button>
             ))}
           </div>
+        </Section>
+
+        {/* ── 赫眼状態 (nd-12) — 5スロット独立プルダウン ── */}
+        <Section title="赫眼状態（最大5回）">
+          <MultiSlotPicker
+            values={form.kakugan}
+            options={[...TG_KAKUGAN]}
+            onChange={(vals) => setField("kakugan", vals)}
+            accentColor="#b91c1c"
+            borderActive="#991b1b"
+          />
+        </Section>
+
+        {/* ── 精神世界 (nd-14) — 5スロット独立プルダウン ── */}
+        <Section title="精神世界（最大5回）">
+          <MultiSlotPicker
+            values={form.shinsekai}
+            options={[...TG_SHINSEKAI]}
+            onChange={(vals) => setField("shinsekai", vals)}
+            accentColor="#1e40af"
+            borderActive="#1d4ed8"
+          />
         </Section>
 
         {/* ── フリーメモ (nd-16) ── */}
@@ -315,8 +333,78 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
   );
 }
 
+// ─── MultiSlotPicker (nd-10/12/14 用) ─────────────────────────────────────────
+// 5個のスロットを並べ、各スロットが独立してプルダウン選択できる形式
+
+function MultiSlotPicker({
+  values, options, onChange, displayFn,
+  accentColor = "#374151", borderActive = "#374151",
+  maxSlots = MAX_SLOTS, slotHeight = 60,
+}: {
+  values: string[];
+  options: string[];
+  onChange: (vals: string[]) => void;
+  displayFn?: (v: string) => string;
+  accentColor?: string;
+  borderActive?: string;
+  maxSlots?: number;
+  slotHeight?: number;
+}) {
+  function setSlot(index: number, value: string) {
+    const next = [...values];
+    while (next.length <= index) next.push("");
+    next[index] = value;
+    while (next.length > 0 && next[next.length - 1] === "") next.pop();
+    onChange(next);
+  }
+
+  return (
+    <div className="grid grid-cols-5 gap-1.5">
+      {Array.from({ length: maxSlots }, (_, i) => {
+        const value = values[i] ?? "";
+        const hasValue = value !== "";
+        const displayLabel = hasValue ? (displayFn ? displayFn(value) : value) : "—";
+
+        return (
+          <div key={i} className="flex flex-col rounded overflow-hidden border-2"
+            style={hasValue ? { borderColor: borderActive } : { borderColor: "#e5e7eb" }}>
+            {/* スロット番号 */}
+            <div className="text-center text-[8px] font-mono py-0.5 leading-none"
+              style={{ backgroundColor: "#f3f4f6", color: "#9ca3af" }}>
+              {i + 1}
+            </div>
+            {/* 選択エリア */}
+            <div className="relative flex-1 overflow-hidden" style={{ minHeight: `${slotHeight}px` }}>
+              <div
+                className="absolute inset-0 flex items-center justify-center px-0.5 pointer-events-none"
+                style={hasValue
+                  ? { backgroundColor: accentColor, color: "#ffffff" }
+                  : { backgroundColor: "#f9fafb", color: "#d1d5db" }
+                }
+              >
+                <span className="text-[9px] font-mono font-bold text-center leading-tight break-all line-clamp-4">
+                  {displayLabel}
+                </span>
+              </div>
+              <select
+                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                value={value}
+                onChange={(e) => setSlot(i, e.target.value)}
+              >
+                <option value="">—</option>
+                {options.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── ZenchoSlot (nd-9) ────────────────────────────────────────────────────────
-// 上段: ゾーン数（グレー背景） / 下段: タップで循環（⋄ + 切替テキスト）
 
 const ZENCHO_TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   "東京上空": { bg: "#c62828", color: "#ffffff" },
@@ -350,24 +438,24 @@ function ZenchoSlot({ zone, value, onChange }: {
       >
         {zone}G
       </div>
-      {/* 下段: タイプ or 切替インジケーター */}
+      {/* 下段: タイプ or 切替インジケーター (2倍サイズ) */}
       <button
         onClick={cycle}
         className="flex flex-col items-center justify-center transition-colors active:opacity-80"
         style={{
-          minHeight: "48px",
+          minHeight: "52px",
           backgroundColor: col ? col.bg : "#f9fafb",
           color: col ? col.color : "#9ca3af",
         }}
       >
         {hasValue ? (
-          <span className="text-[8px] font-mono font-bold text-center leading-tight px-0.5">
+          <span className="text-[10px] font-mono font-bold text-center leading-tight px-0.5">
             {value}
           </span>
         ) : (
           <>
-            <span className="text-base leading-none">⋄</span>
-            <span className="text-[7px] font-mono leading-none mt-0.5">切替</span>
+            <span className="text-[28px] leading-none">⋄</span>
+            <span className="text-[12px] font-mono leading-tight mt-0.5">タップ切替</span>
           </>
         )}
       </button>
@@ -395,22 +483,18 @@ function FormCell({ label, children }: { label: string; children: React.ReactNod
   );
 }
 
-/**
- * ColoredSelectIcon — UIレギュレーション1準拠 単一選択コンポーネント
- * 外観: 色付きアイコンボタン（常に黒枠あり）/ 動作: native picker
- */
 function ColoredSelectIcon({
   value, onChange, options, colorFn, labelFn, emptyLabel = "未選択",
 }: {
   value: string;
   onChange: (v: string) => void;
   options: string[];
-  colorFn: (v: string) => CellColor;
+  colorFn?: (v: string) => CellColor;
   labelFn?: (v: string) => string;
   emptyLabel?: string;
 }) {
   const hasValue = value !== "" && value !== undefined;
-  const color = hasValue ? colorFn(value) : null;
+  const color: CellColor | null = hasValue && colorFn ? colorFn(value) : null;
   const displayLabel = hasValue ? (labelFn ? labelFn(value) : value) : emptyLabel;
 
   return (
@@ -441,35 +525,5 @@ function ColoredSelectIcon({
         ))}
       </select>
     </div>
-  );
-}
-
-/**
- * IconBtn — UIレギュレーション1準拠 多択選択ボタン
- */
-function IconBtn({
-  selected, onClick, color, label, subLabel,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  color: CellColor;
-  label: string;
-  subLabel?: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="py-3 rounded font-mono font-bold transition-all active:scale-95 text-center flex flex-col items-center justify-center"
-      style={
-        selected
-          ? { ...color, boxShadow: "0 0 0 2px #1f2937" }
-          : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
-      }
-    >
-      <span className="text-[10px] leading-tight">{label}</span>
-      {subLabel && (
-        <span className="text-[7px] opacity-75 mt-0.5 leading-tight text-center px-0.5">{subLabel}</span>
-      )}
-    </button>
   );
 }

@@ -21,10 +21,12 @@ import {
   AT_NONE_COLOR,
   type CellColor,
 } from "@/lib/tg/cellColors";
+import { topModes, type ModeProbs } from "@/lib/engine/modeEstimation";
 
 interface Props {
   blocks: NormalBlock[];
   atLabels: Map<string, string>;
+  modeProbs?: ModeProbs[];
   onEdit: (block: NormalBlock, index: number) => void;
   onDelete: (blockId: string) => void;
 }
@@ -38,7 +40,7 @@ const HDR_TEXT     = "#f9fafb";
 const COL_BORDER_R = "border-r border-gray-400";
 const ROW_BORDER   = "border-b border-gray-400";
 
-export function NormalBlockList({ blocks, atLabels, onEdit, onDelete }: Props) {
+export function NormalBlockList({ blocks, atLabels, modeProbs, onEdit, onDelete }: Props) {
   const [expandedId,    setExpandedId]    = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null); // 削除確認中の blockId
 
@@ -96,7 +98,9 @@ export function NormalBlockList({ blocks, atLabels, onEdit, onDelete }: Props) {
               block.kakugan.length > 0 ||
               block.shinsekai.length > 0 ||
               block.invitation.length > 0 ||
-              block.zencho.length > 0;
+              block.zencho.length > 0 ||
+              !!block.memo ||
+              !!modeProbs?.[index];
 
             return (
               <div key={block.id} className={`${ROW_BORDER} bg-white`}>
@@ -128,7 +132,14 @@ export function NormalBlockList({ blocks, atLabels, onEdit, onDelete }: Props) {
 
                   {/* 推定モード */}
                   <Cell color={getModeCellColor(block.estimatedMode)} borderR>
-                    <span className="text-[11px] font-bold">{abbrevMode(block.estimatedMode)}</span>
+                    <span className="flex flex-col items-center leading-tight">
+                      <span className="text-[11px] font-bold">{abbrevMode(block.estimatedMode)}</span>
+                      {modeProbs?.[index] && (
+                        <span className="text-[7px] font-mono opacity-70 leading-none mt-0.5">
+                          {topModes(modeProbs[index], 2).map((m) => `${m.mode}${m.pct}%`).join(" ")}
+                        </span>
+                      )}
+                    </span>
                   </Cell>
 
                   {/* 当選契機 */}
@@ -203,6 +214,22 @@ export function NormalBlockList({ blocks, atLabels, onEdit, onDelete }: Props) {
                         </div>
                       )}
                     </div>
+
+                    {/* モード推定確率 */}
+                    {modeProbs?.[index] && (
+                      <div className="col-span-2 mb-1">
+                        <p className="text-[9px] text-gray-500 font-mono mb-1 font-bold">モード推定</p>
+                        <ModeProbBar probs={modeProbs[index]} />
+                      </div>
+                    )}
+
+                    {/* フリーメモ */}
+                    {block.memo && (
+                      <div className="mb-3 px-2 py-1.5 bg-yellow-50 border border-yellow-300 rounded">
+                        <p className="text-[9px] text-yellow-700 font-mono mb-0.5 font-bold">メモ</p>
+                        <p className="text-[10px] text-gray-700 font-mono whitespace-pre-wrap">{block.memo}</p>
+                      </div>
+                    )}
 
                     {/* アクションボタン */}
                     <div className="flex gap-2 justify-end border-t border-gray-300 pt-2">
@@ -342,6 +369,41 @@ function MultiColorField({ label, values, color }: { label: string; values: stri
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** モード確率の横棒バー */
+const MODE_BAR_COLORS: Record<string, string> = {
+  A: "#f4cccc", B: "#fff2cc", C: "#d9ead3", CH: "#cfe2f3", PRE: "#d0e0e3", HEAVEN: "#a4c2f4",
+};
+const MODE_BAR_TEXT: Record<string, string> = {
+  A: "#7c2d12", B: "#78350f", C: "#14532d", CH: "#1e3a5f", PRE: "#134e4a", HEAVEN: "#1e3a8a",
+};
+
+function ModeProbBar({ probs }: { probs: ModeProbs }) {
+  const entries = (["A", "B", "C", "CH", "PRE", "HEAVEN"] as const)
+    .map((m) => ({ mode: m, pct: Math.round(probs[m] * 100) }))
+    .filter((e) => e.pct > 0);
+
+  return (
+    <div className="flex rounded overflow-hidden border border-gray-300" style={{ height: "22px" }}>
+      {entries.map(({ mode, pct }) => (
+        <div
+          key={mode}
+          className="flex items-center justify-center overflow-hidden"
+          style={{
+            width: `${pct}%`,
+            minWidth: pct > 0 ? "18px" : 0,
+            backgroundColor: MODE_BAR_COLORS[mode],
+            color: MODE_BAR_TEXT[mode],
+          }}
+        >
+          <span className="text-[8px] font-mono font-bold whitespace-nowrap">
+            {mode}{pct}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

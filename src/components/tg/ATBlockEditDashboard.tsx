@@ -1,6 +1,6 @@
 "use client";
 // =============================================================================
-// TOKYO GHOUL RESONANCE: AT記録 編集ダッシュボード v1.5
+// TOKYO GHOUL RESONANCE: AT記録 編集ダッシュボード v1.6
 // SET行セクション順:
 //   AT種別 → 敵キャラ → 対決 → 直乗せ → BITES種別 → BITES獲得
 //   → 終了画面示唆 → トロフィー → エンディングカード
@@ -44,7 +44,8 @@ function emptyEndingCard(): TGEndingCard {
     whiteWeak: 0, whiteStrong: 0,
     blueWeak: 0,  blueStrong: 0,
     redWeak: 0,   redStrong: 0,
-    copperType: "", confirmedType: "",
+    copper1: 0, copper2: 0, copper3: 0, copper4: 0,
+    confirmed1: 0, confirmed2: 0, confirmed3: 0, confirmed4: 0,
   };
 }
 
@@ -60,6 +61,7 @@ function emptySet(defaultAtType?: string): Omit<TGATSet, "id"> {
     endingSuggestion: "",
     trophy: "",
     endingCard: emptyEndingCard(),
+    memo: "",
     directAdds: [],
     battles: [],
   };
@@ -72,13 +74,6 @@ function emptyArima(): Omit<TGArimaJudgment, "id"> {
 function getBitesDesc(bt: string): string {
   const m = bt.match(/\[([^\]]+)\]/);
   return m ? m[1] : "";
-}
-
-function getConfirmedCardStyle(label: string): { backgroundColor: string; color: string } {
-  if (label.startsWith("【銀】")) return { backgroundColor: "#9e9e9e", color: "#fff" };
-  if (label.startsWith("【金】")) return { backgroundColor: "#f9a825", color: "#000" };
-  if (label.startsWith("【虹】")) return { backgroundColor: "#e91e63", color: "#fff" };
-  return { backgroundColor: "#374151", color: "#fff" };
 }
 
 // =============================================================================
@@ -157,6 +152,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           endingSuggestion: initial.endingSuggestion   ?? "",
           trophy:           initial.trophy             ?? "",
           endingCard:       initial.endingCard         ?? emptyEndingCard(),
+          memo:             initial.memo               ?? "",
         }
       : emptySet(defaultAtType)
   );
@@ -409,50 +405,49 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
             })}
           </div>
 
-          {/* 銅カード (ad-22/23) */}
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <p className="text-[9px] font-mono font-bold text-gray-500 mb-2">【銅カード】</p>
-            <div className="grid grid-cols-2 gap-2">
-              {TG_COPPER_CARD_TYPES.map(({ label, character }) => (
-                <button key={label}
-                  onClick={() => setEndingCardField("copperType", ec.copperType === label ? "" : label)}
-                  className="py-3 px-2 rounded text-center transition-all active:scale-95 border-2 flex flex-col items-center"
-                  style={
-                    ec.copperType === label
-                      ? { backgroundColor: "#795548", color: "#fff", borderColor: "#4e342e", boxShadow: "0 0 0 2px #1f2937" }
-                      : { backgroundColor: "#f3f4f6", color: "#6b7280", borderColor: "#e5e7eb" }
-                  }
-                >
-                  <span className="text-[10px] font-mono font-bold leading-tight">{label}</span>
-                  <span className="text-[8px] font-mono opacity-75 mt-0.5">{character}</span>
-                </button>
-              ))}
-            </div>
+          {/* 銅カード (ad-22/23) — カウンター形式 */}
+          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+            <p className="text-[9px] font-mono font-bold text-gray-500 mb-1">【銅カード】</p>
+            {TG_COPPER_CARD_TYPES.map(({ key, label, character, color, textColor }) => (
+              <EndingCardCounter
+                key={key}
+                label={`${label} — ${character}`}
+                color={color}
+                textColor={textColor}
+                value={(ec[key as keyof TGEndingCard] as number) ?? 0}
+                characters={[]}
+                onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
+              />
+            ))}
           </div>
 
-          {/* 確定カード (ad-24〜28) */}
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <p className="text-[9px] font-mono font-bold text-gray-500 mb-2">【確定カード】</p>
-            <div className="grid grid-cols-2 gap-2">
-              {TG_CONFIRMED_CARD_TYPES.map(({ label, character }) => {
-                const style = getConfirmedCardStyle(label);
-                return (
-                  <button key={label}
-                    onClick={() => setEndingCardField("confirmedType", ec.confirmedType === label ? "" : label)}
-                    className="py-3 px-2 rounded text-center transition-all active:scale-95 border-2 flex flex-col items-center"
-                    style={
-                      ec.confirmedType === label
-                        ? { ...style, borderColor: "#1f2937", boxShadow: "0 0 0 2px #1f2937" }
-                        : { backgroundColor: "#f3f4f6", color: "#6b7280", borderColor: "#e5e7eb" }
-                    }
-                  >
-                    <span className="text-[10px] font-mono font-bold leading-tight">{label}</span>
-                    <span className="text-[8px] font-mono opacity-75 mt-0.5">{character}</span>
-                  </button>
-                );
-              })}
-            </div>
+          {/* 確定カード (ad-24〜28) — カウンター形式 */}
+          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+            <p className="text-[9px] font-mono font-bold text-gray-500 mb-1">【確定カード】</p>
+            {TG_CONFIRMED_CARD_TYPES.map(({ key, label, character, color, textColor, rainbow }) => (
+              <EndingCardCounter
+                key={key}
+                label={`${label} — ${character}`}
+                color={color}
+                textColor={textColor}
+                value={(ec[key as keyof TGEndingCard] as number) ?? 0}
+                characters={[]}
+                onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
+                rainbow={rainbow}
+              />
+            ))}
           </div>
+        </Section>
+
+        {/* フリーメモ */}
+        <Section title="フリーメモ">
+          <textarea
+            value={form.memo ?? ""}
+            onChange={(e) => setField("memo", e.target.value)}
+            placeholder="AT記録に関するメモ…"
+            className="w-full border border-gray-300 rounded px-3 py-2 text-[12px] font-mono focus:outline-none focus:border-gray-500 resize-none"
+            rows={3}
+          />
         </Section>
       </div>
 
@@ -694,7 +689,7 @@ function ArimaForm({ initial, onSave, onTempSave }: {
 // ─── EndingCardCounter (ad-16〜21) ────────────────────────────────────────────
 
 function EndingCardCounter({
-  label, color, textColor, value, onChange, characters,
+  label, color, textColor, value, onChange, characters, rainbow,
 }: {
   label: string;
   color: string;
@@ -702,6 +697,7 @@ function EndingCardCounter({
   value: number;
   onChange: (v: number) => void;
   characters: readonly string[];
+  rainbow?: boolean;
 }) {
   return (
     <div
@@ -740,13 +736,18 @@ function EndingCardCounter({
       <div className="flex-1 min-w-0 flex flex-col justify-center">
         <p
           className="text-[9px] font-mono font-bold leading-tight px-1 py-0.5 rounded"
-          style={{ backgroundColor: color, color: textColor }}
+          style={rainbow
+            ? { background: "linear-gradient(90deg,#ef4444,#f59e0b,#22c55e,#3b82f6,#8b5cf6,#ec4899)", color: "#fff" }
+            : { backgroundColor: color, color: textColor }
+          }
         >
           {label}
         </p>
-        <p className="text-[8px] font-mono text-gray-400 leading-snug mt-0.5 px-0.5">
-          {characters.join("　")}
-        </p>
+        {characters.length > 0 && (
+          <p className="text-[8px] font-mono text-gray-400 leading-snug mt-0.5 px-0.5">
+            {characters.join("　")}
+          </p>
+        )}
       </div>
     </div>
   );
