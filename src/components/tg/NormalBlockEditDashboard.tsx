@@ -1,6 +1,6 @@
 "use client";
 // =============================================================================
-// TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード v1.4
+// TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード v1.5
 // UIレギュレーション1準拠
 //   単一選択 → ColoredSelectIcon（アイコンボタン外観 + native picker）
 //   複数選択 → IconBtn グリッド
