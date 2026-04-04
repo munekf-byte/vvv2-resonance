@@ -3,6 +3,7 @@
 // TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード v1.5
 // UIレギュレーション1準拠
 // セクション順: メインカード(3+3+2) → 前兆履歴 → 招待状 → 赫眼状態 → 精神世界 → フリーメモ
+// 終了画面示唆: CZ失敗系のみ表示 ([cz失敗] prefix)
 // =============================================================================
 
 import { useState } from "react";
@@ -20,6 +21,11 @@ import {
   abbrevMode, abbrevTrigger, abbrevEvent,
   type CellColor,
 } from "@/lib/tg/cellColors";
+
+// 通常時では CZ失敗系のみ / AT側では終了画面系のみ (重複排除)
+const ENDING_SUGGESTIONS_NORMAL = TG_ENDING_SUGGESTIONS.filter((s) =>
+  s.startsWith("[cz失敗]")
+);
 
 interface Props {
   block: NormalBlock | null;
@@ -113,14 +119,15 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
         {/* ── メインカード ── */}
         <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4 space-y-3">
 
-          {/* Row 1: 実G数 | ゾーン | 推定MODE */}
+          {/* Row 1: 実G数 (nd-1) | ゾーン (nd-2) | 推定MODE (nd-3) */}
           <div className="grid grid-cols-3 gap-2">
             <FormCell label="実G数">
               <input
                 type="number"
                 inputMode="numeric"
                 placeholder="G数"
-                className="w-full text-sm font-mono border-2 border-gray-300 rounded px-1 py-3 focus:outline-none focus:border-gray-500 bg-white text-center"
+                className="w-full text-sm font-mono rounded px-1 py-3 focus:outline-none bg-white text-center"
+                style={{ border: "1px solid #374151" }}
                 value={form.jisshuG ?? ""}
                 onChange={(e) =>
                   setField("jisshuG", e.target.value === "" ? null : Number(e.target.value))
@@ -146,7 +153,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
             </FormCell>
           </div>
 
-          {/* Row 2: 当選契機 | イベント | AT初当たり */}
+          {/* Row 2: 当選契機 (nd-4) | イベント (nd-5) | AT初当たり (nd-6) */}
           <div className="grid grid-cols-3 gap-2">
             <FormCell label="当選契機">
               <ColoredSelectIcon
@@ -170,11 +177,11 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
             <FormCell label="AT初当たり">
               <button
                 onClick={() => setField("atWin", !form.atWin)}
-                className="w-full font-mono font-bold text-[11px] rounded border-2 transition-all active:scale-95"
+                className="w-full font-mono font-bold text-[11px] rounded transition-all active:scale-95"
                 style={{
                   ...(form.atWin
-                    ? { backgroundColor: "#38761d", color: "#fff", borderColor: "#38761d", boxShadow: "0 0 0 2px #1f2937" }
-                    : { backgroundColor: "#f3f4f6", color: "#6b7280", borderColor: "#e5e7eb" }),
+                    ? { backgroundColor: "#38761d", color: "#fff", border: "1px solid #374151", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "1px solid #374151" }),
                   minHeight: "56px",
                 }}
               >
@@ -183,13 +190,13 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
             </FormCell>
           </div>
 
-          {/* Row 3: 終了画面示唆 | トロフィー */}
+          {/* Row 3: 終了画面示唆 (nd-7) | トロフィー (nd-18) */}
           <div className="grid grid-cols-2 gap-3">
             <FormCell label="終了画面示唆">
               <ColoredSelectIcon
                 value={form.endingSuggestion}
                 onChange={(v) => setField("endingSuggestion", v)}
-                options={["", ...TG_ENDING_SUGGESTIONS]}
+                options={["", ...ENDING_SUGGESTIONS_NORMAL]}
                 colorFn={getEndingCellColor}
                 labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
                 emptyLabel="なし"
@@ -208,7 +215,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
           </div>
         </div>
 
-        {/* ── 前兆履歴 (nd-8) — コンパクトスロット方式 ── */}
+        {/* ── 前兆履歴 (nd-8) — コンパクトスロット・タップ循環 ── */}
         <Section title="前兆履歴">
           <div className="grid grid-cols-3 gap-2">
             {([...TG_ZENCHO_ZONES] as string[]).map((zone) => (
@@ -220,12 +227,11 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
               />
             ))}
           </div>
-          <p className="text-[8px] text-gray-400 font-mono mt-1.5">タップで前兆タイプを循環切替</p>
         </Section>
 
-        {/* ── 招待状 (nd-10) ── */}
+        {/* ── 招待状 (nd-10) — 2列レイアウト ── */}
         <Section title="招待状">
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-2 gap-1.5">
             {([...TG_INVITATIONS] as string[]).map((inv) => {
               const sep = inv.indexOf(" - ");
               const name = sep !== -1 ? inv.slice(0, sep) : inv;
@@ -244,7 +250,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
           </div>
         </Section>
 
-        {/* ── 赫眼状態 (nd-12) ── */}
+        {/* ── 赫眼状態 (nd-12) — 4列 ── */}
         <Section title="赫眼状態">
           <div className="grid grid-cols-4 gap-2">
             {([...TG_KAKUGAN] as string[]).map((k) => (
@@ -259,7 +265,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
           </div>
         </Section>
 
-        {/* ── 精神世界 (nd-14) ── */}
+        {/* ── 精神世界 (nd-14) — 3列 ── */}
         <Section title="精神世界">
           <div className="grid grid-cols-3 gap-2">
             {([...TG_SHINSEKAI] as string[]).map((s) => (
@@ -278,7 +284,8 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
         <Section title="フリーメモ">
           <textarea
             placeholder="メモを入力..."
-            className="w-full border-2 border-gray-300 rounded px-2 py-2 text-[12px] font-mono focus:outline-none focus:border-gray-500 resize-none bg-white"
+            className="w-full rounded px-2 py-2 text-[12px] font-mono focus:outline-none resize-none bg-white"
+            style={{ border: "1px solid #374151" }}
             rows={3}
             value={form.memo ?? ""}
             onChange={(e) => setField("memo", e.target.value || undefined)}
@@ -309,7 +316,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
 }
 
 // ─── ZenchoSlot (nd-9) ────────────────────────────────────────────────────────
-// 上段: ゾーン数表示（グレー背景）/ 下段: タップで循環切替
+// 上段: ゾーン数（グレー背景） / 下段: タップで循環（⋄ + 切替テキスト）
 
 const ZENCHO_TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   "東京上空": { bg: "#c62828", color: "#ffffff" },
@@ -343,14 +350,14 @@ function ZenchoSlot({ zone, value, onChange }: {
       >
         {zone}G
       </div>
-      {/* 下段: タイプ表示 + タップ切替 */}
+      {/* 下段: タイプ or 切替インジケーター */}
       <button
         onClick={cycle}
-        className="flex items-center justify-center transition-colors active:opacity-80"
+        className="flex flex-col items-center justify-center transition-colors active:opacity-80"
         style={{
           minHeight: "48px",
           backgroundColor: col ? col.bg : "#f9fafb",
-          color: col ? col.color : "#d1d5db",
+          color: col ? col.color : "#9ca3af",
         }}
       >
         {hasValue ? (
@@ -358,7 +365,10 @@ function ZenchoSlot({ zone, value, onChange }: {
             {value}
           </span>
         ) : (
-          <span className="text-xl leading-none">⋄</span>
+          <>
+            <span className="text-base leading-none">⋄</span>
+            <span className="text-[7px] font-mono leading-none mt-0.5">切替</span>
+          </>
         )}
       </button>
     </div>
@@ -387,7 +397,7 @@ function FormCell({ label, children }: { label: string; children: React.ReactNod
 
 /**
  * ColoredSelectIcon — UIレギュレーション1準拠 単一選択コンポーネント
- * 外観: 色付きアイコンボタン / 動作: native picker (overlay select)
+ * 外観: 色付きアイコンボタン（常に黒枠あり）/ 動作: native picker
  */
 function ColoredSelectIcon({
   value, onChange, options, colorFn, labelFn, emptyLabel = "未選択",
@@ -404,13 +414,16 @@ function ColoredSelectIcon({
   const displayLabel = hasValue ? (labelFn ? labelFn(value) : value) : emptyLabel;
 
   return (
-    <div className="relative rounded overflow-hidden" style={{ minHeight: "56px" }}>
+    <div
+      className="relative rounded overflow-hidden"
+      style={{ minHeight: "56px", border: "1px solid #374151" }}
+    >
       <div
         className="absolute inset-0 flex items-center justify-center gap-1 font-mono font-bold text-[11px] text-center px-1 pointer-events-none"
         style={
           color
             ? { ...color }
-            : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #e5e7eb" }
+            : { backgroundColor: "#f3f4f6", color: "#9ca3af" }
         }
       >
         <span className="truncate">{displayLabel}</span>

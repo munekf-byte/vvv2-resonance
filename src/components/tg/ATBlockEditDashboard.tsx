@@ -4,7 +4,7 @@
 // SET行セクション順:
 //   AT種別 → 敵キャラ → 対決 → 直乗せ → BITES種別 → BITES獲得
 //   → 終了画面示唆 → トロフィー → エンディングカード
-// 有馬ジャッジメント行: 成否 / 役 / CCGの死神
+// 終了画面示唆: [終了画面] prefix のみ表示
 // =============================================================================
 
 import { useState } from "react";
@@ -16,13 +16,18 @@ import {
   TG_ARIMA_RESULTS, TG_ARIMA_ROLES, TG_CCG_COINS,
   TG_MAX_BATTLE_RESULTS, TG_MAX_DIRECT_ADDS,
   TG_ENDING_SUGGESTIONS, TG_TROPHIES,
-  TG_ENDING_CARD_LABELS, TG_SILVER_CARD_TYPES, TG_CONFIRMED_CARD_TYPES,
+  TG_ENDING_CARD_LABELS, TG_COPPER_CARD_TYPES, TG_CONFIRMED_CARD_TYPES,
 } from "@/lib/engine/constants";
 import {
   getATCharColor, getBitesTypeCellColor, getBitesTypeShort,
   getEndingCellColor, getTrophyCellColor, getSuggestionListLines,
   type CellColor,
 } from "@/lib/tg/cellColors";
+
+// AT側では [終了画面] prefix のみ
+const ENDING_SUGGESTIONS_AT = TG_ENDING_SUGGESTIONS.filter((s) =>
+  s.startsWith("[終了画面]")
+);
 
 interface Props {
   atKey: string;
@@ -39,7 +44,7 @@ function emptyEndingCard(): TGEndingCard {
     whiteWeak: 0, whiteStrong: 0,
     blueWeak: 0,  blueStrong: 0,
     redWeak: 0,   redStrong: 0,
-    silverType: "", confirmedType: "",
+    copperType: "", confirmedType: "",
   };
 }
 
@@ -64,10 +69,16 @@ function emptyArima(): Omit<TGArimaJudgment, "id"> {
   return { rowType: "arima", result: "", role: "", ccgCoins: null };
 }
 
-/** BITES種別の括弧内説明を抽出 */
 function getBitesDesc(bt: string): string {
   const m = bt.match(/\[([^\]]+)\]/);
   return m ? m[1] : "";
+}
+
+function getConfirmedCardStyle(label: string): { backgroundColor: string; color: string } {
+  if (label.startsWith("【銀】")) return { backgroundColor: "#9e9e9e", color: "#fff" };
+  if (label.startsWith("【金】")) return { backgroundColor: "#f9a825", color: "#000" };
+  if (label.startsWith("【虹】")) return { backgroundColor: "#e91e63", color: "#fff" };
+  return { backgroundColor: "#374151", color: "#fff" };
 }
 
 // =============================================================================
@@ -81,7 +92,6 @@ export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", defau
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-gray-100">
-      {/* ヘッダー */}
       <div
         className="sticky top-0 flex-shrink-0 border-b-2 border-gray-500 safe-area-top shadow-sm"
         style={{ backgroundColor: "#1f2937" }}
@@ -141,12 +151,12 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
     initial
       ? {
           ...initial,
-          battles:      initial.battles      ?? [],
-          directAdds:   initial.directAdds   ?? [],
-          kakugan:      initial.kakugan       ?? [],
-          endingSuggestion: initial.endingSuggestion ?? "",
-          trophy:       initial.trophy        ?? "",
-          endingCard:   initial.endingCard    ?? emptyEndingCard(),
+          battles:          initial.battles          ?? [],
+          directAdds:       initial.directAdds        ?? [],
+          kakugan:          initial.kakugan            ?? [],
+          endingSuggestion: initial.endingSuggestion   ?? "",
+          trophy:           initial.trophy             ?? "",
+          endingCard:       initial.endingCard         ?? emptyEndingCard(),
         }
       : emptySet(defaultAtType)
   );
@@ -167,7 +177,6 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
     }));
   }
 
-  // ── 対決スロット操作 ──────────────────────────────────────────────────────
   function setBattleTrigger(i: number, trigger: string) {
     const next = [...form.battles];
     next[i] = { trigger, result: next[i]?.result ?? "" };
@@ -182,7 +191,6 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
     setField("battles", next.slice(0, TG_MAX_BATTLE_RESULTS));
   }
 
-  // ── 直乗せスロット操作 ────────────────────────────────────────────────────
   function setDirectTrigger(i: number, trigger: string) {
     const next: TGDirectAdd[] = [...form.directAdds];
     next[i] = { id: next[i]?.id || crypto.randomUUID(), trigger, coins: next[i]?.coins ?? null };
@@ -361,7 +369,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
               <PickerCell
                 value={form.endingSuggestion ?? ""}
                 onChange={(v) => setField("endingSuggestion", v)}
-                options={["", ...TG_ENDING_SUGGESTIONS]}
+                options={["", ...ENDING_SUGGESTIONS_AT]}
                 colorFn={getEndingCellColor}
                 labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
                 emptyLabel="なし"
@@ -384,8 +392,8 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
         {/* エンディングカード (ad-15) */}
         <Section title="エンディングカード">
           {/* 白/青/赤 カード カウンター (ad-16〜21) */}
-          <div className="space-y-0">
-            {TG_ENDING_CARD_LABELS.map(({ key, label, color, textColor }) => {
+          <div className="space-y-2">
+            {TG_ENDING_CARD_LABELS.map(({ key, label, color, textColor, characters }) => {
               const count = ec[key as keyof TGEndingCard] as number;
               return (
                 <EndingCardCounter
@@ -394,51 +402,57 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
                   color={color}
                   textColor={textColor}
                   value={count}
+                  characters={characters}
                   onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
                 />
               );
             })}
           </div>
 
-          {/* 銀カード (ad-22) */}
-          {TG_SILVER_CARD_TYPES.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-200">
-              <p className="text-[9px] font-mono font-bold text-gray-500 mb-2">【銀カード】</p>
-              <div className="grid grid-cols-4 gap-2">
-                {TG_SILVER_CARD_TYPES.map((t) => (
-                  <button key={t}
-                    onClick={() => setEndingCardField("silverType", ec.silverType === t ? "" : t)}
-                    className="py-3 rounded text-[10px] font-mono font-bold transition-all active:scale-95 text-center border-2"
-                    style={
-                      ec.silverType === t
-                        ? { backgroundColor: "#78909c", color: "#fff", borderColor: "#546e7a", boxShadow: "0 0 0 2px #1f2937" }
-                        : { backgroundColor: "#f3f4f6", color: "#6b7280", borderColor: "#e5e7eb" }
-                    }
-                  >{t}</button>
-                ))}
-              </div>
+          {/* 銅カード (ad-22/23) */}
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <p className="text-[9px] font-mono font-bold text-gray-500 mb-2">【銅カード】</p>
+            <div className="grid grid-cols-2 gap-2">
+              {TG_COPPER_CARD_TYPES.map(({ label, character }) => (
+                <button key={label}
+                  onClick={() => setEndingCardField("copperType", ec.copperType === label ? "" : label)}
+                  className="py-3 px-2 rounded text-center transition-all active:scale-95 border-2 flex flex-col items-center"
+                  style={
+                    ec.copperType === label
+                      ? { backgroundColor: "#795548", color: "#fff", borderColor: "#4e342e", boxShadow: "0 0 0 2px #1f2937" }
+                      : { backgroundColor: "#f3f4f6", color: "#6b7280", borderColor: "#e5e7eb" }
+                  }
+                >
+                  <span className="text-[10px] font-mono font-bold leading-tight">{label}</span>
+                  <span className="text-[8px] font-mono opacity-75 mt-0.5">{character}</span>
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
-          {/* 確定カード (ad-24) */}
-          {TG_CONFIRMED_CARD_TYPES.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-gray-200">
-              <p className="text-[9px] font-mono font-bold text-gray-500 mb-2">【確定カード】</p>
-              <div className="grid grid-cols-4 gap-2">
-                {TG_CONFIRMED_CARD_TYPES.map((t) => (
-                  <button key={t}
-                    onClick={() => setEndingCardField("confirmedType", ec.confirmedType === t ? "" : t)}
-                    className="py-3 rounded text-[10px] font-mono font-bold transition-all active:scale-95 text-center border-2"
+          {/* 確定カード (ad-24〜28) */}
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <p className="text-[9px] font-mono font-bold text-gray-500 mb-2">【確定カード】</p>
+            <div className="grid grid-cols-2 gap-2">
+              {TG_CONFIRMED_CARD_TYPES.map(({ label, character }) => {
+                const style = getConfirmedCardStyle(label);
+                return (
+                  <button key={label}
+                    onClick={() => setEndingCardField("confirmedType", ec.confirmedType === label ? "" : label)}
+                    className="py-3 px-2 rounded text-center transition-all active:scale-95 border-2 flex flex-col items-center"
                     style={
-                      ec.confirmedType === t
-                        ? { backgroundColor: "#f9a825", color: "#000", borderColor: "#f57f17", boxShadow: "0 0 0 2px #1f2937" }
+                      ec.confirmedType === label
+                        ? { ...style, borderColor: "#1f2937", boxShadow: "0 0 0 2px #1f2937" }
                         : { backgroundColor: "#f3f4f6", color: "#6b7280", borderColor: "#e5e7eb" }
                     }
-                  >{t}</button>
-                ))}
-              </div>
+                  >
+                    <span className="text-[10px] font-mono font-bold leading-tight">{label}</span>
+                    <span className="text-[8px] font-mono opacity-75 mt-0.5">{character}</span>
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
         </Section>
       </div>
 
@@ -448,7 +462,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
 }
 
 // ─── スロット共通高さ定数 ────────────────────────────────────────────────────
-const SLOT_HALF_H = 54;
+const SLOT_HALF_H = 40; // 縮小: 54 → 40px
 
 // ─── SlotPickerButton ─────────────────────────────────────────────────────────
 function SlotPickerButton({
@@ -498,7 +512,7 @@ function SlotPickerButton({
   );
 }
 
-// ─── BattleSlot (ad-6) ───────────────────────────────────────────────────────
+// ─── BattleSlot (ad-6) — アンバー配色 ────────────────────────────────────────
 function BattleSlot({
   index, trigger, result, onTriggerChange, onResultToggle,
 }: {
@@ -515,21 +529,21 @@ function BattleSlot({
   return (
     <div
       className="flex flex-col rounded border-2 overflow-hidden"
-      style={active ? { borderColor: "#374151" } : { borderColor: "#e5e7eb" }}
+      style={active ? { borderColor: "#c2410c" } : { borderColor: "#fed7aa" }}
     >
-      <div className="text-center text-[8px] font-mono text-gray-400 py-0.5 leading-none"
-        style={{ backgroundColor: "#dde0e3" }}>
+      <div className="text-center text-[8px] font-mono py-0.5 leading-none"
+        style={{ backgroundColor: "#ffedd5", color: "#c2410c" }}>
         {index + 1}
       </div>
-      {/* 上段: 契機 — SlotPickerButton */}
+      {/* 上段: 契機 */}
       <SlotPickerButton
         value={trigger}
         onChange={onTriggerChange}
         options={[...TG_BATTLE_TRIGGERS]}
-        bgActive="#374151"
+        bgActive="#9a3412"
         colorActive="#ffffff"
-        bgInactive="#e8eaed"
-        borderBottom="2px solid #9ca3af"
+        bgInactive="#fff7ed"
+        borderBottom="2px solid #fdba74"
       />
       {/* 下段: 成績トグル */}
       <button
@@ -541,7 +555,7 @@ function BattleSlot({
             ? { backgroundColor: "#1b5e20", color: "#ffffff", fontSize: "18px" }
             : result === "×"
             ? { backgroundColor: "#b71c1c", color: "#ffffff", fontSize: "18px" }
-            : { backgroundColor: "#f9fafb", color: "#d1d5db", fontSize: "9px" }),
+            : { backgroundColor: "#fffbeb", color: "#c2410c", fontSize: "8px" }),
         }}
       >
         {result || "タップ\n切替え"}
@@ -565,10 +579,10 @@ function DirectAddSlot({
   return (
     <div
       className="flex flex-col rounded border-2 overflow-hidden"
-      style={active ? { borderColor: "#1565c0" } : { borderColor: "#e5e7eb" }}
+      style={active ? { borderColor: "#1565c0" } : { borderColor: "#bfdbfe" }}
     >
-      <div className="text-center text-[8px] font-mono text-blue-400 py-0.5 leading-none"
-        style={{ backgroundColor: "#dde8f7" }}>
+      <div className="text-center text-[8px] font-mono py-0.5 leading-none"
+        style={{ backgroundColor: "#dde8f7", color: "#1565c0" }}>
         {index + 1}
       </div>
       <SlotPickerButton
@@ -680,43 +694,40 @@ function ArimaForm({ initial, onSave, onTempSave }: {
 // ─── EndingCardCounter (ad-16〜21) ────────────────────────────────────────────
 
 function EndingCardCounter({
-  label, color, textColor, value, onChange,
+  label, color, textColor, value, onChange, characters,
 }: {
   label: string;
   color: string;
   textColor: string;
   value: number;
   onChange: (v: number) => void;
+  characters: readonly string[];
 }) {
   return (
     <div
-      className="flex items-center gap-2 py-2.5 border-b border-gray-100 last:border-0"
+      className="flex items-stretch gap-2 p-2 rounded border-2"
+      style={{ borderColor: color }}
     >
-      {/* カード色帯 */}
-      <div
-        className="w-1.5 self-stretch rounded-full shrink-0"
-        style={{ backgroundColor: color }}
-      />
-      {/* PUSH / -1 / 回数 */}
+      {/* PUSH / − / 回数 */}
       <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={() => onChange(value + 1)}
           className="w-11 h-11 rounded-full font-mono font-black text-[10px] active:scale-95 transition-transform shadow-sm"
-          style={{ backgroundColor: "#2e7d32", color: "#ffffff" }}
+          style={{ backgroundColor: "#c8e6c9", color: "#1b5e20" }}
         >
           PUSH
         </button>
         <button
           onClick={() => onChange(Math.max(0, value - 1))}
           className="w-11 h-11 rounded-full font-mono font-black text-base active:scale-95 transition-transform shadow-sm"
-          style={{ backgroundColor: "#c62828", color: "#ffffff" }}
+          style={{ backgroundColor: "#fce4ec", color: "#880e4f" }}
         >
           −
         </button>
         <div
           className="w-12 h-11 rounded border-2 flex items-center justify-center font-mono font-bold"
           style={{
-            borderColor: value > 0 ? "#374151" : "#e5e7eb",
+            borderColor: value > 0 ? color : "#e5e7eb",
             backgroundColor: value > 0 ? "#1f2937" : "#f9fafb",
             color: value > 0 ? "#ffffff" : "#9ca3af",
           }}
@@ -725,13 +736,16 @@ function EndingCardCounter({
           <span className="text-[8px] ml-0.5">回</span>
         </div>
       </div>
-      {/* カードラベル */}
-      <div className="flex-1 min-w-0">
+      {/* カード情報 */}
+      <div className="flex-1 min-w-0 flex flex-col justify-center">
         <p
-          className="text-[10px] font-mono font-bold leading-tight truncate px-1.5 py-0.5 rounded"
+          className="text-[9px] font-mono font-bold leading-tight px-1 py-0.5 rounded"
           style={{ backgroundColor: color, color: textColor }}
         >
           {label}
+        </p>
+        <p className="text-[8px] font-mono text-gray-400 leading-snug mt-0.5 px-0.5">
+          {characters.join("　")}
         </p>
       </div>
     </div>

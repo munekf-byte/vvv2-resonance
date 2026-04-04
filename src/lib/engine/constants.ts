@@ -186,21 +186,55 @@ export const TG_ZENCHO_TYPES = [
 ] as const;
 
 // =============================================================================
-// エンディングカード定数  ※銀カード・確定カードの内容は別途指示により更新
+// エンディングカード定数
 // =============================================================================
 
-/** エンディングカード — 白/青/赤カードの表示ラベル */
+/** エンディングカード — 白/青/赤カードの表示ラベル・カラー・出現キャラ */
 export const TG_ENDING_CARD_LABELS = [
-  { key: "whiteWeak",   label: "【白カード】奇数示唆〔弱〕", color: "#e0e0e0", textColor: "#424242" },
-  { key: "whiteStrong", label: "【白カード】奇数示唆〔強〕", color: "#bdbdbd", textColor: "#212121" },
-  { key: "blueWeak",    label: "【青カード】奇数示唆〔弱〕", color: "#90caf9", textColor: "#0d47a1" },
-  { key: "blueStrong",  label: "【青カード】奇数示唆〔強〕", color: "#1565c0", textColor: "#ffffff" },
-  { key: "redWeak",     label: "【赤カード】高設定示唆〔弱〕", color: "#ef9a9a", textColor: "#b71c1c" },
-  { key: "redStrong",   label: "【赤カード】高設定示唆〔強〕", color: "#c62828", textColor: "#ffffff" },
+  {
+    key: "whiteWeak", label: "【白カード】奇数設定示唆〔弱〕",
+    color: "#e0e0e0", textColor: "#424242",
+    characters: ["金木研", "霧嶋董香", "笛口雛実", "永近英良", "西尾錦", "月山習"],
+  },
+  {
+    key: "whiteStrong", label: "【白カード】奇数設定示唆〔強〕",
+    color: "#bdbdbd", textColor: "#212121",
+    characters: ["芳村", "四方蓮示", "ウタ", "イトリ", "古間円児", "入見カヤ"],
+  },
+  {
+    key: "blueWeak", label: "【青カード】偶数設定示唆〔弱〕",
+    color: "#90caf9", textColor: "#0d47a1",
+    characters: ["金木研", "霧嶋董香", "笛口雛実", "ナキ", "西尾錦", "月山習"],
+  },
+  {
+    key: "blueStrong", label: "【青カード】偶数設定示唆〔強〕",
+    color: "#1565c0", textColor: "#ffffff",
+    characters: ["亜門鋼太朗", "篠原幸紀", "滝澤政道", "真戸暁", "真戸呉緒", "丸手斎"],
+  },
+  {
+    key: "redWeak", label: "【赤カード】高設定示唆〔弱〕",
+    color: "#ef9a9a", textColor: "#b71c1c",
+    characters: ["鯱", "亜門鋼太朗", "篠原幸紀", "鈴屋什造"],
+  },
+  {
+    key: "redStrong", label: "【赤カード】高設定示唆〔強〕",
+    color: "#c62828", textColor: "#ffffff",
+    characters: ["鯱", "亜門鋼太朗", "篠原幸紀", "鈴屋什造"],
+  },
 ] as const;
 
-/** 銀カード種別 — 内容は別途指示 */
-export const TG_SILVER_CARD_TYPES: readonly string[] = []; // TODO: 別途指示で追加
+/** 銅カード (ad-22/23) */
+export const TG_COPPER_CARD_TYPES = [
+  { label: "【銅】設定1否定", character: "鈴屋什造" },
+  { label: "【銅】設定2否定", character: "高槻泉" },
+  { label: "【銅】設定3否定", character: "梟" },
+  { label: "【銅】設定4否定", character: "エト" },
+] as const;
 
-/** 確定カード種別 — 内容は別途指示 */
-export const TG_CONFIRMED_CARD_TYPES: readonly string[] = []; // TODO: 別途指示で追加
+/** 確定カード (ad-24〜28) */
+export const TG_CONFIRMED_CARD_TYPES = [
+  { label: "【銀】設定3以上濃厚", character: "金木研" },
+  { label: "【金】設定4以上濃厚", character: "神代利世" },
+  { label: "【金】設定5以上濃厚", character: "隻眼の梟" },
+  { label: "【虹】設定6濃厚",    character: "有馬貴将" },
+] as const;

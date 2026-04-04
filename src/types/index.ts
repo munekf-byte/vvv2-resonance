@@ -66,8 +66,8 @@ export interface TGEndingCard {
   blueStrong: number;    // 青カード 奇数示唆〔強〕回数
   redWeak: number;       // 赤カード 高設定示唆〔弱〕回数
   redStrong: number;     // 赤カード 高設定示唆〔強〕回数
-  silverType: string;    // 銀カード種別 (TG_SILVER_CARD_TYPES | "")
-  confirmedType: string; // 確定カード種別 (TG_CONFIRMED_CARD_TYPES | "")
+  copperType: string;    // 銅カード種別 label (TG_COPPER_CARD_TYPES[].label | "")
+  confirmedType: string; // 確定カード種別 label (TG_CONFIRMED_CARD_TYPES[].label | "")
 }
 
 /** SET行 — 喰種対決1SET分 */
