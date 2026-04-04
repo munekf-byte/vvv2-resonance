@@ -34,6 +34,8 @@ export interface TGNormalBlock {
   invitation: string[];
   /** 前兆履歴 — 複数記録可 (TG_ZENCHO values) */
   zencho: string[];
+  /** フリーメモ */
+  memo?: string;
 }
 
 /** Store 互換エイリアス */
@@ -56,18 +58,31 @@ export interface TGBattle {
   result: string;   // "○" | "×" | ""
 }
 
+/** エンディングカード記録 */
+export interface TGEndingCard {
+  whiteWeak: number;     // 白カード 奇数示唆〔弱〕回数
+  whiteStrong: number;   // 白カード 奇数示唆〔強〕回数
+  blueWeak: number;      // 青カード 奇数示唆〔弱〕回数
+  blueStrong: number;    // 青カード 奇数示唆〔強〕回数
+  redWeak: number;       // 赤カード 高設定示唆〔弱〕回数
+  redStrong: number;     // 赤カード 高設定示唆〔強〕回数
+  silverType: string;    // 銀カード種別 (TG_SILVER_CARD_TYPES | "")
+  confirmedType: string; // 確定カード種別 (TG_CONFIRMED_CARD_TYPES | "")
+}
+
 /** SET行 — 喰種対決1SET分 */
 export interface TGATSet {
   id: string;
   rowType: "set";
   atType: string;       // 通常AT / 裏AT / 隠れ裏AT（推測）
   character: string;    // 敵キャラ
-  disadvantage: string; // - / 不利益⭕️ / 不利益❌
+  disadvantage: string; // - / 不利益⭕️ / 不利益❌  ※フォーム非表示・型は保持
   bitesType: string;    // BITES種別
   bitesCoins: string;   // BITES獲得: "50"〜"3000" | "ED" | ""
-  kakugan?: string[];        // 赫眼状態
+  kakugan?: string[];        // 赫眼状態 ※フォーム非表示・型は保持
   endingSuggestion?: string; // 終了画面示唆 ([終了画面] prefix のみ)
   trophy?: string;           // トロフィー
+  endingCard?: TGEndingCard; // エンディングカード記録
   directAdds: TGDirectAdd[]; // 直乗せ max 10
   battles: TGBattle[];       // 対決（契機+成績） max 10
 }

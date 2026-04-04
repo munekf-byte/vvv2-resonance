@@ -184,3 +184,23 @@ export const TG_ZENCHO_TYPES = [
   "前兆",
   "東京上空",
 ] as const;
+
+// =============================================================================
+// エンディングカード定数  ※銀カード・確定カードの内容は別途指示により更新
+// =============================================================================
+
+/** エンディングカード — 白/青/赤カードの表示ラベル */
+export const TG_ENDING_CARD_LABELS = [
+  { key: "whiteWeak",   label: "【白カード】奇数示唆〔弱〕", color: "#e0e0e0", textColor: "#424242" },
+  { key: "whiteStrong", label: "【白カード】奇数示唆〔強〕", color: "#bdbdbd", textColor: "#212121" },
+  { key: "blueWeak",    label: "【青カード】奇数示唆〔弱〕", color: "#90caf9", textColor: "#0d47a1" },
+  { key: "blueStrong",  label: "【青カード】奇数示唆〔強〕", color: "#1565c0", textColor: "#ffffff" },
+  { key: "redWeak",     label: "【赤カード】高設定示唆〔弱〕", color: "#ef9a9a", textColor: "#b71c1c" },
+  { key: "redStrong",   label: "【赤カード】高設定示唆〔強〕", color: "#c62828", textColor: "#ffffff" },
+] as const;
+
+/** 銀カード種別 — 内容は別途指示 */
+export const TG_SILVER_CARD_TYPES: readonly string[] = []; // TODO: 別途指示で追加
+
+/** 確定カード種別 — 内容は別途指示 */
+export const TG_CONFIRMED_CARD_TYPES: readonly string[] = []; // TODO: 別途指示で追加

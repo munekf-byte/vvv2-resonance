@@ -1,21 +1,28 @@
 "use client";
 // =============================================================================
 // TOKYO GHOUL RESONANCE: AT記録 編集ダッシュボード v1.5
-// SET行: 対決（契機+成績 統合10枠） / 直乗せ（契機+枚数 10枠）
+// SET行セクション順:
+//   AT種別 → 敵キャラ → 対決 → 直乗せ → BITES種別 → BITES獲得
+//   → 終了画面示唆 → トロフィー → エンディングカード
 // 有馬ジャッジメント行: 成否 / 役 / CCGの死神
-// セクション順: AT種別 → 敵キャラ → 対決 → 直乗せ → 赫眼 → 不利益 → BITES種別 → BITES獲得
 // =============================================================================
 
 import { useState } from "react";
-import type { TGATRow, TGATSet, TGArimaJudgment, TGDirectAdd, TGBattle } from "@/types";
+import type { TGATRow, TGATSet, TGArimaJudgment, TGDirectAdd, TGBattle, TGEndingCard } from "@/types";
 import {
   TG_AT_TYPES, TG_AT_CHARACTERS, TG_BATTLE_TRIGGERS,
-  TG_DISADVANTAGE, TG_BITES_TYPES, TG_BITES_COINS,
+  TG_BITES_TYPES, TG_BITES_COINS,
   TG_DIRECT_ADD_TRIGGERS, TG_DIRECT_ADD_COINS,
   TG_ARIMA_RESULTS, TG_ARIMA_ROLES, TG_CCG_COINS,
-  TG_MAX_BATTLE_RESULTS, TG_MAX_DIRECT_ADDS, TG_KAKUGAN,
+  TG_MAX_BATTLE_RESULTS, TG_MAX_DIRECT_ADDS,
+  TG_ENDING_SUGGESTIONS, TG_TROPHIES,
+  TG_ENDING_CARD_LABELS, TG_SILVER_CARD_TYPES, TG_CONFIRMED_CARD_TYPES,
 } from "@/lib/engine/constants";
-import { getATCharColor, getBitesTypeCellColor, getBitesTypeShort, getKakuganCellColor } from "@/lib/tg/cellColors";
+import {
+  getATCharColor, getBitesTypeCellColor, getBitesTypeShort,
+  getEndingCellColor, getTrophyCellColor, getSuggestionListLines,
+  type CellColor,
+} from "@/lib/tg/cellColors";
 
 interface Props {
   atKey: string;
@@ -27,6 +34,15 @@ interface Props {
   onClose: () => void;
 }
 
+function emptyEndingCard(): TGEndingCard {
+  return {
+    whiteWeak: 0, whiteStrong: 0,
+    blueWeak: 0,  blueStrong: 0,
+    redWeak: 0,   redStrong: 0,
+    silverType: "", confirmedType: "",
+  };
+}
+
 function emptySet(defaultAtType?: string): Omit<TGATSet, "id"> {
   return {
     rowType: "set",
@@ -36,6 +52,9 @@ function emptySet(defaultAtType?: string): Omit<TGATSet, "id"> {
     bitesType: "",
     bitesCoins: "",
     kakugan: [],
+    endingSuggestion: "",
+    trophy: "",
+    endingCard: emptyEndingCard(),
     directAdds: [],
     battles: [],
   };
@@ -117,23 +136,35 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
   onSave: (r: TGATRow) => void;
   onTempSave: (r: TGATRow) => void;
 }) {
-  /** 前セットからAT種別が引き継がれているか（新規追加時のみ true） */
   const isAtTypeInherited = !!defaultAtType;
   const [form, setForm] = useState<Omit<TGATSet, "id">>(() =>
-    initial ? { ...initial, battles: initial.battles ?? [], directAdds: initial.directAdds ?? [], kakugan: initial.kakugan ?? [] }
-            : emptySet(defaultAtType)
+    initial
+      ? {
+          ...initial,
+          battles:      initial.battles      ?? [],
+          directAdds:   initial.directAdds   ?? [],
+          kakugan:      initial.kakugan       ?? [],
+          endingSuggestion: initial.endingSuggestion ?? "",
+          trophy:       initial.trophy        ?? "",
+          endingCard:   initial.endingCard    ?? emptyEndingCard(),
+        }
+      : emptySet(defaultAtType)
   );
-  const [bitesFreeInput, setBitesFreeInput] = useState(
-    () => {
-      if (!initial?.bitesCoins) return "";
-      // プリセット値でなければフリー入力とみなす
-      const presets = TG_BITES_COINS.map(String);
-      return presets.includes(initial.bitesCoins) ? "" : initial.bitesCoins;
-    }
-  );
+  const [bitesFreeInput, setBitesFreeInput] = useState(() => {
+    if (!initial?.bitesCoins) return "";
+    const presets = TG_BITES_COINS.map(String);
+    return presets.includes(initial.bitesCoins) ? "" : initial.bitesCoins;
+  });
 
   function setField<K extends keyof typeof form>(k: K, v: typeof form[K]) {
     setForm((p) => ({ ...p, [k]: v }));
+  }
+
+  function setEndingCardField(k: keyof TGEndingCard, v: string | number) {
+    setForm((p) => ({
+      ...p,
+      endingCard: { ...(p.endingCard ?? emptyEndingCard()), [k]: v },
+    }));
   }
 
   // ── 対決スロット操作 ──────────────────────────────────────────────────────
@@ -173,11 +204,13 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
   function handleSave()     { onSave(buildRow()); }
   function handleTempSave() { onTempSave(buildRow()); }
 
+  const ec = form.endingCard ?? emptyEndingCard();
+
   return (
     <>
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-32">
 
-        {/* AT種別 */}
+        {/* AT種別 (ad-1) */}
         <Section title="AT種別">
           {isAtTypeInherited && (
             <div className="mb-2 px-2 py-1.5 rounded text-[9px] font-mono text-amber-700 bg-amber-50 border border-amber-300">
@@ -202,7 +235,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           </div>
         </Section>
 
-        {/* 敵キャラ */}
+        {/* 敵キャラ (ad-3) */}
         <Section title="敵キャラ">
           <div className="grid grid-cols-4 gap-2">
             {TG_AT_CHARACTERS.map((c) => {
@@ -219,7 +252,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           </div>
         </Section>
 
-        {/* 対決（契機+成績 統合10枠） */}
+        {/* 対決 (ad-5) */}
         <Section title="対決（契機 + 成績）">
           <div className="grid grid-cols-5 gap-1.5">
             {Array.from({ length: TG_MAX_BATTLE_RESULTS }, (_, i) => {
@@ -241,7 +274,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           </p>
         </Section>
 
-        {/* 直乗せ（契機+枚数 10枠） */}
+        {/* 直乗せ (ad-7) */}
         <Section title="直乗せ（契機 + 枚数）">
           <div className="grid grid-cols-5 gap-1.5">
             {Array.from({ length: TG_MAX_DIRECT_ADDS }, (_, i) => {
@@ -263,48 +296,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           </p>
         </Section>
 
-        {/* 赫眼状態 */}
-        <Section title="赫眼状態">
-          <div className="grid grid-cols-4 gap-2">
-            {TG_KAKUGAN.map((k) => {
-              const sel = (form.kakugan ?? []).includes(k);
-              const col = getKakuganCellColor(k);
-              return (
-                <button key={k}
-                  onClick={() => {
-                    const current = form.kakugan ?? [];
-                    setField("kakugan", sel ? current.filter((v) => v !== k) : [...current, k]);
-                  }}
-                  className="py-3 rounded text-[11px] font-mono font-bold transition-all active:scale-95 text-center"
-                  style={sel ? { ...col, boxShadow: "0 0 0 2px #1f2937" }
-                             : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }}
-                >{k}</button>
-              );
-            })}
-          </div>
-        </Section>
-
-        {/* 不利益 */}
-        <Section title="不利益">
-          <div className="grid grid-cols-3 gap-2">
-            {TG_DISADVANTAGE.map((d) => (
-              <button key={d} onClick={() => setField("disadvantage", d)}
-                className="py-4 rounded text-[11px] font-mono font-bold transition-all active:scale-95 text-center"
-                style={
-                  form.disadvantage === d
-                    ? d === "不利益⭕️"
-                      ? { backgroundColor: "#2e7d32", color: "#fff", border: "2px solid #2e7d32", boxShadow: "0 0 0 2px #1f2937" }
-                      : d === "不利益❌"
-                      ? { backgroundColor: "#c62828", color: "#fff", border: "2px solid #c62828", boxShadow: "0 0 0 2px #1f2937" }
-                      : { backgroundColor: "#374151", color: "#f9fafb", border: "2px solid #374151", boxShadow: "0 0 0 2px #1f2937" }
-                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
-                }
-              >{d}</button>
-            ))}
-          </div>
-        </Section>
-
-        {/* BITES種別 */}
+        {/* BITES種別 (ad-9) */}
         <Section title="BITES種別">
           <div className="grid grid-cols-3 gap-2">
             {TG_BITES_TYPES.map((bt) => {
@@ -325,7 +317,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           </div>
         </Section>
 
-        {/* BITES獲得 */}
+        {/* BITES獲得 (ad-11) */}
         <Section title="BITES獲得">
           <div className="grid grid-cols-5 gap-2 mb-3">
             {TG_BITES_COINS.map((c) => (
@@ -343,7 +335,6 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
               >{c === "ED" ? "ED" : `${c}枚`}</button>
             ))}
           </div>
-          {/* フリー入力（百足覚醒など枚数が変動する場合） */}
           <div className="flex items-center gap-2 border-t border-gray-200 pt-3">
             <span className="text-[9px] font-mono text-gray-500 shrink-0">フリー入力</span>
             <input
@@ -361,6 +352,94 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
             <span className="text-[10px] font-mono text-gray-500 shrink-0">枚</span>
           </div>
         </Section>
+
+        {/* 終了画面示唆 (nd-13) + トロフィー (nd-14) */}
+        <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-wide">終了画面示唆</span>
+              <PickerCell
+                value={form.endingSuggestion ?? ""}
+                onChange={(v) => setField("endingSuggestion", v)}
+                options={["", ...TG_ENDING_SUGGESTIONS]}
+                colorFn={getEndingCellColor}
+                labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
+                emptyLabel="なし"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-wide">トロフィー</span>
+              <PickerCell
+                value={form.trophy ?? ""}
+                onChange={(v) => setField("trophy", v)}
+                options={["", ...TG_TROPHIES]}
+                colorFn={getTrophyCellColor}
+                labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
+                emptyLabel="なし"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* エンディングカード (ad-15) */}
+        <Section title="エンディングカード">
+          {/* 白/青/赤 カード カウンター (ad-16〜21) */}
+          <div className="space-y-0">
+            {TG_ENDING_CARD_LABELS.map(({ key, label, color, textColor }) => {
+              const count = ec[key as keyof TGEndingCard] as number;
+              return (
+                <EndingCardCounter
+                  key={key}
+                  label={label}
+                  color={color}
+                  textColor={textColor}
+                  value={count}
+                  onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
+                />
+              );
+            })}
+          </div>
+
+          {/* 銀カード (ad-22) */}
+          {TG_SILVER_CARD_TYPES.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <p className="text-[9px] font-mono font-bold text-gray-500 mb-2">【銀カード】</p>
+              <div className="grid grid-cols-4 gap-2">
+                {TG_SILVER_CARD_TYPES.map((t) => (
+                  <button key={t}
+                    onClick={() => setEndingCardField("silverType", ec.silverType === t ? "" : t)}
+                    className="py-3 rounded text-[10px] font-mono font-bold transition-all active:scale-95 text-center border-2"
+                    style={
+                      ec.silverType === t
+                        ? { backgroundColor: "#78909c", color: "#fff", borderColor: "#546e7a", boxShadow: "0 0 0 2px #1f2937" }
+                        : { backgroundColor: "#f3f4f6", color: "#6b7280", borderColor: "#e5e7eb" }
+                    }
+                  >{t}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 確定カード (ad-24) */}
+          {TG_CONFIRMED_CARD_TYPES.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <p className="text-[9px] font-mono font-bold text-gray-500 mb-2">【確定カード】</p>
+              <div className="grid grid-cols-4 gap-2">
+                {TG_CONFIRMED_CARD_TYPES.map((t) => (
+                  <button key={t}
+                    onClick={() => setEndingCardField("confirmedType", ec.confirmedType === t ? "" : t)}
+                    className="py-3 rounded text-[10px] font-mono font-bold transition-all active:scale-95 text-center border-2"
+                    style={
+                      ec.confirmedType === t
+                        ? { backgroundColor: "#f9a825", color: "#000", borderColor: "#f57f17", boxShadow: "0 0 0 2px #1f2937" }
+                        : { backgroundColor: "#f3f4f6", color: "#6b7280", borderColor: "#e5e7eb" }
+                    }
+                  >{t}</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </Section>
       </div>
 
       <SaveBar onTempSave={handleTempSave} onSave={handleSave} color="#b91c1c" />
@@ -368,13 +447,10 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
   );
 }
 
-// ─── スロット共通高さ定数 (対決・直乗せで統一) ───────────────────────────────
-const SLOT_HALF_H = 54; // 上段・下段それぞれ 54px (1:1)
+// ─── スロット共通高さ定数 ────────────────────────────────────────────────────
+const SLOT_HALF_H = 54;
 
-// ─── SlotPickerButton ──────────────────────────────────────────────────────────
-// UIレギュレーション1準拠: slot内単一選択
-// 外観: 色付きボタン / 動作: native picker (透明 select overlay)
-
+// ─── SlotPickerButton ─────────────────────────────────────────────────────────
 function SlotPickerButton({
   value, onChange, options, labelFn, optionLabelFn,
   height = SLOT_HALF_H,
@@ -422,8 +498,7 @@ function SlotPickerButton({
   );
 }
 
-// ─── BattleSlot ──────────────────────────────────────────────────────────────
-
+// ─── BattleSlot (ad-6) ───────────────────────────────────────────────────────
 function BattleSlot({
   index, trigger, result, onTriggerChange, onResultToggle,
 }: {
@@ -442,12 +517,11 @@ function BattleSlot({
       className="flex flex-col rounded border-2 overflow-hidden"
       style={active ? { borderColor: "#374151" } : { borderColor: "#e5e7eb" }}
     >
-      {/* スロット番号 */}
       <div className="text-center text-[8px] font-mono text-gray-400 py-0.5 leading-none"
         style={{ backgroundColor: "#dde0e3" }}>
         {index + 1}
       </div>
-      {/* 上段: 契機 — SlotPickerButton (UIレギュレーション1準拠) */}
+      {/* 上段: 契機 — SlotPickerButton */}
       <SlotPickerButton
         value={trigger}
         onChange={onTriggerChange}
@@ -457,27 +531,26 @@ function BattleSlot({
         bgInactive="#e8eaed"
         borderBottom="2px solid #9ca3af"
       />
-      {/* 下段: 成績トグル — 明るい背景で押せる感を演出 */}
+      {/* 下段: 成績トグル */}
       <button
         onClick={onResultToggle}
-        className="flex items-center justify-center text-sm font-bold transition-colors active:opacity-80"
+        className="flex items-center justify-center font-bold transition-colors active:opacity-80"
         style={{
           minHeight: `${SLOT_HALF_H}px`,
           ...(result === "○"
-            ? { backgroundColor: "#1b5e20", color: "#ffffff" }
+            ? { backgroundColor: "#1b5e20", color: "#ffffff", fontSize: "18px" }
             : result === "×"
-            ? { backgroundColor: "#b71c1c", color: "#ffffff" }
-            : { backgroundColor: "#f9fafb", color: "#c8ccd0" }),
+            ? { backgroundColor: "#b71c1c", color: "#ffffff", fontSize: "18px" }
+            : { backgroundColor: "#f9fafb", color: "#d1d5db", fontSize: "9px" }),
         }}
       >
-        {result || "—"}
+        {result || "タップ\n切替え"}
       </button>
     </div>
   );
 }
 
-// ─── DirectAddSlot ────────────────────────────────────────────────────────────
-
+// ─── DirectAddSlot (ad-8) ─────────────────────────────────────────────────────
 function DirectAddSlot({
   index, trigger, coins, onTriggerChange, onCoinsChange,
 }: {
@@ -494,12 +567,10 @@ function DirectAddSlot({
       className="flex flex-col rounded border-2 overflow-hidden"
       style={active ? { borderColor: "#1565c0" } : { borderColor: "#e5e7eb" }}
     >
-      {/* スロット番号 — 対決と同じ色調で統一 */}
       <div className="text-center text-[8px] font-mono text-blue-400 py-0.5 leading-none"
         style={{ backgroundColor: "#dde8f7" }}>
         {index + 1}
       </div>
-      {/* 上段: 役 — SlotPickerButton (UIレギュレーション1準拠) */}
       <SlotPickerButton
         value={trigger}
         onChange={onTriggerChange}
@@ -509,7 +580,6 @@ function DirectAddSlot({
         bgInactive="#dbeafe"
         borderBottom="2px solid #93c5fd"
       />
-      {/* 下段: 枚数 — SlotPickerButton (UIレギュレーション1準拠) */}
       <SlotPickerButton
         value={coins != null ? String(coins) : ""}
         onChange={(v) => onCoinsChange(v === "" ? null : Number(v))}
@@ -528,7 +598,11 @@ function DirectAddSlot({
 // 有馬ジャッジメント フォーム
 // =============================================================================
 
-function ArimaForm({ initial, onSave, onTempSave }: { initial: TGArimaJudgment | null; onSave: (r: TGATRow) => void; onTempSave: (r: TGATRow) => void }) {
+function ArimaForm({ initial, onSave, onTempSave }: {
+  initial: TGArimaJudgment | null;
+  onSave: (r: TGATRow) => void;
+  onTempSave: (r: TGATRow) => void;
+}) {
   const [form, setForm] = useState<Omit<TGArimaJudgment, "id">>(() =>
     initial ? { ...initial } : emptyArima()
   );
@@ -540,7 +614,6 @@ function ArimaForm({ initial, onSave, onTempSave }: { initial: TGArimaJudgment |
   return (
     <>
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-32">
-
         <Section title="成否">
           <div className="grid grid-cols-2 gap-3">
             {TG_ARIMA_RESULTS.map((r) => (
@@ -573,7 +646,6 @@ function ArimaForm({ initial, onSave, onTempSave }: { initial: TGArimaJudgment |
           </div>
         </Section>
 
-        {/* CCGの死神（常時表示） */}
         <Section title="CCGの死神（獲得枚数）">
           <p className="text-[9px] font-mono text-gray-400 mb-2">
             ジャッジメント成功時に権利獲得。獲得枚数を選択してください。
@@ -602,6 +674,104 @@ function ArimaForm({ initial, onSave, onTempSave }: { initial: TGArimaJudgment |
         disabled={!form.result}
       />
     </>
+  );
+}
+
+// ─── EndingCardCounter (ad-16〜21) ────────────────────────────────────────────
+
+function EndingCardCounter({
+  label, color, textColor, value, onChange,
+}: {
+  label: string;
+  color: string;
+  textColor: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div
+      className="flex items-center gap-2 py-2.5 border-b border-gray-100 last:border-0"
+    >
+      {/* カード色帯 */}
+      <div
+        className="w-1.5 self-stretch rounded-full shrink-0"
+        style={{ backgroundColor: color }}
+      />
+      {/* PUSH / -1 / 回数 */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          onClick={() => onChange(value + 1)}
+          className="w-11 h-11 rounded-full font-mono font-black text-[10px] active:scale-95 transition-transform shadow-sm"
+          style={{ backgroundColor: "#2e7d32", color: "#ffffff" }}
+        >
+          PUSH
+        </button>
+        <button
+          onClick={() => onChange(Math.max(0, value - 1))}
+          className="w-11 h-11 rounded-full font-mono font-black text-base active:scale-95 transition-transform shadow-sm"
+          style={{ backgroundColor: "#c62828", color: "#ffffff" }}
+        >
+          −
+        </button>
+        <div
+          className="w-12 h-11 rounded border-2 flex items-center justify-center font-mono font-bold"
+          style={{
+            borderColor: value > 0 ? "#374151" : "#e5e7eb",
+            backgroundColor: value > 0 ? "#1f2937" : "#f9fafb",
+            color: value > 0 ? "#ffffff" : "#9ca3af",
+          }}
+        >
+          <span className="text-sm">{value}</span>
+          <span className="text-[8px] ml-0.5">回</span>
+        </div>
+      </div>
+      {/* カードラベル */}
+      <div className="flex-1 min-w-0">
+        <p
+          className="text-[10px] font-mono font-bold leading-tight truncate px-1.5 py-0.5 rounded"
+          style={{ backgroundColor: color, color: textColor }}
+        >
+          {label}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── PickerCell (終了画面示唆・トロフィー用) ──────────────────────────────────
+function PickerCell({
+  value, onChange, options, colorFn, labelFn, emptyLabel = "なし",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  colorFn: (v: string) => CellColor;
+  labelFn?: (v: string) => string;
+  emptyLabel?: string;
+}) {
+  const hasValue = value !== "";
+  const color = hasValue ? colorFn(value) : null;
+  const displayLabel = hasValue ? (labelFn ? labelFn(value) : value) : emptyLabel;
+
+  return (
+    <div className="relative rounded overflow-hidden" style={{ minHeight: "56px" }}>
+      <div
+        className="absolute inset-0 flex items-center justify-center gap-1 font-mono font-bold text-[11px] text-center px-1 pointer-events-none"
+        style={color ? { ...color } : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #e5e7eb" }}
+      >
+        <span className="truncate">{displayLabel}</span>
+        <span className="text-[9px] opacity-50 shrink-0">▼</span>
+      </div>
+      <select
+        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt}>{opt === "" ? emptyLabel : opt}</option>
+        ))}
+      </select>
+    </div>
   );
 }
 
