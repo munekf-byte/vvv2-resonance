@@ -173,12 +173,12 @@ function ATBlock({
   return (
     <div className="border border-gray-400 mb-4 mx-3 rounded overflow-hidden">
 
-      {/* ── ATサマリーヘッダー ── */}
+      {/* ── ATサマリーヘッダー (全体を深緑に統一) ── */}
       <div
-        className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] border-b-2 border-gray-500"
-        style={{ backgroundColor: HDR_BG }}
+        className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] border-b-2 border-green-900"
+        style={{ backgroundColor: "#14532d" }}
       >
-        <div className="px-3 py-2 flex items-center justify-center border-r border-gray-600" style={{ backgroundColor: "#14532d" }}>
+        <div className="px-3 py-2 flex items-center justify-center border-r border-green-900">
           <span className="text-white font-mono font-black text-base tracking-wider">{atKey}</span>
         </div>
         <SummaryCell label="喰種Set数"   value={`${summary.setCount}Set`} />
@@ -505,6 +505,24 @@ function SetRow({
       {/* アコーディオン: 詳細 */}
       {isExpanded && (
         <div className="bg-gray-50 border-t border-gray-300 px-3 py-3 space-y-3">
+
+          {/* 赫眼状態 */}
+          {(row.kakugan?.length ?? 0) > 0 && (
+            <div>
+              <span className="text-[9px] font-mono text-gray-500 block mb-1.5">赫眼状態</span>
+              <div className="flex flex-wrap gap-1.5">
+                {row.kakugan!.map((k, i) => (
+                  <span
+                    key={i}
+                    className="text-[9px] font-mono font-bold px-2 py-1 rounded"
+                    style={{ backgroundColor: "#b10202", color: "#fff" }}
+                  >
+                    {k}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* 対決アイコン一覧 */}
           {row.battles.length > 0 && (

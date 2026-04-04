@@ -1,9 +1,9 @@
 "use client";
 // =============================================================================
-// TOKYO GHOUL RESONANCE: AT記録 編集ダッシュボード v1.3
+// TOKYO GHOUL RESONANCE: AT記録 編集ダッシュボード v1.4
 // SET行: 対決（契機+成績 統合10枠） / 直乗せ（契機+枚数 10枠）
 // 有馬ジャッジメント行: 成否 / 役 / CCGの死神
-// セクション順: AT種別 → 敵キャラ → 対決 → 直乗せ → 不利益 → BITES種別 → BITES獲得
+// セクション順: AT種別 → 敵キャラ → 対決 → 直乗せ → 赫眼 → 不利益 → BITES種別 → BITES獲得
 // =============================================================================
 
 import { useState } from "react";
@@ -111,7 +111,14 @@ export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", defau
 // SET行フォーム
 // =============================================================================
 
-function SetForm({ initial, defaultAtType, onSave, onTempSave }: { initial: TGATSet | null; defaultAtType?: string; onSave: (r: TGATRow) => void; onTempSave: (r: TGATRow) => void }) {
+function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
+  initial: TGATSet | null;
+  defaultAtType?: string;
+  onSave: (r: TGATRow) => void;
+  onTempSave: (r: TGATRow) => void;
+}) {
+  /** 前セットからAT種別が引き継がれているか（新規追加時のみ true） */
+  const isAtTypeInherited = !!defaultAtType;
   const [form, setForm] = useState<Omit<TGATSet, "id">>(() =>
     initial ? { ...initial, battles: initial.battles ?? [], directAdds: initial.directAdds ?? [], kakugan: initial.kakugan ?? [] }
             : emptySet(defaultAtType)
@@ -172,7 +179,12 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: { initial: TGAT
 
         {/* AT種別 */}
         <Section title="AT種別">
-          <div className="grid grid-cols-3 gap-2">
+          {isAtTypeInherited && (
+            <div className="mb-2 px-2 py-1.5 rounded text-[9px] font-mono text-amber-700 bg-amber-50 border border-amber-300">
+              前セットから「{form.atType}」を自動引継ぎ — 変更不要な場合はそのまま保存
+            </div>
+          )}
+          <div className={`grid grid-cols-3 gap-2 transition-opacity ${isAtTypeInherited ? "opacity-50" : ""}`}>
             {TG_AT_TYPES.map((t) => (
               <button key={t} onClick={() => setField("atType", t)}
                 className="py-4 rounded text-[10px] font-mono font-bold transition-all active:scale-95 text-center leading-tight"
@@ -356,6 +368,9 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: { initial: TGAT
   );
 }
 
+// ─── スロット共通高さ定数 (対決・直乗せで統一) ───────────────────────────────
+const SLOT_HALF_H = 54; // 上段・下段それぞれ 54px (1:1)
+
 // ─── BattleSlot ──────────────────────────────────────────────────────────────
 
 function BattleSlot({
@@ -377,15 +392,17 @@ function BattleSlot({
       style={active ? { borderColor: "#374151" } : { borderColor: "#e5e7eb" }}
     >
       {/* スロット番号 */}
-      <div className="text-center text-[8px] font-mono text-gray-400 pt-0.5 leading-none bg-gray-50">
+      <div className="text-center text-[8px] font-mono text-gray-400 py-0.5 leading-none"
+        style={{ backgroundColor: "#dde0e3" }}>
         {index + 1}
       </div>
-      {/* 上段: 契機セレクト（縦幅1.5倍 = 66px） */}
+      {/* 上段: 契機セレクト — グレー背景で境界を明示 */}
       <select
-        className="w-full text-[9px] font-mono border-0 border-b border-gray-200 bg-gray-50 text-center focus:outline-none"
+        className="w-full text-[9px] font-mono border-0 border-b-2 border-gray-300 text-center focus:outline-none"
         style={{
           color: hasTrigger ? "#1f2937" : "#9ca3af",
-          minHeight: "66px",
+          backgroundColor: "#e8eaed",
+          minHeight: `${SLOT_HALF_H}px`,
           padding: "0 2px",
         }}
         value={trigger}
@@ -396,17 +413,17 @@ function BattleSlot({
           <option key={t} value={t}>{t}</option>
         ))}
       </select>
-      {/* 下段: 成績トグル */}
+      {/* 下段: 成績トグル — 明るい背景で押せる感を演出 */}
       <button
         onClick={onResultToggle}
-        className="flex items-center justify-center text-sm font-bold transition-colors"
+        className="flex items-center justify-center text-sm font-bold transition-colors active:opacity-80"
         style={{
-          minHeight: "44px",
+          minHeight: `${SLOT_HALF_H}px`,
           ...(result === "○"
             ? { backgroundColor: "#1b5e20", color: "#ffffff" }
             : result === "×"
             ? { backgroundColor: "#b71c1c", color: "#ffffff" }
-            : { backgroundColor: "#f9fafb", color: "#d1d5db" }),
+            : { backgroundColor: "#f9fafb", color: "#c8ccd0" }),
         }}
       >
         {result || "—"}
@@ -433,15 +450,18 @@ function DirectAddSlot({
       className="flex flex-col rounded border-2 overflow-hidden"
       style={active ? { borderColor: "#1565c0" } : { borderColor: "#e5e7eb" }}
     >
-      <div className="text-center text-[8px] font-mono text-gray-400 pt-0.5 leading-none bg-gray-50">
+      {/* スロット番号 — 対決と同じ色調で統一 */}
+      <div className="text-center text-[8px] font-mono text-blue-400 py-0.5 leading-none"
+        style={{ backgroundColor: "#dde8f7" }}>
         {index + 1}
       </div>
-      {/* 上段: 役（対決スロットと同じ66px） */}
+      {/* 上段: 役 — グレー系で境界を明示 (対決の上段と同じ扱い) */}
       <select
-        className="w-full text-[9px] font-mono border-0 border-b border-gray-200 bg-gray-50 text-center focus:outline-none"
+        className="w-full text-[9px] font-mono border-0 border-b-2 border-blue-200 text-center focus:outline-none"
         style={{
           color: trigger ? "#1f2937" : "#9ca3af",
-          minHeight: "66px",
+          backgroundColor: "#dbeafe",
+          minHeight: `${SLOT_HALF_H}px`,
           padding: "0 2px",
         }}
         value={trigger}
@@ -452,13 +472,14 @@ function DirectAddSlot({
           <option key={t} value={t}>{t}</option>
         ))}
       </select>
-      {/* 下段: 枚数（対決スロットの下段と同じ66px） */}
+      {/* 下段: 枚数 — 明るい背景で押せる感 */}
       <select
-        className="w-full text-[9px] font-mono border-0 bg-white text-center focus:outline-none"
+        className="w-full text-[9px] font-mono border-0 text-center focus:outline-none"
         style={{
           color: coins != null ? "#1565c0" : "#9ca3af",
           fontWeight: coins != null ? "bold" : "normal",
-          minHeight: "66px",
+          backgroundColor: "#eff6ff",
+          minHeight: `${SLOT_HALF_H}px`,
           padding: "0 2px",
         }}
         value={coins ?? ""}

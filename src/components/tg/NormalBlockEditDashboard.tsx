@@ -1,8 +1,10 @@
 "use client";
 // =============================================================================
-// TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード v1.3
-// UIデザインレギュレーション1準拠: 全選択肢をスクエアボタングリッド化
-// <select> ドロップダウン完全廃止 → 四角いボタン形式に統一
+// TOKYO GHOUL RESONANCE: 通常時周期 編集ダッシュボード v1.4
+// UIレギュレーション1準拠
+//   単一選択 → ColoredSelectIcon（アイコンボタン外観 + native picker）
+//   複数選択 → IconBtn グリッド
+// メインフォーム: 2×2グリッド (実G / ゾーン / モード / 契機)
 // =============================================================================
 
 import { useState } from "react";
@@ -60,7 +62,6 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  /** multi-toggle: 選択済みなら除去、未選択なら追加 */
   function toggleMulti(field: "kakugan" | "shinsekai" | "invitation", value: string) {
     const current = form[field] as string[];
     setField(field, current.includes(value)
@@ -69,13 +70,11 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
     );
   }
 
-  /** 前兆履歴: "zone:type" 形式でセット。type="" なら削除 */
   function setZencho(zone: string, type: string) {
     const filtered = form.zencho.filter((v) => !v.startsWith(zone + ":"));
     setField("zencho", type ? [...filtered, `${zone}:${type}`] : filtered);
   }
 
-  /** 現在の前兆タイプを取得 */
   function getZenchoType(zone: string): string {
     const entry = form.zencho.find((v) => v.startsWith(zone + ":"));
     return entry ? entry.split(":")[1] : "";
@@ -112,189 +111,109 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
       {/* ===== スクロール可能フォーム ===== */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-32">
 
-        {/* ── 実G数 ── */}
-        <Section title="実G数">
-          <input
-            type="number"
-            inputMode="numeric"
-            placeholder="G数を入力"
-            className="w-full text-sm font-mono border-2 border-gray-300 rounded px-3 py-4 focus:outline-none focus:border-gray-500 bg-white text-center"
-            value={form.jisshuG ?? ""}
-            onChange={(e) =>
-              setField("jisshuG", e.target.value === "" ? null : Number(e.target.value))
-            }
-          />
-        </Section>
+        {/* ── メインカード: 2×2グリッド ── */}
+        <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4 space-y-3">
 
-        {/* ── ゾーン (20択) ── */}
-        <Section title="ゾーン">
-          <div className="grid grid-cols-5 gap-1">
-            {([...TG_ZONES] as string[]).map((z) => (
-              <IconBtn
-                key={z}
-                selected={form.zone === z}
-                onClick={() => setField("zone", z)}
-                color={getZoneCellColor(z)}
-                label={z}
+          {/* Row 1: 実G数 | ゾーン */}
+          <div className="grid grid-cols-2 gap-3">
+            <FormCell label="実G数">
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="G数"
+                className="w-full text-sm font-mono border-2 border-gray-300 rounded px-2 py-3 focus:outline-none focus:border-gray-500 bg-white text-center"
+                value={form.jisshuG ?? ""}
+                onChange={(e) =>
+                  setField("jisshuG", e.target.value === "" ? null : Number(e.target.value))
+                }
               />
-            ))}
-          </div>
-        </Section>
-
-        {/* ── 推定モード (8択) ── */}
-        <Section title="推定モード">
-          <div className="grid grid-cols-4 gap-2">
-            {([...TG_MODES] as string[]).map((m) => {
-              const lbl = m === "不明" ? "不明" : abbrevMode(m);
-              return (
-                <IconBtn
-                  key={m}
-                  selected={form.estimatedMode === m}
-                  onClick={() => setField("estimatedMode", m)}
-                  color={getModeCellColor(m)}
-                  label={lbl}
-                />
-              );
-            })}
-          </div>
-        </Section>
-
-        {/* ── 当選契機 (11択) ── */}
-        <Section title="当選契機">
-          <div className="grid grid-cols-4 gap-1.5">
-            {([...TG_WIN_TRIGGERS] as string[]).map((t) => {
-              const lbl = t === "不明" ? "不明" : abbrevTrigger(t);
-              return (
-                <IconBtn
-                  key={t}
-                  selected={form.winTrigger === t}
-                  onClick={() => setField("winTrigger", t)}
-                  color={getTriggerCellColor(t)}
-                  label={lbl}
-                />
-              );
-            })}
-          </div>
-        </Section>
-
-        {/* ── イベント (6択 + なし) ── */}
-        <Section title="イベント">
-          <div className="grid grid-cols-4 gap-2">
-            <IconBtn
-              selected={form.event === ""}
-              onClick={() => setField("event", "")}
-              color={{ backgroundColor: "#e5e7eb", color: "#6b7280" }}
-              label="なし"
-            />
-            {([...TG_EVENTS] as string[]).map((e) => (
-              <IconBtn
-                key={e}
-                selected={form.event === e}
-                onClick={() => setField("event", e)}
-                color={getEventCellColor(e)}
-                label={abbrevEvent(e)}
+            </FormCell>
+            <FormCell label="ゾーン">
+              <ColoredSelectIcon
+                value={form.zone}
+                onChange={(v) => setField("zone", v)}
+                options={[...TG_ZONES]}
+                colorFn={getZoneCellColor}
               />
-            ))}
-          </div>
-        </Section>
-
-        {/* ── AT初当り ── */}
-        <Section title="AT初当り">
-          <button
-            onClick={() => setField("atWin", !form.atWin)}
-            className="w-full py-7 rounded font-mono font-black text-lg transition-all active:scale-95"
-            style={
-              form.atWin
-                ? { backgroundColor: "#38761d", color: "#fff", border: "2px solid #38761d", boxShadow: "0 0 0 2px #1f2937" }
-                : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
-            }
-          >
-            {form.atWin ? "AT Get ✓" : "なし"}
-          </button>
-        </Section>
-
-        {/* ── 終了画面示唆 (CZ失敗 / 終了画面 2カテゴリ) ── */}
-        <Section title="終了画面示唆">
-          {/* なし */}
-          <button
-            onClick={() => setField("endingSuggestion", "")}
-            className="w-full mb-2 py-3 rounded font-mono font-bold text-[11px] transition-all active:scale-95"
-            style={
-              form.endingSuggestion === ""
-                ? { backgroundColor: "#374151", color: "#fff", border: "2px solid #374151", boxShadow: "0 0 0 2px #1f2937" }
-                : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
-            }
-          >
-            なし
-          </button>
-
-          {/* CZ失敗 カテゴリ */}
-          <p className="text-[9px] font-mono text-gray-400 mb-1.5 font-bold">— CZ失敗画面 —</p>
-          <div className="grid grid-cols-3 gap-1 mb-3">
-            {([...TG_ENDING_SUGGESTIONS] as string[])
-              .filter((s) => s.startsWith("[cz失敗]"))
-              .map((s) => {
-                const lines = getSuggestionListLines(s);
-                return (
-                  <IconBtn
-                    key={s}
-                    selected={form.endingSuggestion === s}
-                    onClick={() => setField("endingSuggestion", s)}
-                    color={getEndingCellColor(s)}
-                    label={lines?.name ?? s}
-                    subLabel={lines?.hint}
-                  />
-                );
-              })}
+            </FormCell>
           </div>
 
-          {/* 終了画面 カテゴリ */}
-          <p className="text-[9px] font-mono text-gray-400 mb-1.5 font-bold">— 終了画面 —</p>
-          <div className="grid grid-cols-3 gap-1">
-            {([...TG_ENDING_SUGGESTIONS] as string[])
-              .filter((s) => s.startsWith("[終了画面]"))
-              .map((s) => {
-                const lines = getSuggestionListLines(s);
-                return (
-                  <IconBtn
-                    key={s}
-                    selected={form.endingSuggestion === s}
-                    onClick={() => setField("endingSuggestion", s)}
-                    color={getEndingCellColor(s)}
-                    label={lines?.name ?? s}
-                    subLabel={lines?.hint}
-                  />
-                );
-              })}
+          {/* Row 2: 推定モード | 当選契機 */}
+          <div className="grid grid-cols-2 gap-3">
+            <FormCell label="推定モード">
+              <ColoredSelectIcon
+                value={form.estimatedMode}
+                onChange={(v) => setField("estimatedMode", v)}
+                options={[...TG_MODES]}
+                colorFn={getModeCellColor}
+                labelFn={(v) => v === "不明" ? "不明" : abbrevMode(v)}
+              />
+            </FormCell>
+            <FormCell label="当選契機">
+              <ColoredSelectIcon
+                value={form.winTrigger}
+                onChange={(v) => setField("winTrigger", v)}
+                options={[...TG_WIN_TRIGGERS]}
+                colorFn={getTriggerCellColor}
+                labelFn={(v) => v === "不明" ? "不明" : abbrevTrigger(v)}
+              />
+            </FormCell>
           </div>
-        </Section>
 
-        {/* ── トロフィー (6択 + なし) ── */}
-        <Section title="トロフィー">
-          <div className="grid grid-cols-4 gap-2">
-            <IconBtn
-              selected={form.trophy === ""}
-              onClick={() => setField("trophy", "")}
-              color={{ backgroundColor: "#e5e7eb", color: "#6b7280" }}
-              label="なし"
-            />
-            {([...TG_TROPHIES] as string[]).map((t) => {
-              const lines = getSuggestionListLines(t);
-              return (
-                <IconBtn
-                  key={t}
-                  selected={form.trophy === t}
-                  onClick={() => setField("trophy", t)}
-                  color={getTrophyCellColor(t)}
-                  label={lines?.name ?? t}
-                  subLabel={lines?.hint}
-                />
-              );
-            })}
+          {/* Row 3: イベント | AT初当り */}
+          <div className="grid grid-cols-2 gap-3">
+            <FormCell label="イベント">
+              <ColoredSelectIcon
+                value={form.event}
+                onChange={(v) => setField("event", v)}
+                options={["", ...TG_EVENTS]}
+                colorFn={getEventCellColor}
+                labelFn={(v) => v ? abbrevEvent(v) : "なし"}
+                emptyLabel="なし"
+              />
+            </FormCell>
+            <FormCell label="AT初当り">
+              <button
+                onClick={() => setField("atWin", !form.atWin)}
+                className="w-full font-mono font-bold text-sm rounded border-2 transition-all active:scale-95"
+                style={{
+                  ...(form.atWin
+                    ? { backgroundColor: "#38761d", color: "#fff", borderColor: "#38761d", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280", borderColor: "#e5e7eb" }),
+                  minHeight: "56px",
+                }}
+              >
+                {form.atWin ? "AT Get ✓" : "なし"}
+              </button>
+            </FormCell>
           </div>
-        </Section>
 
-        {/* ── 前兆履歴 (ゾーン別 3択ボタン) ── */}
+          {/* Row 4: 終了画面示唆 | トロフィー */}
+          <div className="grid grid-cols-2 gap-3">
+            <FormCell label="終了画面示唆">
+              <ColoredSelectIcon
+                value={form.endingSuggestion}
+                onChange={(v) => setField("endingSuggestion", v)}
+                options={["", ...TG_ENDING_SUGGESTIONS]}
+                colorFn={getEndingCellColor}
+                labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
+                emptyLabel="なし"
+              />
+            </FormCell>
+            <FormCell label="トロフィー">
+              <ColoredSelectIcon
+                value={form.trophy}
+                onChange={(v) => setField("trophy", v)}
+                options={["", ...TG_TROPHIES]}
+                colorFn={getTrophyCellColor}
+                labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
+                emptyLabel="なし"
+              />
+            </FormCell>
+          </div>
+        </div>
+
+        {/* ── 前兆履歴 ── */}
         <Section title="前兆履歴">
           <div className="space-y-1.5">
             {([...TG_ZENCHO_ZONES] as string[]).map((zone) => {
@@ -305,7 +224,6 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
                     {zone}G
                   </span>
                   <div className="flex flex-1 gap-1.5">
-                    {/* クリアボタン */}
                     <button
                       onClick={() => setZencho(zone, "")}
                       className="flex-1 py-2.5 rounded text-[10px] font-mono font-bold transition-all active:scale-95"
@@ -338,7 +256,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
           </div>
         </Section>
 
-        {/* ── 赫眼状態 (4択・複数選択可) ── */}
+        {/* ── 赫眼状態 (multi-toggle) ── */}
         <Section title="赫眼状態">
           <div className="grid grid-cols-4 gap-2">
             {([...TG_KAKUGAN] as string[]).map((k) => (
@@ -353,7 +271,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
           </div>
         </Section>
 
-        {/* ── 精神世界 (3択・複数選択可) ── */}
+        {/* ── 精神世界 (multi-toggle) ── */}
         <Section title="精神世界">
           <div className="grid grid-cols-3 gap-2">
             {([...TG_SHINSEKAI] as string[]).map((s) => (
@@ -368,7 +286,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
           </div>
         </Section>
 
-        {/* ── 招待状 (16択・複数選択可) ── */}
+        {/* ── 招待状 (multi-toggle) ── */}
         <Section title="招待状">
           <div className="grid grid-cols-4 gap-1">
             {([...TG_INVITATIONS] as string[]).map((inv) => {
@@ -423,9 +341,66 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+function FormCell({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-[11px] font-mono text-gray-500 font-medium">{label}</span>
+      {children}
+    </div>
+  );
+}
+
 /**
- * UIレギュレーション1準拠スクエアボタン
- * 選択時: 指定カラー + boxShadow / 未選択: グレー
+ * ColoredSelectIcon — UIレギュレーション1準拠 単一選択コンポーネント
+ * 外観: 色付きアイコンボタン / 動作: native picker (overlay select)
+ */
+function ColoredSelectIcon({
+  value, onChange, options, colorFn, labelFn, emptyLabel = "未選択",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  colorFn: (v: string) => CellColor;
+  labelFn?: (v: string) => string;
+  emptyLabel?: string;
+}) {
+  const hasValue = value !== "" && value !== undefined;
+  const color = hasValue ? colorFn(value) : null;
+  const displayLabel = hasValue ? (labelFn ? labelFn(value) : value) : emptyLabel;
+
+  return (
+    <div className="relative rounded overflow-hidden" style={{ minHeight: "56px" }}>
+      {/* 表示レイヤー */}
+      <div
+        className="absolute inset-0 flex items-center justify-center gap-1 font-mono font-bold text-[11px] text-center px-1 pointer-events-none"
+        style={
+          color
+            ? { ...color }
+            : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #e5e7eb" }
+        }
+      >
+        <span className="truncate">{displayLabel}</span>
+        <span className="text-[9px] opacity-50 shrink-0">▼</span>
+      </div>
+      {/* タップレイヤー: 不透明度0のネイティブselect */}
+      <select
+        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt === "" ? emptyLabel : opt}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/**
+ * IconBtn — UIレギュレーション1準拠 多択選択ボタン
+ * 複数選択可能な項目に使用（赫眼・精神世界・招待状・前兆など）
  */
 function IconBtn({
   selected, onClick, color, label, subLabel,
