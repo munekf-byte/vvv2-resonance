@@ -65,6 +65,7 @@ export interface TGATSet {
   disadvantage: string; // - / 不利益⭕️ / 不利益❌
   bitesType: string;    // BITES種別
   bitesCoins: string;   // BITES獲得: "50"〜"3000" | "ED" | ""
+  kakugan?: string[];        // 赫眼状態
   directAdds: TGDirectAdd[]; // 直乗せ max 10
   battles: TGBattle[];       // 対決（契機+成績） max 10
 }

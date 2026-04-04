@@ -178,7 +178,7 @@ function ATBlock({
         className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] border-b-2 border-gray-500"
         style={{ backgroundColor: HDR_BG }}
       >
-        <div className="px-3 py-2 flex items-center justify-center border-r border-gray-600">
+        <div className="px-3 py-2 flex items-center justify-center border-r border-gray-600" style={{ backgroundColor: "#14532d" }}>
           <span className="text-white font-mono font-black text-base tracking-wider">{atKey}</span>
         </div>
         <SummaryCell label="喰種Set数"   value={`${summary.setCount}Set`} />

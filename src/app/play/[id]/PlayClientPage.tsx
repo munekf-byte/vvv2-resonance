@@ -6,7 +6,7 @@
 
 import { useEffect, useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { PlaySession, NormalBlock, TGATRow, TGATEntry } from "@/types";
+import type { PlaySession, NormalBlock, TGATRow, TGATSet, TGATEntry } from "@/types";
 import { useSessionStore } from "@/store/useSessionStore";
 import { NormalBlockList } from "@/components/tg/NormalBlockList";
 import { NormalBlockEditDashboard } from "@/components/tg/NormalBlockEditDashboard";
@@ -47,6 +47,7 @@ interface ATEditingState {
   atKey: string;
   row: TGATRow | null;
   defaultRowType: "set" | "arima";
+  defaultAtType?: string;
 }
 const AT_CLOSED: ATEditingState = { open: false, atKey: "", row: null, defaultRowType: "set" };
 
@@ -125,7 +126,11 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
     if (!atEntries.find((e) => e.atKey === atKey)) {
       appendTGATEntry({ atKey, rows: [] });
     }
-    setATEdit({ open: true, atKey, row: null, defaultRowType: rowType });
+    // 直前のSET行のAT種別を引き継ぐ
+    const entry = atEntries.find((e) => e.atKey === atKey);
+    const sets = (entry?.rows ?? []).filter((r): r is TGATSet => r.rowType === "set");
+    const defaultAtType = sets.length > 0 ? sets[sets.length - 1].atType : undefined;
+    setATEdit({ open: true, atKey, row: null, defaultRowType: rowType, defaultAtType });
   }
 
   function handleATEditRow(atKey: string, row: TGATRow) {
@@ -183,7 +188,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               <p className="text-sm font-mono font-bold text-white truncate">
                 {session?.machineName ?? "セッション"}
               </p>
-              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v1.2</span>
+              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v1.3</span>
             </div>
             <p className="text-[10px] font-mono text-gray-400">
               {activeTab === "normal"
@@ -279,6 +284,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           atKey={atEdit.atKey}
           row={atEdit.row}
           defaultRowType={atEdit.defaultRowType}
+          defaultAtType={atEdit.defaultAtType}
           onSave={handleATSave}
           onTempSave={handleATTempSave}
           onClose={() => setATEdit(AT_CLOSED)}

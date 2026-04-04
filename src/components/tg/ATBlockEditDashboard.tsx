@@ -1,6 +1,6 @@
 "use client";
 // =============================================================================
-// TOKYO GHOUL RESONANCE: AT記録 編集ダッシュボード v1.2
+// TOKYO GHOUL RESONANCE: AT記録 編集ダッシュボード v1.3
 // SET行: 対決（契機+成績 統合10枠） / 直乗せ（契機+枚数 10枠）
 // 有馬ジャッジメント行: 成否 / 役 / CCGの死神
 // セクション順: AT種別 → 敵キャラ → 対決 → 直乗せ → 不利益 → BITES種別 → BITES獲得
@@ -13,27 +13,29 @@ import {
   TG_DISADVANTAGE, TG_BITES_TYPES, TG_BITES_COINS,
   TG_DIRECT_ADD_TRIGGERS, TG_DIRECT_ADD_COINS,
   TG_ARIMA_RESULTS, TG_ARIMA_ROLES, TG_CCG_COINS,
-  TG_MAX_BATTLE_RESULTS, TG_MAX_DIRECT_ADDS,
+  TG_MAX_BATTLE_RESULTS, TG_MAX_DIRECT_ADDS, TG_KAKUGAN,
 } from "@/lib/engine/constants";
-import { getATCharColor, getBitesTypeCellColor, getBitesTypeShort } from "@/lib/tg/cellColors";
+import { getATCharColor, getBitesTypeCellColor, getBitesTypeShort, getKakuganCellColor } from "@/lib/tg/cellColors";
 
 interface Props {
   atKey: string;
   row: TGATRow | null;
   defaultRowType?: "set" | "arima";
+  defaultAtType?: string;
   onSave: (row: TGATRow) => void;
   onTempSave: (row: TGATRow) => void;
   onClose: () => void;
 }
 
-function emptySet(): Omit<TGATSet, "id"> {
+function emptySet(defaultAtType?: string): Omit<TGATSet, "id"> {
   return {
     rowType: "set",
-    atType: "通常AT",
+    atType: defaultAtType ?? "通常AT",
     character: "",
     disadvantage: "-",
     bitesType: "",
     bitesCoins: "",
+    kakugan: [],
     directAdds: [],
     battles: [],
   };
@@ -53,7 +55,7 @@ function getBitesDesc(bt: string): string {
 // メインコンポーネント
 // =============================================================================
 
-export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", onSave, onTempSave, onClose }: Props) {
+export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", defaultAtType, onSave, onTempSave, onClose }: Props) {
   const isNew    = row === null;
   const initType = row?.rowType ?? defaultRowType;
   const [rowType, setRowType] = useState<"set" | "arima">(initType);
@@ -97,7 +99,7 @@ export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", onSav
       </div>
 
       {rowType === "set" ? (
-        <SetForm initial={row?.rowType === "set" ? row : null} onSave={onSave} onTempSave={onTempSave} />
+        <SetForm initial={row?.rowType === "set" ? row : null} defaultAtType={defaultAtType} onSave={onSave} onTempSave={onTempSave} />
       ) : (
         <ArimaForm initial={row?.rowType === "arima" ? row : null} onSave={onSave} onTempSave={onTempSave} />
       )}
@@ -109,10 +111,10 @@ export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", onSav
 // SET行フォーム
 // =============================================================================
 
-function SetForm({ initial, onSave, onTempSave }: { initial: TGATSet | null; onSave: (r: TGATRow) => void; onTempSave: (r: TGATRow) => void }) {
+function SetForm({ initial, defaultAtType, onSave, onTempSave }: { initial: TGATSet | null; defaultAtType?: string; onSave: (r: TGATRow) => void; onTempSave: (r: TGATRow) => void }) {
   const [form, setForm] = useState<Omit<TGATSet, "id">>(() =>
-    initial ? { ...initial, battles: initial.battles ?? [], directAdds: initial.directAdds ?? [] }
-            : emptySet()
+    initial ? { ...initial, battles: initial.battles ?? [], directAdds: initial.directAdds ?? [], kakugan: initial.kakugan ?? [] }
+            : emptySet(defaultAtType)
   );
   const [bitesFreeInput, setBitesFreeInput] = useState(
     () => {
@@ -170,18 +172,18 @@ function SetForm({ initial, onSave, onTempSave }: { initial: TGATSet | null; onS
 
         {/* AT種別 */}
         <Section title="AT種別">
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {TG_AT_TYPES.map((t) => (
               <button key={t} onClick={() => setField("atType", t)}
-                className="flex-1 text-[10px] font-mono font-bold py-2.5 rounded border-2 transition-colors leading-tight text-center"
+                className="py-4 rounded text-[10px] font-mono font-bold transition-all active:scale-95 text-center leading-tight"
                 style={
                   form.atType === t
                     ? t === "裏AT"
-                      ? { backgroundColor: "#b91c1c", color: "#fff", borderColor: "#b91c1c" }
+                      ? { backgroundColor: "#b91c1c", color: "#fff", border: "2px solid #b91c1c", boxShadow: "0 0 0 2px #1f2937" }
                       : t === "隠れ裏AT（推測）"
-                      ? { backgroundColor: "#4a148c", color: "#fff", borderColor: "#4a148c" }
-                      : { backgroundColor: "#374151", color: "#fff", borderColor: "#374151" }
-                    : { backgroundColor: "#fff", color: "#9ca3af", borderColor: "#d1d5db" }
+                      ? { backgroundColor: "#4a148c", color: "#fff", border: "2px solid #4a148c", boxShadow: "0 0 0 2px #1f2937" }
+                      : { backgroundColor: "#374151", color: "#fff", border: "2px solid #374151", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
                 }
               >{t}</button>
             ))}
@@ -249,20 +251,41 @@ function SetForm({ initial, onSave, onTempSave }: { initial: TGATSet | null; onS
           </p>
         </Section>
 
+        {/* 赫眼状態 */}
+        <Section title="赫眼状態">
+          <div className="grid grid-cols-4 gap-2">
+            {TG_KAKUGAN.map((k) => {
+              const sel = (form.kakugan ?? []).includes(k);
+              const col = getKakuganCellColor(k);
+              return (
+                <button key={k}
+                  onClick={() => {
+                    const current = form.kakugan ?? [];
+                    setField("kakugan", sel ? current.filter((v) => v !== k) : [...current, k]);
+                  }}
+                  className="py-3 rounded text-[11px] font-mono font-bold transition-all active:scale-95 text-center"
+                  style={sel ? { ...col, boxShadow: "0 0 0 2px #1f2937" }
+                             : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }}
+                >{k}</button>
+              );
+            })}
+          </div>
+        </Section>
+
         {/* 不利益 */}
         <Section title="不利益">
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {TG_DISADVANTAGE.map((d) => (
               <button key={d} onClick={() => setField("disadvantage", d)}
-                className="flex-1 py-3 rounded text-[11px] font-mono font-bold border-2 transition-colors"
+                className="py-4 rounded text-[11px] font-mono font-bold transition-all active:scale-95 text-center"
                 style={
                   form.disadvantage === d
                     ? d === "不利益⭕️"
-                      ? { backgroundColor: "#2e7d32", color: "#fff", borderColor: "#2e7d32" }
+                      ? { backgroundColor: "#2e7d32", color: "#fff", border: "2px solid #2e7d32", boxShadow: "0 0 0 2px #1f2937" }
                       : d === "不利益❌"
-                      ? { backgroundColor: "#c62828", color: "#fff", borderColor: "#c62828" }
-                      : { backgroundColor: "#374151", color: "#f9fafb", borderColor: "#374151" }
-                    : { backgroundColor: "#fff", color: "#9ca3af", borderColor: "#d1d5db" }
+                      ? { backgroundColor: "#c62828", color: "#fff", border: "2px solid #c62828", boxShadow: "0 0 0 2px #1f2937" }
+                      : { backgroundColor: "#374151", color: "#f9fafb", border: "2px solid #374151", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
                 }
               >{d}</button>
             ))}
@@ -468,16 +491,16 @@ function ArimaForm({ initial, onSave, onTempSave }: { initial: TGArimaJudgment |
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-32">
 
         <Section title="成否">
-          <div className="flex gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {TG_ARIMA_RESULTS.map((r) => (
               <button key={r} onClick={() => setField("result", r)}
-                className="flex-1 py-5 rounded text-base font-mono font-black border-2 transition-colors"
+                className="py-6 rounded text-base font-mono font-black transition-all active:scale-95 text-center"
                 style={
                   form.result === r
                     ? r === "成功"
-                      ? { backgroundColor: "#f9a825", color: "#000", borderColor: "#f9a825" }
-                      : { backgroundColor: "#424242", color: "#fff", borderColor: "#424242" }
-                    : { backgroundColor: "#fff", color: "#9ca3af", borderColor: "#d1d5db" }
+                      ? { backgroundColor: "#f9a825", color: "#000", border: "2px solid #f9a825", boxShadow: "0 0 0 2px #1f2937" }
+                      : { backgroundColor: "#424242", color: "#fff", border: "2px solid #424242", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #e5e7eb" }
                 }
               >{r}</button>
             ))}
@@ -485,14 +508,14 @@ function ArimaForm({ initial, onSave, onTempSave }: { initial: TGArimaJudgment |
         </Section>
 
         <Section title="役">
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {TG_ARIMA_ROLES.map((r) => (
               <button key={r} onClick={() => setField("role", r)}
-                className="flex-1 py-3 rounded text-[11px] font-mono font-bold border-2 transition-colors"
+                className="py-4 rounded text-[11px] font-mono font-bold transition-all active:scale-95 text-center"
                 style={
                   form.role === r
-                    ? { backgroundColor: "#374151", color: "#fff", borderColor: "#374151" }
-                    : { backgroundColor: "#fff", color: "#9ca3af", borderColor: "#d1d5db" }
+                    ? { backgroundColor: "#374151", color: "#fff", border: "2px solid #374151", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #e5e7eb" }
                 }
               >{r}</button>
             ))}
@@ -504,15 +527,15 @@ function ArimaForm({ initial, onSave, onTempSave }: { initial: TGArimaJudgment |
           <p className="text-[9px] font-mono text-gray-400 mb-2">
             ジャッジメント成功時に権利獲得。獲得枚数を選択してください。
           </p>
-          <div className="flex gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {TG_CCG_COINS.map((c) => (
               <button key={c}
                 onClick={() => setField("ccgCoins", form.ccgCoins === c ? null : c)}
-                className="flex-1 py-4 rounded text-sm font-mono font-bold border-2 transition-colors"
+                className="py-5 rounded text-sm font-mono font-bold transition-all active:scale-95 text-center"
                 style={
                   form.ccgCoins === c
-                    ? { backgroundColor: "#b91c1c", color: "#fff", borderColor: "#b91c1c" }
-                    : { backgroundColor: "#fff", color: "#374151", borderColor: "#d1d5db" }
+                    ? { backgroundColor: "#b91c1c", color: "#fff", border: "2px solid #b91c1c", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#374151", border: "2px solid #e5e7eb" }
                 }
               >{c.toLocaleString()}枚</button>
             ))}
