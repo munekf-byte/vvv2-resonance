@@ -6,7 +6,7 @@
 // =============================================================================
 
 import { useState } from "react";
-import type { TGATEntry, TGATSet, TGArimaJudgment, TGATRow } from "@/types";
+import type { TGATEntry, TGATSet, TGArimaJudgment, TGATRow, TGEndingCard } from "@/types";
 import {
   getATCharColor,
   getBitesTypeCellColor,
@@ -14,7 +14,9 @@ import {
   getDisadvantageCellColor,
   getArimaResultColor,
   getBattleResultColor,
+  getSuggestionListLines,
 } from "@/lib/tg/cellColors";
+import { TG_ENDING_CARD_LABELS, TG_COPPER_CARD_TYPES, TG_CONFIRMED_CARD_TYPES } from "@/lib/engine/constants";
 
 interface Props {
   atKeyList: string[];
@@ -48,7 +50,11 @@ function computeSummary(entry: TGATEntry) {
   const ccgTotal    = arimas.reduce((sum, a) =>
     sum + (a.result === "成功" && a.ccgCoins ? a.ccgCoins : 0), 0);
 
-  return { setCount, bitesTotal, directTotal, total: bitesTotal + directTotal + ccgTotal };
+  // 終了画面/トロフィー: 入力のあるSET行から収集
+  const endingSuggestion = sets.find((s) => s.endingSuggestion)?.endingSuggestion ?? "";
+  const trophy = sets.find((s) => s.trophy)?.trophy ?? "";
+
+  return { setCount, bitesTotal, directTotal, total: bitesTotal + directTotal + ccgTotal, endingSuggestion, trophy };
 }
 
 function directTotalCoins(s: TGATSet): number {
@@ -175,16 +181,26 @@ function ATBlock({
 
       {/* ── ATサマリーヘッダー (全体を深緑に統一) ── */}
       <div
-        className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] border-b-2 border-green-900"
+        className="flex items-stretch border-b-2 border-green-900"
         style={{ backgroundColor: "#14532d" }}
       >
-        <div className="px-3 py-2 flex items-center justify-center border-r border-green-900">
-          <span className="text-white font-mono font-black text-base tracking-wider">{atKey}</span>
+        <div className="px-2 py-2 flex items-center justify-center border-r border-green-900 shrink-0">
+          <span className="text-white font-mono font-black text-base">{atKey}</span>
         </div>
-        <SummaryCell label="喰種Set数"   value={`${summary.setCount}Set`} />
-        <SummaryCell label="BITES獲得"   value={`${summary.bitesTotal.toLocaleString()}枚`} />
-        <SummaryCell label="直乗せ"       value={`${summary.directTotal.toLocaleString()}枚`} />
-        <SummaryCell label="合計獲得枚数" value={`${summary.total.toLocaleString()}枚`} highlight />
+        <SummaryCell label="Set" value={`${summary.setCount}`} />
+        <SummaryCell label="BITES" value={`${summary.bitesTotal.toLocaleString()}`} />
+        <SummaryCell label="直乗せ" value={`${summary.directTotal.toLocaleString()}`} />
+        <SummaryCell label="合計" value={`${summary.total.toLocaleString()}`} highlight />
+        {(summary.endingSuggestion || summary.trophy) && (
+          <>
+            {summary.endingSuggestion && (
+              <SuggestionBadge value={summary.endingSuggestion} />
+            )}
+            {summary.trophy && (
+              <SuggestionBadge value={summary.trophy} />
+            )}
+          </>
+        )}
       </div>
 
       {/* ── 列ヘッダー ── */}
@@ -268,10 +284,21 @@ function ATBlock({
 
 function SummaryCell({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center px-1 py-1.5 border-r border-gray-600 last:border-r-0">
-      <span className="text-[8px] font-mono text-gray-400 leading-none">{label}</span>
-      <span className={`text-[11px] font-mono font-bold mt-0.5 ${highlight ? "text-yellow-300" : "text-white"}`}>
+    <div className="flex flex-col items-center justify-center px-1 py-1 border-r border-green-900 shrink-0">
+      <span className="text-[7px] font-mono text-gray-400 leading-none">{label}</span>
+      <span className={`text-[10px] font-mono font-bold mt-0.5 ${highlight ? "text-yellow-300" : "text-white"}`}>
         {value}
+      </span>
+    </div>
+  );
+}
+
+function SuggestionBadge({ value }: { value: string }) {
+  const lines = getSuggestionListLines(value);
+  return (
+    <div className="flex items-center justify-center px-1.5 py-1 border-l border-green-900 shrink-0" style={{ backgroundColor: "#1a3d1f" }}>
+      <span className="text-[8px] font-mono text-green-300 leading-tight text-center">
+        {lines ? lines.name : value}
       </span>
     </div>
   );
@@ -405,17 +432,17 @@ function SetRow({
 
   // AT種別による行背景色
   const rowBg =
-    row.atType === "裏AT"             ? "#fff5f5" :
-    row.atType === "隠れ裏AT（推測）" ? "#f5f0ff" :
-    "#fffde7"; // 通常AT: 薄いクリーム色
+    row.atType === "裏AT"             ? "#f3e8ff" :  // パープル系薄い
+    row.atType === "隠れ裏AT（推測）" ? "#fff1f2" :  // 薄いピンク
+    "#eff6ff"; // 通常AT: 薄い水色
 
   // AT種別によるセット欄色
   const setBg =
     row.atType === "裏AT"
-      ? { backgroundColor: "#fca5a5", color: "#9b1c1c" }
+      ? { backgroundColor: "#c4b5fd", color: "#5b21b6" }     // パープル
       : row.atType === "隠れ裏AT（推測）"
-      ? { backgroundColor: "#c4b5fd", color: "#5b21b6" }
-      : { backgroundColor: "#fef08a", color: "#713f12" }; // 通常AT: 薄い黄色
+      ? { backgroundColor: "#fecdd3", color: "#9f1239" }     // 薄いピンク
+      : { backgroundColor: "#bfdbfe", color: "#1e40af" };    // 通常AT: 薄い水色
 
   return (
     <div className={`${ROW_BR}`} style={{ backgroundColor: rowBg }}>
@@ -548,6 +575,22 @@ function SetRow({
             </div>
           )}
 
+          {/* エンディングカード */}
+          {row.endingCard && hasEndingCardData(row.endingCard) && (
+            <div>
+              <span className="text-[9px] font-mono text-gray-500 block mb-1.5">エンディングカード</span>
+              <EndingCardSummary card={row.endingCard} />
+            </div>
+          )}
+
+          {/* フリーメモ */}
+          {row.memo && (
+            <div className="px-2 py-1.5 bg-yellow-50 border border-yellow-300 rounded">
+              <p className="text-[9px] text-yellow-700 font-mono mb-0.5 font-bold">メモ</p>
+              <p className="text-[10px] text-gray-700 font-mono whitespace-pre-wrap">{row.memo}</p>
+            </div>
+          )}
+
           {/* アクション */}
           <div className="flex gap-2 justify-end border-t border-gray-200 pt-2">
             <button
@@ -643,6 +686,59 @@ function ArimaRow({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── エンディングカード サマリー表示 ──────────────────────────────────────────
+
+function hasEndingCardData(card: TGEndingCard): boolean {
+  return (
+    card.whiteWeak > 0 || card.whiteStrong > 0 ||
+    card.blueWeak > 0 || card.blueStrong > 0 ||
+    card.redWeak > 0 || card.redStrong > 0 ||
+    card.copper1 > 0 || card.copper2 > 0 || card.copper3 > 0 || card.copper4 > 0 ||
+    card.confirmed1 > 0 || card.confirmed2 > 0 || card.confirmed3 > 0 || card.confirmed4 > 0
+  );
+}
+
+function EndingCardSummary({ card }: { card: TGEndingCard }) {
+  const items: { label: string; count: number; bg: string; fg: string }[] = [];
+
+  // 白/青/赤
+  for (const { key, label, color, textColor } of TG_ENDING_CARD_LABELS) {
+    const count = card[key as keyof TGEndingCard] as number;
+    if (count > 0) items.push({ label: label.replace(/【|】/g, ""), count, bg: color, fg: textColor });
+  }
+  // 銅
+  for (const { key, label, color, textColor } of TG_COPPER_CARD_TYPES) {
+    const count = card[key as keyof TGEndingCard] as number;
+    if (count > 0) items.push({ label: label.replace(/【|】/g, ""), count, bg: color, fg: textColor });
+  }
+  // 確定
+  for (const { key, label, color, textColor, rainbow } of TG_CONFIRMED_CARD_TYPES) {
+    const count = card[key as keyof TGEndingCard] as number;
+    if (count > 0) items.push({
+      label: label.replace(/【|】/g, ""),
+      count,
+      bg: rainbow ? "linear-gradient(90deg,#ef4444,#f59e0b,#22c55e,#3b82f6,#8b5cf6)" : color,
+      fg: textColor,
+    });
+  }
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {items.map(({ label, count, bg, fg }, i) => (
+        <span
+          key={i}
+          className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
+          style={bg.startsWith("linear") ? { background: bg, color: fg } : { backgroundColor: bg, color: fg }}
+        >
+          {label} x{count}
+        </span>
+      ))}
     </div>
   );
 }
