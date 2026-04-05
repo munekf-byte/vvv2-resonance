@@ -238,52 +238,85 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
         </div>
 
         {/* ── CZ内容カウンター ── */}
-        <Section title="CZ内容カウンター">
-          {([
-            { key: "bell"       as const, label: "押/斜🔔", bg: "#fef9c3", color: "#713f12" },
-            { key: "replay"     as const, label: "リプ",     bg: "#cffafe", color: "#155e75" },
-            { key: "weakRare"   as const, label: "弱レア",   bg: "#ede9fe", color: "#5b21b6" },
-            { key: "strongRare" as const, label: "強レア",   bg: "#c084fc", color: "#ffffff" },
-          ]).map(({ key, label, bg, color }) => {
-            const cz = form.czCounter ?? { bell: 0, replay: 0, weakRare: 0, strongRare: 0, hitRole: "" };
-            const val = cz[key] as number;
-            const isHit = cz.hitRole === key;
-            return (
-              <div key={key} className="flex items-center border-b border-gray-200 last:border-b-0" style={{ minHeight: "48px" }}>
-                <div className="flex items-center justify-center font-mono font-bold text-[13px] shrink-0"
-                  style={{ width: "68px", height: "48px", backgroundColor: bg, color, borderRight: "2px solid #374151" }}>
-                  {label}
-                </div>
-                <div className="flex items-center gap-1.5 flex-1 justify-center px-1">
-                  <button onClick={() => setCZCounter(key, 1)}
-                    className="w-9 h-9 rounded-full font-mono font-black text-[8px] active:scale-95 transition-transform"
-                    style={{ backgroundColor: "#c8e6c9", color: "#1b5e20" }}>
-                    PUSH
-                  </button>
-                  <button onClick={() => setCZCounter(key, -1)}
-                    className="w-9 h-9 rounded-full font-mono font-black text-sm active:scale-95 transition-transform"
-                    style={{ backgroundColor: "#fce4ec", color: "#880e4f" }}>
-                    -1
-                  </button>
-                  <button onClick={() => setCZHit(key)}
-                    className="w-9 h-9 rounded-full font-mono font-black text-sm active:scale-95 transition-transform"
-                    style={{
-                      backgroundColor: isHit ? "#b91c1c" : "#ef4444",
-                      color: "#ffffff",
-                      boxShadow: isHit ? "0 0 0 3px #fca5a5" : "none",
-                    }}>
-                    当
-                  </button>
-                </div>
-                <div className="flex items-center justify-center font-mono font-black text-xl shrink-0"
-                  style={{ width: "48px", height: "48px", border: "2px solid #374151", borderRadius: "4px", marginRight: "4px",
-                    backgroundColor: val > 0 ? "#1f2937" : "#f9fafb", color: val > 0 ? "#ffffff" : "#9ca3af" }}>
-                  {val}
-                </div>
+        {(() => {
+          const cz = form.czCounter ?? { bell: 0, replay: 0, weakRare: 0, strongRare: 0, hitRole: "" };
+          const hasHit = !!cz.hitRole;
+          return (
+            <div className="relative rounded border border-gray-400 overflow-hidden">
+              {/* 背景画像: pre_hit（うっすら） */}
+              <div className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage: "url(/images/pre_hit.png)",
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  opacity: 0.08,
+                }} />
+
+              {/* 当選時オーバーレイ: after_hit */}
+              {hasHit && (
+                <div className="absolute inset-0 pointer-events-none z-10 animate-[fadeIn_0.2s_ease-out]"
+                  style={{
+                    backgroundImage: "url(/images/after_hit.png)",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    opacity: 0.7,
+                  }} />
+              )}
+
+              {/* ヘッダー */}
+              <div className="relative z-20 px-3 pt-3 pb-1">
+                <p className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-wide">CZ内容カウンター</p>
               </div>
-            );
-          })}
-        </Section>
+
+              {/* カウンター行 */}
+              <div className="relative z-20">
+                {([
+                  { key: "bell"       as const, label: "押/斜🔔", bg: "#fef9c3", color: "#713f12" },
+                  { key: "replay"     as const, label: "リプ",     bg: "#cffafe", color: "#155e75" },
+                  { key: "weakRare"   as const, label: "弱レア",   bg: "#ede9fe", color: "#5b21b6" },
+                  { key: "strongRare" as const, label: "強レア",   bg: "#c084fc", color: "#ffffff" },
+                ]).map(({ key, label, bg, color }) => {
+                  const val = cz[key] as number;
+                  const isHit = cz.hitRole === key;
+                  return (
+                    <div key={key} className="flex items-center border-b border-gray-200 last:border-b-0" style={{ minHeight: "48px" }}>
+                      <div className="flex items-center justify-center font-mono font-bold text-[13px] shrink-0"
+                        style={{ width: "68px", height: "48px", backgroundColor: bg, color, borderRight: "2px solid #374151" }}>
+                        {label}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-1 justify-center px-1">
+                        <button onClick={() => setCZCounter(key, 1)}
+                          className="w-9 h-9 rounded-full font-mono font-black text-[8px] active:scale-95 transition-transform"
+                          style={{ backgroundColor: "#c8e6c9", color: "#1b5e20" }}>
+                          PUSH
+                        </button>
+                        <button onClick={() => setCZCounter(key, -1)}
+                          className="w-9 h-9 rounded-full font-mono font-black text-sm active:scale-95 transition-transform"
+                          style={{ backgroundColor: "#fce4ec", color: "#880e4f" }}>
+                          -1
+                        </button>
+                        <button onClick={() => setCZHit(key)}
+                          className="w-9 h-9 rounded-full font-mono font-black text-sm active:scale-95 transition-transform"
+                          style={{
+                            backgroundColor: isHit ? "#b91c1c" : "#ef4444",
+                            color: "#ffffff",
+                            boxShadow: isHit ? "0 0 0 3px #fca5a5, 0 0 12px rgba(185,28,28,0.5)" : "none",
+                          }}>
+                          当
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-center font-mono font-black text-xl shrink-0"
+                        style={{ width: "48px", height: "48px", border: "2px solid #374151", borderRadius: "4px", marginRight: "4px",
+                          backgroundColor: val > 0 ? "#1f2937" : "#f9fafb", color: val > 0 ? "#ffffff" : "#9ca3af" }}>
+                        {val}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* ── 前兆履歴 (nd-8) ── */}
         <Section title="前兆履歴">
