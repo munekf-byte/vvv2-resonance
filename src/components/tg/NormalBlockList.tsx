@@ -107,18 +107,6 @@ export function NormalBlockList({ blocks, atLabels, modeProbs, onEdit, onDelete 
             return (
               <div key={block.id} className={`${ROW_BORDER} bg-white`}>
 
-                {/* ── ヤメ表示バナー ── */}
-                {block.yame && (
-                  <div
-                    className="flex items-center justify-center gap-1.5 py-1"
-                    style={{ backgroundColor: "#1e3a5f" }}
-                  >
-                    <span className="text-[10px] font-mono font-bold text-white tracking-wider">
-                      ヤメ{block.jisshuG != null ? ` · ${block.jisshuG}G` : ""}
-                    </span>
-                  </div>
-                )}
-
                 {/* ── メイン行 ── */}
                 <div className={`grid ${COLS}`}>
 
@@ -286,6 +274,18 @@ export function NormalBlockList({ blocks, atLabels, modeProbs, onEdit, onDelete 
                         編集
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {/* ── ヤメ表示バナー（ブロック直下） ── */}
+                {block.yame && (
+                  <div
+                    className="flex items-center justify-center gap-1.5 py-1"
+                    style={{ backgroundColor: "#1e3a5f" }}
+                  >
+                    <span className="text-[10px] font-mono font-bold text-white tracking-wider">
+                      ヤメ{block.jisshuG != null ? ` · ${block.jisshuG}G` : ""}
+                    </span>
                   </div>
                 )}
               </div>
