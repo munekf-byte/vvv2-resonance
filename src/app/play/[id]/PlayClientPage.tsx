@@ -12,6 +12,7 @@ import { NormalBlockList } from "@/components/tg/NormalBlockList";
 import { NormalBlockEditDashboard } from "@/components/tg/NormalBlockEditDashboard";
 import { ATBlockList } from "@/components/tg/ATBlockList";
 import { ATBlockEditDashboard } from "@/components/tg/ATBlockEditDashboard";
+import { SummaryTab } from "@/components/tg/SummaryTab";
 import { lsLoadSession, lsSaveSession } from "@/lib/tg/localStore";
 import { estimateAllModes } from "@/lib/engine/modeEstimation";
 
@@ -66,7 +67,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const updateTGATRow      = useSessionStore((s) => s.updateTGATRow);
   const deleteTGATRow      = useSessionStore((s) => s.deleteTGATRow);
 
-  const [activeTab,    setActiveTab]    = useState<"normal" | "at">("normal");
+  const [activeTab,    setActiveTab]    = useState<"normal" | "at" | "summary">("normal");
   const [normalEdit,   setNormalEdit]   = useState<NormalEditingState>(NORMAL_CLOSED);
   const [atEdit,       setATEdit]       = useState<ATEditingState>(AT_CLOSED);
 
@@ -190,7 +191,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               <p className="text-sm font-mono font-bold text-white truncate">
                 {session?.machineName ?? "セッション"}
               </p>
-              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v1.7</span>
+              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v1.8</span>
             </div>
             <p className="text-[10px] font-mono text-gray-400">
               {activeTab === "normal"
@@ -229,6 +230,17 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           >
             AT記録 {atCount > 0 ? `(${atCount})` : ""}
           </button>
+          <button
+            onClick={() => setActiveTab("summary")}
+            className="flex-1 py-2 text-[11px] font-mono font-bold transition-colors"
+            style={
+              activeTab === "summary"
+                ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" }
+                : { color: "#6b7280", borderBottom: "2px solid transparent" }
+            }
+          >
+            集計
+          </button>
         </div>
       </header>
 
@@ -254,6 +266,15 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
             onAddRow={handleATAddRow}
             onEditRow={(atKey, row) => handleATEditRow(atKey, row)}
             onDeleteRow={handleATDeleteRow}
+          />
+        )}
+
+        {/* 集計タブ */}
+        {activeTab === "summary" && (
+          <SummaryTab
+            blocks={blocks}
+            atEntries={atEntries}
+            totalGames={session?.summary?.totalGames ?? null}
           />
         )}
       </main>
