@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { create } from "zustand";
-import type { PlaySession, NormalBlock, TGATEntry, TGATRow } from "@/types";
+import type { PlaySession, NormalBlock, TGATEntry, TGATRow, UchidashiState, ShushiData } from "@/types";
 
 // -----------------------------------------------------------------------------
 // Store 型定義
@@ -32,6 +32,9 @@ interface SessionActions {
 
   updateStartDiff: (newStartDiff: number) => void;
   updateInitialThroughCount: (count: number) => void;
+
+  updateUchidashi: (uchidashi: UchidashiState | null) => void;
+  updateShushi: (shushi: ShushiData | null) => void;
 
   clearSession: () => void;
   clearError: () => void;
@@ -141,6 +144,12 @@ export const useSessionStore = create<SessionState & SessionActions>(
 
     updateInitialThroughCount: (count) =>
       mutateSession(set, get, (s) => ({ ...s, initialThroughCount: count })),
+
+    updateUchidashi: (uchidashi) =>
+      mutateSession(set, get, (s) => ({ ...s, uchidashi })),
+
+    updateShushi: (shushi) =>
+      mutateSession(set, get, (s) => ({ ...s, shushi })),
 
     // ---- ユーティリティ ----
     clearSession: () => set({ session: null, error: null }),

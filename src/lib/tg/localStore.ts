@@ -135,6 +135,8 @@ export async function createSessionWithCloud(machineName: string): Promise<PlayS
     summary: null,
     modeInferences: [],
     memo: null,
+    uchidashi: null,
+    shushi: null,
     createdAt: now,
     updatedAt: now,
   };

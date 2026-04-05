@@ -2,7 +2,7 @@
 // VALVRAVE-RESONANCE: セッション DB 操作 (サーバー用)
 // =============================================================================
 
-import type { PlaySession, NormalBlock, TGATEntry, SessionSummary } from "@/types";
+import type { PlaySession, NormalBlock, TGATEntry, SessionSummary, UchidashiState, ShushiData } from "@/types";
 import { createServerSupabaseClient } from "./server";
 
 // -----------------------------------------------------------------------------
@@ -29,6 +29,8 @@ function rowToSession(row: Record<string, unknown>): PlaySession {
     summary: castJson<SessionSummary | null>(row.summary ?? null),
     modeInferences: castJson<null[]>(row.mode_inferences ?? []),
     memo: (row.memo as string | null) ?? null,
+    uchidashi: castJson<UchidashiState | null>(row.uchidashi ?? null),
+    shushi: castJson<ShushiData | null>(row.shushi ?? null),
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -84,6 +86,8 @@ export async function saveSessionToDb(session: PlaySession): Promise<boolean> {
       start_diff: session.startDiff,
       initial_through_count: session.initialThroughCount,
       memo: session.memo,
+      uchidashi: session.uchidashi as unknown as import("@/types").Json,
+      shushi: session.shushi as unknown as import("@/types").Json,
       updated_at: new Date().toISOString(),
     })
     .eq("id", session.id)

@@ -27,6 +27,8 @@ function makeFallbackSession(id: string, userId: string): PlaySession {
     summary: null,
     modeInferences: [],
     memo: null,
+    uchidashi: null,
+    shushi: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

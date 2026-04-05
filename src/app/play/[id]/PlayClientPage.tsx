@@ -6,13 +6,15 @@
 
 import { useEffect, useCallback, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import type { PlaySession, NormalBlock, TGATRow, TGATSet, TGATEntry } from "@/types";
+import type { PlaySession, NormalBlock, TGATRow, TGATSet, TGATEntry, UchidashiState, ShushiData } from "@/types";
 import { useSessionStore } from "@/store/useSessionStore";
 import { NormalBlockList } from "@/components/tg/NormalBlockList";
 import { NormalBlockEditDashboard } from "@/components/tg/NormalBlockEditDashboard";
 import { ATBlockList } from "@/components/tg/ATBlockList";
 import { ATBlockEditDashboard } from "@/components/tg/ATBlockEditDashboard";
 import { SummaryTab } from "@/components/tg/SummaryTab";
+import { UchidashiEditDashboard } from "@/components/tg/UchidashiEditDashboard";
+import { ShushiEditDashboard } from "@/components/tg/ShushiEditDashboard";
 import { lsLoadSession, lsSaveSession } from "@/lib/tg/localStore";
 import { estimateAllModes } from "@/lib/engine/modeEstimation";
 import { captureAndDownload } from "@/lib/tg/captureImage";
@@ -67,10 +69,14 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const appendTGATRow      = useSessionStore((s) => s.appendTGATRow);
   const updateTGATRow      = useSessionStore((s) => s.updateTGATRow);
   const deleteTGATRow      = useSessionStore((s) => s.deleteTGATRow);
+  const updateUchidashi    = useSessionStore((s) => s.updateUchidashi);
+  const updateShushi       = useSessionStore((s) => s.updateShushi);
 
   const [activeTab,    setActiveTab]    = useState<"normal" | "at" | "summary">("normal");
   const [normalEdit,   setNormalEdit]   = useState<NormalEditingState>(NORMAL_CLOSED);
   const [atEdit,       setATEdit]       = useState<ATEditingState>(AT_CLOSED);
+  const [uchidashiOpen, setUchidashiOpen] = useState(false);
+  const [shushiOpen,    setShushiOpen]    = useState(false);
 
   // ── 起動: localStorage 優先復元 ────────────────────────────────────────────
   useEffect(() => {
@@ -98,6 +104,8 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
   const blocks     = session?.normalBlocks ?? [];
   const atEntries  = session?.atEntries   ?? [];
+  const uchidashi  = session?.uchidashi   ?? null;
+  const shushi     = session?.shushi      ?? null;
   const atLabels   = computeAtLabels(blocks);
   const atKeyList  = computeAtKeyList(blocks);
   const atCount    = blocks.filter((b) => b.atWin).length;
@@ -190,7 +198,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const normalListRef = useRef<HTMLDivElement>(null);
   const atListRef = useRef<HTMLDivElement>(null);
 
-  const anyEditOpen = normalEdit.open || atEdit.open;
+  const anyEditOpen = normalEdit.open || atEdit.open || uchidashiOpen || shushiOpen;
 
   return (
     <div className="flex flex-col overflow-hidden" style={{ height: "100dvh" }}>
@@ -212,7 +220,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               <p className="text-sm font-mono font-bold text-white truncate">
                 {session?.machineName ?? "セッション"}
               </p>
-              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v3.2</span>
+              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v3.3</span>
             </div>
             <p className="text-[10px] font-mono text-gray-400">
               {activeTab === "normal"
@@ -279,6 +287,15 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
                 画像で保存
               </button>
             </div>
+
+            {/* ── 打ち出し状態・収支 表示セクション ── */}
+            {(uchidashi || shushi) && (
+              <div className="px-3 pt-2 pb-1 space-y-2">
+                {uchidashi && <UchidashiDisplayCard data={uchidashi} onEdit={() => setUchidashiOpen(true)} />}
+                {shushi && <ShushiDisplayCard data={shushi} onEdit={() => setShushiOpen(true)} />}
+              </div>
+            )}
+
             <div ref={normalListRef}>
               <NormalBlockList
                 blocks={blocks}
@@ -326,10 +343,24 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
       {/* ===== FAB: 通常時タブのみ ===== */}
       {activeTab === "normal" && !anyEditOpen && (
-        <div className="fixed bottom-6 right-4 z-40">
+        <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center gap-2 px-4 max-w-2xl mx-auto">
+          <button
+            onClick={() => setUchidashiOpen(true)}
+            className="flex items-center gap-1 font-mono font-bold text-[11px] px-4 py-3 rounded-full shadow-lg active:scale-95 transition-transform"
+            style={{ backgroundColor: "#1e40af", color: "#fff" }}
+          >
+            打ち出し設定
+          </button>
+          <button
+            onClick={() => setShushiOpen(true)}
+            className="flex items-center gap-1 font-mono font-bold text-[11px] px-4 py-3 rounded-full shadow-lg active:scale-95 transition-transform"
+            style={{ backgroundColor: "#059669", color: "#fff" }}
+          >
+            収支入力
+          </button>
           <button
             onClick={handleNormalOpenNew}
-            className="flex items-center gap-2 bg-v2-red text-white font-mono font-bold text-sm px-5 py-3 rounded-full shadow-lg active:scale-95 transition-transform"
+            className="flex items-center gap-1 bg-v2-red text-white font-mono font-bold text-[11px] px-4 py-3 rounded-full shadow-lg active:scale-95 transition-transform"
           >
             ＋ 周期追加
           </button>
@@ -344,6 +375,11 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           onSave={handleNormalSave}
           onTempSave={handleNormalTempSave}
           onClose={() => setNormalEdit(NORMAL_CLOSED)}
+          onYame={(yameBlock) => {
+            if (normalEdit.block === null) appendNormalBlock(yameBlock);
+            else updateNormalBlock(yameBlock.id, yameBlock);
+            setNormalEdit(NORMAL_CLOSED);
+          }}
         />
       )}
 
@@ -357,6 +393,24 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           onSave={handleATSave}
           onTempSave={handleATTempSave}
           onClose={() => setATEdit(AT_CLOSED)}
+        />
+      )}
+
+      {/* ===== 打ち出し状態設定ダッシュボード ===== */}
+      {uchidashiOpen && (
+        <UchidashiEditDashboard
+          data={uchidashi}
+          onSave={(data) => { updateUchidashi(data); setUchidashiOpen(false); }}
+          onClose={() => setUchidashiOpen(false)}
+        />
+      )}
+
+      {/* ===== 収支入力ダッシュボード ===== */}
+      {shushiOpen && (
+        <ShushiEditDashboard
+          data={shushi}
+          onSave={(data) => { updateShushi(data); setShushiOpen(false); }}
+          onClose={() => setShushiOpen(false)}
         />
       )}
 
@@ -382,6 +436,91 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── 打ち出し状態 表示カード ─────────────────────────────────────────────────
+
+function UchidashiDisplayCard({ data, onEdit }: { data: UchidashiState; onEdit: () => void }) {
+  const items: { label: string; value: string }[] = [];
+  if (data.currentGames != null) items.push({ label: "現在G数", value: `${data.currentGames}G` });
+  if (data.totalGames != null) items.push({ label: "Total G数", value: `${data.totalGames}G` });
+  if (data.samai != null) items.push({ label: "差枚数", value: `${data.samai >= 0 ? "+" : ""}${data.samai}枚` });
+  if (data.reminiscence != null) items.push({ label: "レミニセンス", value: `${data.reminiscence}回` });
+  if (data.rize != null) items.push({ label: "大食いの利世", value: `${data.rize}回` });
+  if (data.episodeBonus != null) items.push({ label: "エピソードBONUS", value: `${data.episodeBonus}回` });
+
+  if (items.length === 0) return null;
+
+  return (
+    <div
+      className="rounded border px-3 py-2 cursor-pointer active:scale-[0.98] transition-transform"
+      style={{ borderColor: "#1e40af", backgroundColor: "#eff6ff" }}
+      onClick={onEdit}
+    >
+      <div className="flex items-center justify-between mb-1.5">
+        <p className="text-[10px] font-mono font-bold" style={{ color: "#1e40af" }}>打ち出し状態</p>
+        <span className="text-[9px] font-mono text-gray-400">タップで編集</span>
+      </div>
+      <div className="grid grid-cols-3 gap-x-3 gap-y-1">
+        {items.map((item) => (
+          <div key={item.label} className="flex items-baseline gap-1">
+            <span className="text-[9px] font-mono text-gray-500">{item.label}</span>
+            <span className="text-[11px] font-mono font-bold text-gray-800">{item.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── 収支 表示カード ────────────────────────────────────────────────────────
+
+function ShushiDisplayCard({ data, onEdit }: { data: ShushiData; onEdit: () => void }) {
+  const totalInvest = (data.handCoins ?? 0) + (data.cashInvestK ?? 0) * data.coinRate;
+  const balance = (data.exchangeCoins ?? 0) - totalInvest;
+  const hasData = totalInvest > 0 || (data.exchangeCoins ?? 0) > 0;
+
+  if (!hasData) return null;
+
+  return (
+    <div
+      className="rounded border-2 px-3 py-2 cursor-pointer active:scale-[0.98] transition-transform"
+      style={{
+        borderColor: balance >= 0 ? "#16a34a" : "#dc2626",
+        backgroundColor: balance >= 0 ? "#f0fdf4" : "#fef2f2",
+      }}
+      onClick={onEdit}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-[10px] font-mono font-bold" style={{ color: balance >= 0 ? "#16a34a" : "#dc2626" }}>
+          収支
+        </p>
+        <span className="text-[9px] font-mono text-gray-400">タップで編集</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex gap-3">
+          {totalInvest > 0 && (
+            <div className="flex items-baseline gap-1">
+              <span className="text-[9px] font-mono text-gray-500">投資</span>
+              <span className="text-[11px] font-mono font-bold text-gray-700">{totalInvest.toLocaleString()}枚</span>
+            </div>
+          )}
+          {(data.exchangeCoins ?? 0) > 0 && (
+            <div className="flex items-baseline gap-1">
+              <span className="text-[9px] font-mono text-gray-500">交換</span>
+              <span className="text-[11px] font-mono font-bold text-gray-700">{(data.exchangeCoins ?? 0).toLocaleString()}枚</span>
+            </div>
+          )}
+        </div>
+        <p
+          className="text-base font-mono font-black"
+          style={{ color: balance >= 0 ? "#16a34a" : "#dc2626" }}
+        >
+          {balance >= 0 ? "+" : ""}{balance.toLocaleString()}枚
+        </p>
+      </div>
     </div>
   );
 }

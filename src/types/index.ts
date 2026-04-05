@@ -50,6 +50,8 @@ export interface TGNormalBlock {
   czCounter?: TGCZCounter;
   /** フリーメモ */
   memo?: string;
+  /** ヤメフラグ — この周期でやめた */
+  yame?: boolean;
   /** 生成タイムスタンプ（不正検知用） */
   createdAt?: string;
 }
@@ -132,6 +134,40 @@ export interface TGATEntry {
 }
 
 // -----------------------------------------------------------------------------
+// 打ち出し状態設定
+// -----------------------------------------------------------------------------
+
+export interface UchidashiState {
+  /** 現在のゲーム数 */
+  currentGames: number | null;
+  /** Total ゲーム数 */
+  totalGames: number | null;
+  /** 打ち出し時差枚数 */
+  samai: number | null;
+  /** レミニセンス回数 */
+  reminiscence: number | null;
+  /** 大食いの利世 回数 */
+  rize: number | null;
+  /** エピソードボーナス回数 */
+  episodeBonus: number | null;
+}
+
+// -----------------------------------------------------------------------------
+// 収支入力
+// -----------------------------------------------------------------------------
+
+export interface ShushiData {
+  /** 1000円あたりの貸出枚数 (デフォルト46) */
+  coinRate: number;
+  /** 手持ち枚数（貯玉・当日出玉など） */
+  handCoins: number | null;
+  /** 現金投資 (k単位: 3 = 3000円) */
+  cashInvestK: number | null;
+  /** 交換枚数（最終持ち帰り枚数） */
+  exchangeCoins: number | null;
+}
+
+// -----------------------------------------------------------------------------
 // SessionSummary / PlaySession
 // -----------------------------------------------------------------------------
 
@@ -156,6 +192,10 @@ export interface PlaySession {
   summary: SessionSummary | null;
   modeInferences: null[];
   memo: string | null;
+  /** 打ち出し状態設定 */
+  uchidashi: UchidashiState | null;
+  /** 収支入力 */
+  shushi: ShushiData | null;
   createdAt: string;
   updatedAt: string;
 }

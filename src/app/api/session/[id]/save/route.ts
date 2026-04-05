@@ -46,6 +46,8 @@ export async function POST(
       start_diff: session.startDiff,
       initial_through_count: session.initialThroughCount,
       memo: session.memo,
+      uchidashi: session.uchidashi as unknown as Json,
+      shushi: session.shushi as unknown as Json,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

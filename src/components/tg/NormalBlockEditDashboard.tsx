@@ -40,6 +40,7 @@ interface Props {
   onSave: (block: NormalBlock) => void;
   onTempSave: (block: NormalBlock) => void;
   onClose: () => void;
+  onYame?: (block: NormalBlock) => void;
 }
 
 type FormState = Omit<NormalBlock, "id">;
@@ -61,6 +62,7 @@ function emptyForm(): FormState {
     eyecatch: "",
     czCounter: { bell: 0, replay: 0, weakRare: 0, strongRare: 0, hitRole: "" },
     memo: "",
+    yame: false,
   };
 }
 
@@ -68,11 +70,13 @@ const MAX_SLOTS = 5;
 
 // ─── メインコンポーネント ──────────────────────────────────────────────────────
 
-export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave, onClose }: Props) {
+export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave, onClose, onYame }: Props) {
   const isNew = block === null;
   const [form, setForm] = useState<FormState>(() =>
     block ? { ...block, memo: block.memo ?? "" } : emptyForm()
   );
+  const [yamePopup, setYamePopup] = useState(false);
+  const [yameG, setYameG] = useState<string>("");
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -409,7 +413,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
         </Section>
 
         {/* ── フリーメモ (nd-16) ── */}
-        <Section title="フリーメモ">
+        <Section title="フリ���メモ">
           <textarea
             placeholder="メモを入力..."
             className="w-full rounded px-2 py-2 text-[12px] font-mono focus:outline-none resize-none bg-white"
@@ -419,6 +423,20 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
             onChange={(e) => setField("memo", e.target.value || undefined)}
           />
         </Section>
+
+        {/* ── ヤメボタン ── */}
+        {onYame && (
+          <button
+            onClick={() => {
+              setYameG(form.jisshuG != null ? String(form.jisshuG) : "");
+              setYamePopup(true);
+            }}
+            className="w-full py-4 rounded-xl font-mono font-bold text-base text-white active:scale-95 transition-transform shadow-md"
+            style={{ backgroundColor: "#1e3a5f" }}
+          >
+            {form.yame ? "ヤメ���み" : "ヤメ"}
+          </button>
+        )}
       </div>
 
       {/* ===== 保存ボタン ===== */}
@@ -439,6 +457,65 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
           </button>
         </div>
       </div>
+
+      {/* ===== ヤメ確認ポッ��アップ ===== */}
+      {yamePopup && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4"
+          onClick={(e) => e.target === e.currentTarget && setYamePopup(false)}
+        >
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="px-5 py-4" style={{ backgroundColor: "#1e3a5f" }}>
+              <p className="text-white font-mono font-bold text-sm">ヤメ</p>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <p className="text-gray-700 font-mono text-sm">
+                稼働終了時の消化実ゲーム��を入力してください
+              </p>
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="��ーム数（任意）"
+                className="w-full text-sm font-mono rounded px-3 py-3 focus:outline-none bg-white text-center"
+                style={{ border: "2px solid #1e3a5f" }}
+                value={yameG}
+                onChange={(e) => setYameG(e.target.value)}
+                min={0}
+                autoFocus
+              />
+              <p className="text-[10px] font-mono text-gray-400">
+                入力しなくてもヤメを記録できます
+              </p>
+            </div>
+            <div className="flex border-t border-gray-200">
+              <button
+                onClick={() => setYamePopup(false)}
+                className="flex-1 py-4 text-sm font-mono font-bold text-gray-600 hover:bg-gray-50 transition-colors border-r border-gray-200"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={() => {
+                  const finalG = yameG !== "" ? Number(yameG) : form.jisshuG;
+                  const yameBlock: NormalBlock = {
+                    id: block?.id ?? crypto.randomUUID(),
+                    ...form,
+                    jisshuG: finalG,
+                    yame: true,
+                    createdAt: block?.createdAt ?? new Date().toISOString(),
+                  };
+                  setYamePopup(false);
+                  onYame?.(yameBlock);
+                }}
+                className="flex-1 py-4 text-sm font-mono font-bold text-white transition-colors"
+                style={{ backgroundColor: "#1e3a5f" }}
+              >
+                ヤメ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
