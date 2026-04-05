@@ -85,12 +85,16 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
   const [czOverlay, setCZOverlay] = useState(false);
   function setCZHit(key: string) {
     const cz = form.czCounter ?? { bell: 0, replay: 0, weakRare: 0, strongRare: 0, hitRole: "" };
-    // カウント+1 + hitRole設定 + オーバーレイ表示
-    setField("czCounter", {
-      ...cz,
-      [key]: (cz[key as keyof typeof cz] as number) + 1,
-      hitRole: key,
-    });
+    // カウント+1 + hitRole設定 + AT Get自動ON + オーバーレイ表示
+    setForm((prev) => ({
+      ...prev,
+      atWin: true,
+      czCounter: {
+        ...cz,
+        [key]: (cz[key as keyof typeof cz] as number) + 1,
+        hitRole: key,
+      },
+    }));
     setCZOverlay(true);
   }
 

@@ -195,7 +195,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               <p className="text-sm font-mono font-bold text-white truncate">
                 {session?.machineName ?? "セッション"}
               </p>
-              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v2.9</span>
+              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v3.0</span>
             </div>
             <p className="text-[10px] font-mono text-gray-400">
               {activeTab === "normal"
