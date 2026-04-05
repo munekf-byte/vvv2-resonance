@@ -6,7 +6,7 @@
 // =============================================================================
 
 import { useState } from "react";
-import type { NormalBlock } from "@/types";
+import type { NormalBlock, TGATEntry, TGATSet, TGArimaJudgment } from "@/types";
 import {
   getZoneCellColor,
   getModeCellColor,
@@ -26,9 +26,32 @@ import { topModes, type ModeProbs } from "@/lib/engine/modeEstimation";
 interface Props {
   blocks: NormalBlock[];
   atLabels: Map<string, string>;
+  atEntries?: TGATEntry[];
   modeProbs?: ModeProbs[];
   onEdit: (block: NormalBlock, index: number) => void;
   onDelete: (blockId: string) => void;
+}
+
+// ─── ATサマリー計算 ──────────────────────────────────────────────────────────
+
+function computeATSummary(entry: TGATEntry) {
+  const sets   = entry.rows.filter((r): r is TGATSet => r.rowType === "set");
+  const arimas = entry.rows.filter((r): r is TGArimaJudgment => r.rowType === "arima");
+
+  const setCount    = sets.length;
+  const bitesTotal  = sets.reduce((sum, s) => {
+    const n = s.bitesCoins === "ED" || s.bitesCoins === "" ? 0 : Number(s.bitesCoins);
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+  const directTotal = sets.reduce((sum, s) =>
+    sum + s.directAdds.reduce((ds, d) => ds + (d.coins ?? 0), 0), 0);
+  const ccgTotal    = arimas.reduce((sum, a) =>
+    sum + (a.result === "成功" && a.ccgCoins ? a.ccgCoins : 0), 0);
+
+  const endingSuggestion = sets.find((s) => s.endingSuggestion)?.endingSuggestion ?? "";
+  const trophy = sets.find((s) => s.trophy)?.trophy ?? "";
+
+  return { setCount, bitesTotal, directTotal, total: bitesTotal + directTotal + ccgTotal, endingSuggestion, trophy };
 }
 
 // ─── グリッド ─────────────────────────────────────────────────────────────────
@@ -40,7 +63,7 @@ const HDR_TEXT     = "#f9fafb";
 const COL_BORDER_R = "border-r border-gray-400";
 const ROW_BORDER   = "border-b border-gray-400";
 
-export function NormalBlockList({ blocks, atLabels, modeProbs, onEdit, onDelete }: Props) {
+export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit, onDelete }: Props) {
   const [expandedId,    setExpandedId]    = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null); // 削除確認中の blockId
 
@@ -189,6 +212,41 @@ export function NormalBlockList({ blocks, atLabels, modeProbs, onEdit, onDelete 
                     {hasExtras ? (isExpanded ? "▲" : "▼") : ""}
                   </button>
                 </div>
+
+                {/* ── ATサマリーバー（AT当選ブロックのみ） ── */}
+                {atLabel && atEntries && (() => {
+                  const entry = atEntries.find((e) => e.atKey === atLabel);
+                  if (!entry || entry.rows.length === 0) return null;
+                  const s = computeATSummary(entry);
+                  return (
+                    <div
+                      className="flex items-stretch border-t border-green-900"
+                      style={{ backgroundColor: "#14532d" }}
+                    >
+                      <div className="px-2 py-1.5 flex items-center justify-center border-r border-green-900 shrink-0">
+                        <span className="text-white font-mono font-black text-[11px]">{atLabel}</span>
+                      </div>
+                      <ATSummaryCell label="Set" value={`${s.setCount}`} />
+                      <ATSummaryCell label="BITES" value={s.bitesTotal.toLocaleString()} />
+                      <ATSummaryCell label="直乗せ" value={s.directTotal.toLocaleString()} />
+                      <ATSummaryCell label="合計" value={s.total.toLocaleString()} highlight />
+                      {s.endingSuggestion && (
+                        <div className="flex items-center justify-center px-1.5 py-1 border-l border-green-900 shrink-0" style={{ backgroundColor: "#1a3d1f" }}>
+                          <span className="text-[8px] font-mono text-green-300 leading-tight text-center">
+                            {getSuggestionListLines(s.endingSuggestion)?.name ?? s.endingSuggestion}
+                          </span>
+                        </div>
+                      )}
+                      {s.trophy && (
+                        <div className="flex items-center justify-center px-1.5 py-1 border-l border-green-900 shrink-0" style={{ backgroundColor: "#1a3d1f" }}>
+                          <span className="text-[8px] font-mono text-green-300 leading-tight text-center">
+                            {s.trophy}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* ── アコーディオン ── */}
                 {isExpanded && (
@@ -409,6 +467,18 @@ function MultiColorField({ label, values, color }: { label: string; values: stri
           </span>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** ATサマリーセル */
+function ATSummaryCell({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center px-1.5 py-1 border-r border-green-900 shrink-0">
+      <span className="text-[7px] font-mono text-gray-400 leading-none">{label}</span>
+      <span className={`text-[10px] font-mono font-bold mt-0.5 ${highlight ? "text-yellow-300" : "text-white"}`}>
+        {value}
+      </span>
     </div>
   );
 }

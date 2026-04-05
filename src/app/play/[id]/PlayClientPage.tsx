@@ -220,7 +220,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               <p className="text-sm font-mono font-bold text-white truncate">
                 {session?.machineName ?? "セッション"}
               </p>
-              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v3.3.1</span>
+              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v3.3.2</span>
             </div>
             <p className="text-[10px] font-mono text-gray-400">
               {activeTab === "normal"
@@ -300,6 +300,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               <NormalBlockList
                 blocks={blocks}
                 atLabels={atLabels}
+                atEntries={atEntries}
                 modeProbs={modeProbs}
                 onEdit={handleNormalEdit}
                 onDelete={(blockId) => deleteNormalBlock(blockId)}
