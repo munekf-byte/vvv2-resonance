@@ -63,6 +63,7 @@ export type Database = {
           summary: Json | null;
           mode_inferences: Json | null;
           memo: string | null;
+          is_deleted: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -80,6 +81,7 @@ export type Database = {
           summary?: Json | null;
           mode_inferences?: Json | null;
           memo?: string | null;
+          is_deleted?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -97,6 +99,7 @@ export type Database = {
           summary?: Json | null;
           mode_inferences?: Json | null;
           memo?: string | null;
+          is_deleted?: boolean;
           created_at?: string;
           updated_at?: string;
         };

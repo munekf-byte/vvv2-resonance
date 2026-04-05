@@ -10,6 +10,7 @@ export async function GET() {
     .from("play_sessions")
     .select("id, machine_name, created_at, updated_at, status, normal_blocks, at_entries")
     .eq("user_id", user.id)
+    .eq("is_deleted", false)
     .order("updated_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

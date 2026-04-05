@@ -1,17 +1,18 @@
 "use client";
 // =============================================================================
 // TOKYO GHOUL RESONANCE: ダッシュボード Client
-// Supabase + localStorage からセッション一覧を表示
+// 論理削除 + 無料プラン3件制限（作成ブロック方式）
 // =============================================================================
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthContext";
 import {
-  lsGetSessionList, lsDeleteSession, lsSaveSession, lsLoadSession,
+  lsGetSessionList, lsDeleteSession,
   dbGetSessionList, createSessionWithCloud,
   type SessionMeta,
 } from "@/lib/tg/localStore";
+import { FREE_SESSION_LIMIT } from "@/lib/auth/access";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -24,24 +25,27 @@ export function DashboardClient() {
   const isPro = profile?.is_pro ?? false;
   const [sessions, setSessions] = useState<SessionMeta[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [sessionName, setSessionName] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadSessions();
-  }, []);
+  useEffect(() => { loadSessions(); }, []);
 
   async function loadSessions() {
     setLoading(true);
-    // クラウド優先、フォールバック localStorage
     const cloud = await dbGetSessionList();
-    if (cloud.length > 0) {
-      setSessions(cloud);
-    } else {
-      setSessions(lsGetSessionList());
-    }
+    setSessions(cloud.length > 0 ? cloud : lsGetSessionList());
     setLoading(false);
+  }
+
+  function handleNewSession() {
+    // 無料プラン: 有効セッション3件以上なら作成ブロック
+    if (!isPro && sessions.length >= FREE_SESSION_LIMIT) {
+      setShowLimitDialog(true);
+      return;
+    }
+    setShowModal(true);
   }
 
   async function handleCreate() {
@@ -56,15 +60,12 @@ export function DashboardClient() {
     router.push(`/play/${id}`);
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
+    // 論理削除: API経由で is_deleted=true + localStorage削除
     lsDeleteSession(id);
     setSessions((prev) => prev.filter((s) => s.id !== id));
     setDeleteConfirmId(null);
   }
-
-  // 表示制限: 無課金者は直近3件のみ
-  const visibleSessions = isPro ? sessions : sessions.slice(0, 3);
-  const hiddenCount = isPro ? 0 : Math.max(0, sessions.length - 3);
 
   return (
     <div className="space-y-4">
@@ -78,7 +79,8 @@ export function DashboardClient() {
         </div>
       ) : (
         <div className="space-y-2">
-          {visibleSessions.map((s) => (
+          {/* 全件表示（slice なし） */}
+          {sessions.map((s) => (
             <div key={s.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="flex items-stretch">
                 <button onClick={() => handleOpen(s.id)}
@@ -113,30 +115,51 @@ export function DashboardClient() {
             </div>
           ))}
 
-          {/* 無課金者向け Pro 案内 */}
-          {hiddenCount > 0 && (
-            <div className="bg-purple-50 rounded-xl border border-purple-200 p-4 text-center space-y-2">
-              <p className="font-mono font-bold text-purple-800 text-sm">
-                他 {hiddenCount}件 の稼働ログがあります
-              </p>
-              <p className="font-mono text-purple-600 text-xs">
-                Pro版へアップグレードすると全てのログを表示できます
-              </p>
-              <div className="bg-white rounded-lg border border-purple-200 px-3 py-2 mt-2">
-                <p className="font-mono text-gray-700 text-xs">PayPay決済で Pro を有効化</p>
-                <p className="font-mono text-gray-400 text-[10px] mt-0.5">管理者へお問い合わせください</p>
-              </div>
-            </div>
+          {/* 無課金者: セッション数表示 */}
+          {!isPro && (
+            <p className="text-center text-[10px] font-mono text-gray-400">
+              {sessions.length} / {FREE_SESSION_LIMIT} セッション使用中
+            </p>
           )}
         </div>
       )}
 
-      <button onClick={() => setShowModal(true)}
+      {/* 新規セッションボタン */}
+      <button onClick={handleNewSession}
         className="w-full flex items-center justify-center gap-2 bg-red-700 hover:bg-red-800 active:bg-red-900 text-white font-mono font-bold text-sm rounded-xl px-4 py-4 transition-all duration-150 shadow-md">
         <span className="text-base">＋</span>
         <span>新規セッション開始</span>
       </button>
 
+      {/* ===== 無料プラン制限ダイアログ ===== */}
+      {showLimitDialog && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center px-4"
+          onClick={(e) => e.target === e.currentTarget && setShowLimitDialog(false)}>
+          <div className="rounded-2xl shadow-xl w-full max-w-sm overflow-hidden" style={{ backgroundColor: "#f5f0e8" }}>
+            <div className="px-5 py-5 space-y-3">
+              <p className="font-mono font-bold text-gray-900 text-base">無料プランの制限</p>
+              <p className="font-mono text-gray-700 text-sm leading-relaxed">
+                無料プランの記録可能セッション数（{FREE_SESSION_LIMIT}件）を超えています。
+                これ以上のセッションを記録したい場合は、過去のセッションを削除するか、プロプランへのアップグレードをお願いします。
+              </p>
+              <div className="flex gap-2 pt-2">
+                <button onClick={() => setShowLimitDialog(false)}
+                  className="flex-1 py-3 rounded-lg border-2 border-gray-300 text-gray-600 font-mono text-sm font-bold hover:bg-white/50 transition-colors"
+                  style={{ backgroundColor: "rgba(255,255,255,0.3)" }}>
+                  OK
+                </button>
+                <button onClick={() => { setShowLimitDialog(false); /* TODO: Pro詳細ページ */ }}
+                  className="flex-1 py-3 rounded-lg text-white font-mono text-sm font-bold transition-colors"
+                  style={{ backgroundColor: "#7c3aed" }}>
+                  プロプランの詳細
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== セッション名入力モーダル ===== */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4"
           onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>

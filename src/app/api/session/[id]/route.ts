@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
+/** DELETE → 論理削除 (is_deleted = true) */
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -12,7 +13,7 @@ export async function DELETE(
 
   const { error } = await supabase
     .from("play_sessions")
-    .delete()
+    .update({ is_deleted: true, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", user.id);
 

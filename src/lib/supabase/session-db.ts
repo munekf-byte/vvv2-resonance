@@ -53,6 +53,7 @@ export async function loadSessionById(
     .select("*")
     .eq("id", id)
     .eq("user_id", userId)
+    .eq("is_deleted", false)
     .single();
 
   if (error || !data) return null;
