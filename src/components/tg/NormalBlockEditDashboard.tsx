@@ -252,15 +252,18 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
                   opacity: 0.08,
                 }} />
 
-              {/* 当選時オーバーレイ: after_hit */}
+              {/* 当選時オーバーレイ: after_hit — 最前面に被せてびっくりさせる */}
               {hasHit && (
-                <div className="absolute inset-0 pointer-events-none z-10 animate-[fadeIn_0.2s_ease-out]"
+                <div className="absolute inset-0 z-50 animate-[fadeIn_0.15s_ease-out]"
                   style={{
                     backgroundImage: "url(/images/after_hit.png)",
                     backgroundSize: "cover",
                     backgroundPosition: "center",
-                    opacity: 0.7,
-                  }} />
+                    opacity: 0.85,
+                  }}>
+                  {/* タップで閉じる */}
+                  <button className="absolute inset-0 w-full h-full" onClick={() => setCZHit(cz.hitRole)} />
+                </div>
               )}
 
               {/* ヘッダー */}
