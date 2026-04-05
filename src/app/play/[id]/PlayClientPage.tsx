@@ -15,6 +15,7 @@ import { ATBlockEditDashboard } from "@/components/tg/ATBlockEditDashboard";
 import { SummaryTab } from "@/components/tg/SummaryTab";
 import { lsLoadSession, lsSaveSession } from "@/lib/tg/localStore";
 import { estimateAllModes } from "@/lib/engine/modeEstimation";
+import { captureAndDownload } from "@/lib/tg/captureImage";
 
 interface PlayClientPageProps {
   initialSession: PlaySession;
@@ -169,6 +170,9 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
     deleteTGATRow(atKey, rowId);
   }
 
+  const normalListRef = useRef<HTMLDivElement>(null);
+  const atListRef = useRef<HTMLDivElement>(null);
+
   const anyEditOpen = normalEdit.open || atEdit.open;
 
   return (
@@ -191,7 +195,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               <p className="text-sm font-mono font-bold text-white truncate">
                 {session?.machineName ?? "セッション"}
               </p>
-              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v1.9</span>
+              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v2.0</span>
             </div>
             <p className="text-[10px] font-mono text-gray-400">
               {activeTab === "normal"
@@ -249,24 +253,48 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
         {/* 通常時タブ */}
         {activeTab === "normal" && (
-          <NormalBlockList
-            blocks={blocks}
-            atLabels={atLabels}
-            modeProbs={modeProbs}
-            onEdit={handleNormalEdit}
-            onDelete={(blockId) => deleteNormalBlock(blockId)}
-          />
+          <>
+            <div className="flex justify-end px-3 py-1.5 border-b border-gray-200">
+              <button
+                onClick={() => normalListRef.current && captureAndDownload(normalListRef.current, `TG_Normal_${new Date().toISOString().slice(0, 10)}.png`)}
+                className="text-[10px] font-mono px-3 py-1 rounded bg-gray-700 text-white active:scale-95 transition-transform"
+              >
+                画像で保存
+              </button>
+            </div>
+            <div ref={normalListRef}>
+              <NormalBlockList
+                blocks={blocks}
+                atLabels={atLabels}
+                modeProbs={modeProbs}
+                onEdit={handleNormalEdit}
+                onDelete={(blockId) => deleteNormalBlock(blockId)}
+              />
+            </div>
+          </>
         )}
 
         {/* AT記録タブ */}
         {activeTab === "at" && (
-          <ATBlockList
-            atKeyList={atKeyList}
-            atEntries={atEntries}
-            onAddRow={handleATAddRow}
-            onEditRow={(atKey, row) => handleATEditRow(atKey, row)}
-            onDeleteRow={handleATDeleteRow}
-          />
+          <>
+            <div className="flex justify-end px-3 py-1.5 border-b border-gray-200">
+              <button
+                onClick={() => atListRef.current && captureAndDownload(atListRef.current, `TG_AT_${new Date().toISOString().slice(0, 10)}.png`)}
+                className="text-[10px] font-mono px-3 py-1 rounded bg-gray-700 text-white active:scale-95 transition-transform"
+              >
+                画像で保存
+              </button>
+            </div>
+            <div ref={atListRef}>
+              <ATBlockList
+                atKeyList={atKeyList}
+                atEntries={atEntries}
+                onAddRow={handleATAddRow}
+                onEditRow={(atKey, row) => handleATEditRow(atKey, row)}
+                onDeleteRow={handleATDeleteRow}
+              />
+            </div>
+          </>
         )}
 
         {/* 集計タブ */}

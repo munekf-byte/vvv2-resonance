@@ -1,8 +1,8 @@
 "use client";
 // =============================================================================
-// TOKYO GHOUL RESONANCE: 集計タブ v1.9
+// TOKYO GHOUL RESONANCE: 集計タブ v2.0
 // 横スクロール禁止・iPhone Pro幅完全収納
-// カテゴリ縦長・2〜3列横並びレイアウト
+// カテゴリ縦長・2〜3列横並び / 画像出力テキスト修正済み
 // =============================================================================
 
 import { useRef, useCallback, useState, useEffect } from "react";
@@ -41,10 +41,6 @@ function extractName(s: string): string {
   const m = s.match(/\]\s*(.+?)\s*-/);
   return m ? m[1] : s;
 }
-function extractHint(s: string): string {
-  const m = s.match(/-\s*(.+)$/);
-  return m ? m[1] : "";
-}
 function groupCount(arr: string[]): { value: string; count: number }[] {
   const map = new Map<string, number>();
   for (const v of arr) map.set(v, (map.get(v) ?? 0) + 1);
@@ -56,7 +52,6 @@ function groupCount(arr: string[]): { value: string; count: number }[] {
 export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
 
-  // 総消化G数: localStorage 保存
   const lsKey = `tgr_totalG_${sessionId}`;
   const [totalGInput, setTotalGInput] = useState("");
   useEffect(() => {
@@ -68,7 +63,6 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
     localStorage.setItem(lsKey, v);
   }
 
-  // ── 計算 ──
   const sum2 = blocks.reduce((s, b) => s + (b.jisshuG ?? 0), 0);
   const sum1 = totalGInput ? parseInt(totalGInput) || sum2 : sum2;
 
@@ -108,7 +102,6 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
   const zoneAll = computeZoneDistribution(blocks, "all");
   const zoneAfterAT = computeZoneDistribution(blocks, "afterAT");
 
-  // ── 画像出力 ──
   const handleCapture = useCallback(async () => {
     if (!captureRef.current) return;
     const html2canvas = (await import("html2canvas")).default;
@@ -128,134 +121,108 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
         </button>
       </div>
 
-      <div ref={captureRef} className="bg-white px-1.5 py-2 text-[8px] font-mono">
+      <div ref={captureRef} style={{ padding: "8px 6px", backgroundColor: "#ffffff", fontFamily: "monospace" }}>
 
         {/* ===== Row 1: 通常時 | 赫眼/精神世界 ===== */}
-        <div className="grid grid-cols-2 gap-1 mb-1">
-
-          {/* 通常時 */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <Cat color="#1565c0" title="通常時">
-            <TR>
-              <TD w>総消化G数</TD>
-              <TDv>
+            <Row i={0}>
+              <Lbl b>総消化G数</Lbl>
+              <Val>
                 <input type="number" value={totalGInput} onChange={(e) => handleTotalGChange(e.target.value)}
-                  placeholder={String(sum2)} className="w-full bg-yellow-50 border border-yellow-400 rounded text-[9px] font-mono font-bold text-right px-1 py-0.5 focus:outline-none" />
-              </TDv>
-            </TR>
-            <TR><TD w>通常時G</TD><TDv>{sum2.toLocaleString()} G</TDv></TR>
-            <TR><TD w>CZ(レミニ&利世)</TD><TDv>{czCount}回 {prob(czCount, sum2)}</TDv></TR>
-            <TR><TD w>エピボ</TD><TDv>{epiCount}回 {prob(epiCount, sum2)}</TDv></TR>
-            <TR><TD w>AT直撃</TD><TDv>{directATCount}回 {prob(directATCount, sum2)}</TDv></TR>
-            <TR><TD w>AT初当たり</TD><TDv>{atWinCount}回 {prob(atWinCount, sum2)}</TDv></TR>
+                  placeholder={String(sum2)}
+                  style={{ width: "100%", backgroundColor: "#fefce8", border: "1px solid #ca8a04", borderRadius: "2px", fontSize: "9px", fontFamily: "monospace", fontWeight: 700, textAlign: "right", padding: "1px 4px", outline: "none" }} />
+              </Val>
+            </Row>
+            <Row i={1}><Lbl b>通常時G</Lbl><Val>{sum2.toLocaleString()} G</Val></Row>
+            <Row i={2}><Lbl b>CZ(レミニ&利世)</Lbl><Val>{czCount}回 {prob(czCount, sum2)}</Val></Row>
+            <Row i={3}><Lbl b>エピボ</Lbl><Val>{epiCount}回 {prob(epiCount, sum2)}</Val></Row>
+            <Row i={4}><Lbl b>AT直撃</Lbl><Val>{directATCount}回 {prob(directATCount, sum2)}</Val></Row>
+            <Row i={5}><Lbl b>AT初当たり</Lbl><Val>{atWinCount}回 {prob(atWinCount, sum2)}</Val></Row>
           </Cat>
 
-          {/* 赫眼/精神世界 */}
           <Cat color="#b71c1c" title="赫眼 / 精神世界">
-            <TR><TD w>赫眼</TD><TDv>{kakuganTotal}回 {prob(kakuganTotal, sum1)}</TDv></TR>
-            {kakuganBD.map((k) => (
-              <TR key={k.label}><TD>　{k.label}</TD><TDv>{k.count}回 [{pct(k.count, kakuganTotal)}]</TDv></TR>
+            <Row i={0}><Lbl b>赫眼</Lbl><Val>{kakuganTotal}回 {prob(kakuganTotal, sum1)}</Val></Row>
+            {kakuganBD.map((k, i) => (
+              <Row key={k.label} i={i + 1}><Lbl>　{k.label}</Lbl><Val>{k.count}回 [{pct(k.count, kakuganTotal)}]</Val></Row>
             ))}
-            <TR><TD w>精神世界</TD><TDv>{shinsekaiTotal}回 {prob(shinsekaiTotal, sum2)}</TDv></TR>
-            {shinsekaiBS.map((s) => (
-              <TR key={s.label}><TD>　{s.label}</TD><TDv>{s.count}回 [{pct(s.count, shinsekaiTotal)}]</TDv></TR>
+            <Row i={kakuganBD.length + 1}><Lbl b>精神世界</Lbl><Val>{shinsekaiTotal}回 {prob(shinsekaiTotal, sum2)}</Val></Row>
+            {shinsekaiBS.map((s, i) => (
+              <Row key={s.label} i={kakuganBD.length + 2 + i}><Lbl>　{s.label}</Lbl><Val>{s.count}回 [{pct(s.count, shinsekaiTotal)}]</Val></Row>
             ))}
           </Cat>
         </div>
 
-        {/* ===== Row 2: 設定示唆 ===== */}
-        <Cat color="#e65100" title="設定示唆" className="mb-1">
-          <TR><TD w>設定情報</TD><TDv bold>{settingHints || "情報不足"}</TDv></TR>
-          <TR><TD w>トロフィー他</TD><TDv>{trophyCount}回</TDv></TR>
+        {/* ===== 設定示唆 ===== */}
+        <Cat color="#e65100" title="設定示唆" mb>
+          <Row i={0}><Lbl b>設定情報</Lbl><Val b>{settingHints || "情報不足"}</Val></Row>
+          <Row i={1}><Lbl b>トロフィー他</Lbl><Val>{trophyCount}回</Val></Row>
         </Cat>
 
-        <div className="grid grid-cols-2 gap-1 mb-1">
-          {/* CZ失敗 終了画面 */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <Cat color="#bf360c" title="[cz失敗] 終了画面">
-            {TG_ENDING_SUGGESTIONS.filter((s) => s.startsWith("[cz失敗]")).map((s) => {
+            {TG_ENDING_SUGGESTIONS.filter((s) => s.startsWith("[cz失敗]")).map((s, i) => {
               const c = czFailSuggestions.filter((v) => v === s).length;
-              return (
-                <TR key={s}><TD>{extractName(s)}</TD><TDv>{c}回</TDv></TR>
-              );
+              return <Row key={s} i={i}><Lbl>{extractName(s)}</Lbl><Val>{c}回</Val></Row>;
             })}
           </Cat>
-
-          {/* [終了画面] 示唆 */}
           <Cat color="#4e342e" title="[終了画面] 示唆">
-            {endScreenItems.map((s) => {
+            {endScreenItems.map((s, i) => {
               const c = allEndScreenFromAT.filter((v) => v === s).length;
               const t = allEndScreenFromAT.length;
-              return (
-                <TR key={s}><TD>{extractName(s)}</TD><TDv>{c}回 [{pct(c, t)}]</TDv></TR>
-              );
+              return <Row key={s} i={i}><Lbl>{extractName(s)}</Lbl><Val>{c}回 [{pct(c, t)}]</Val></Row>;
             })}
           </Cat>
         </div>
 
-        {/* ===== Row 3: AT ===== */}
-        <Cat color="#2e7d32" title="AT" className="mb-1">
-          <TR><TD w>AT初当たり</TD><TDv>{atWinCount}回 {prob(atWinCount, sum2)}</TDv></TR>
+        {/* ===== AT ===== */}
+        <Cat color="#2e7d32" title="AT" mb>
+          <Row i={0}><Lbl b>AT初当たり</Lbl><Val>{atWinCount}回 {prob(atWinCount, sum2)}</Val></Row>
         </Cat>
 
-        <div className="grid grid-cols-2 gap-1 mb-1">
-          {/* キャラ対決 */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <Cat color="#1b5e20" title="キャラ対決成績">
-            {charStats.map(({ char, sets, wins, total }) => (
-              <TR key={char}>
-                <TD>{char}</TD>
-                <TDv>{total > 0 ? `${wins}/${total} [${pct(wins, total)}]` : "—"}</TDv>
-              </TR>
+            {charStats.map(({ char, wins, total }, i) => (
+              <Row key={char} i={i}><Lbl>{char}</Lbl><Val>{total > 0 ? `${wins}/${total} [${pct(wins, total)}]` : "—"}</Val></Row>
             ))}
           </Cat>
-
-          {/* BITESテーブル */}
           <Cat color="#33691e" title="BITESテーブル">
-            {bitesStats.map(({ label, count }) => (
-              <TR key={label}>
-                <TD>{label}</TD>
-                <TDv>{count}回 [{pct(count, bitesTotal)}]</TDv>
-              </TR>
+            {bitesStats.map(({ label, count }, i) => (
+              <Row key={label} i={i}><Lbl>{label}</Lbl><Val>{count}回 [{pct(count, bitesTotal)}]</Val></Row>
             ))}
           </Cat>
         </div>
 
-        {/* 有馬set */}
         {arimaByPos.some((a) => a.total > 0) && (
-          <Cat color="#455a64" title="有馬set (1,3,5セット目)" className="mb-1">
-            <div className="grid grid-cols-3 gap-0.5">
+          <Cat color="#455a64" title="有馬set（1,3,5セット目）" mb>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2px", padding: "4px" }}>
               {arimaByPos.map(({ pos, count, total }) => (
-                <div key={pos} className="text-center bg-gray-50 rounded py-0.5">
-                  <span className="text-[7px] text-gray-500">{pos}set目</span>
-                  <span className="block text-[9px] font-bold">{count}回 [{pct(count, total)}]</span>
+                <div key={pos} style={{ textAlign: "center", backgroundColor: "#f9fafb", borderRadius: "2px", padding: "3px 0" }}>
+                  <div style={{ fontSize: "7px", color: "#6b7280", lineHeight: 1.4 }}>{pos}set目</div>
+                  <div style={{ fontSize: "9px", fontWeight: 700, lineHeight: 1.4 }}>{count}回 [{pct(count, total)}]</div>
                 </div>
               ))}
             </div>
           </Cat>
         )}
 
-        {/* BITES獲得履歴 */}
         {bitesHistory.length > 0 && (
-          <Cat color="#14532d" title="BITES獲得履歴" className="mb-1">
-            <div className="flex flex-wrap gap-px">
-              {bitesHistory.map((h, i) => (
-                <SqIcon key={i} top={h.table} bottom={h.coins} bg="#14532d" />
-              ))}
+          <Cat color="#14532d" title="BITES獲得履歴" mb>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "1px", padding: "4px" }}>
+              {bitesHistory.map((h, i) => <SqIcon key={i} top={h.table} bottom={h.coins} bg="#14532d" />)}
             </div>
           </Cat>
         )}
 
-        {/* 直乗せ履歴 */}
         {directAddHistory.length > 0 && (
-          <Cat color="#1565c0" title="直乗せ履歴" className="mb-1">
-            <div className="flex flex-wrap gap-px">
-              {directAddHistory.map((d, i) => (
-                <SqIcon key={i} top={d.trigger} bottom={d.coins != null ? String(d.coins) : "—"} bg="#1565c0" />
-              ))}
+          <Cat color="#1565c0" title="直乗せ履歴" mb>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "1px", padding: "4px" }}>
+              {directAddHistory.map((d, i) => <SqIcon key={i} top={d.trigger} bottom={d.coins != null ? String(d.coins) : "—"} bg="#1565c0" />)}
             </div>
           </Cat>
         )}
 
-        {/* ===== ゾーン ===== */}
-        <div className="grid grid-cols-2 gap-1 mb-1">
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <ZoneBlock label="ゾーン [全体]" data={zoneAll} />
           <ZoneBlock label="ゾーン [リセ頭]" data={zoneAfterAT} />
         </div>
@@ -265,39 +232,45 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
   );
 }
 
-// ── レイアウト部品 ──────────────────────────────────────────────────────────
+// ── レイアウト部品 (inline style for html2canvas compatibility) ──────────
 
-function Cat({ color, title, children, className = "" }: {
-  color: string; title: string; children: React.ReactNode; className?: string;
+function Cat({ color, title, children, mb }: {
+  color: string; title: string; children: React.ReactNode; mb?: boolean;
 }) {
   return (
-    <div className={`border border-gray-300 rounded overflow-hidden ${className}`}>
-      <div className="px-1 py-0.5" style={{ backgroundColor: color }}>
-        <span className="text-[8px] font-mono font-bold text-white">{title}</span>
+    <div style={{ border: `2px solid ${color}`, borderRadius: "3px", overflow: "hidden", marginBottom: mb ? "4px" : 0 }}>
+      <div style={{ backgroundColor: color, padding: "2px 6px" }}>
+        <span style={{ fontSize: "9px", fontWeight: 700, color: "#fff", lineHeight: 1.6 }}>{title}</span>
       </div>
-      <div className="divide-y divide-gray-200">{children}</div>
+      {children}
     </div>
   );
 }
 
-/** テーブル行 */
-function TR({ children }: { children: React.ReactNode }) {
-  return <div className="flex items-center min-h-[18px]">{children}</div>;
+function Row({ children, i }: { children: React.ReactNode; i: number }) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", padding: "3px 4px",
+      backgroundColor: i % 2 === 0 ? "#ffffff" : "#f7f7f7",
+      borderBottom: "1px solid #e5e7eb",
+      lineHeight: 1.5,
+    }}>
+      {children}
+    </div>
+  );
 }
 
-/** ラベルセル */
-function TD({ children, w }: { children: React.ReactNode; w?: boolean }) {
+function Lbl({ children, b }: { children: React.ReactNode; b?: boolean }) {
   return (
-    <span className={`flex-1 min-w-0 truncate px-1 text-[7px] text-gray-600 ${w ? "font-bold" : ""}`}>
+    <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "8px", color: "#4b5563", fontWeight: b ? 700 : 400, lineHeight: 1.5 }}>
       {children}
     </span>
   );
 }
 
-/** 値セル — 右揃え固定幅 */
-function TDv({ children, bold }: { children: React.ReactNode; bold?: boolean }) {
+function Val({ children, b }: { children: React.ReactNode; b?: boolean }) {
   return (
-    <span className={`shrink-0 text-right px-1 text-[8px] text-gray-900 tabular-nums whitespace-nowrap ${bold ? "font-bold" : ""}`}>
+    <span style={{ flexShrink: 0, textAlign: "right", fontSize: "9px", color: "#111827", fontWeight: b ? 700 : 400, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums", paddingLeft: "4px", lineHeight: 1.5 }}>
       {children}
     </span>
   );
@@ -305,11 +278,9 @@ function TDv({ children, bold }: { children: React.ReactNode; bold?: boolean }) 
 
 function SqIcon({ top, bottom, bg }: { top: string; bottom: string; bg: string }) {
   return (
-    <div className="flex flex-col items-center rounded border overflow-hidden"
-      style={{ width: "28px", height: "26px", borderColor: bg }}>
-      <span className="text-[5px] font-bold leading-none w-full text-center truncate"
-        style={{ backgroundColor: bg, color: "#fff" }}>{top}</span>
-      <span className="text-[8px] font-bold leading-none mt-0.5 text-gray-800">{bottom}</span>
+    <div style={{ width: "30px", display: "flex", flexDirection: "column", alignItems: "center", border: `1px solid ${bg}`, borderRadius: "2px", overflow: "hidden" }}>
+      <span style={{ fontSize: "6px", fontWeight: 700, backgroundColor: bg, color: "#fff", width: "100%", textAlign: "center", lineHeight: 1.6, overflow: "hidden" }}>{top}</span>
+      <span style={{ fontSize: "9px", fontWeight: 700, color: "#1f2937", lineHeight: 1.6 }}>{bottom}</span>
     </div>
   );
 }
@@ -320,20 +291,21 @@ function ZoneBlock({ label, data }: { label: string; data: { zone: string; count
   return (
     <Cat color="#6a1b9a" title={`${label} (${total})`}>
       {total === 0 ? (
-        <TR><TD>データなし</TD><TDv>—</TDv></TR>
+        <Row i={0}><Lbl>データなし</Lbl><Val>—</Val></Row>
       ) : (
         <>
-          {/* 棒グラフ */}
-          <div className="flex" style={{ height: "14px" }}>
+          <div style={{ display: "flex", height: "16px" }}>
             {filtered.map((d) => (
-              <div key={d.zone} className="flex items-center justify-center overflow-hidden"
-                style={{ width: `${(d.count / total) * 100}%`, minWidth: "14px", backgroundColor: zoneColor(d.zone), color: "#fff" }}>
-                <span className="text-[5px] font-bold">{d.zone}</span>
-              </div>
+              <div key={d.zone} style={{
+                width: `${(d.count / total) * 100}%`, minWidth: "16px",
+                backgroundColor: zoneColor(d.zone), color: "#fff",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: "6px", fontWeight: 700, lineHeight: 1.5,
+              }}>{d.zone}</div>
             ))}
           </div>
-          {filtered.map((d) => (
-            <TR key={d.zone}><TD>{d.zone}</TD><TDv>{d.count}回 [{pct(d.count, total)}]</TDv></TR>
+          {filtered.map((d, i) => (
+            <Row key={d.zone} i={i}><Lbl>{d.zone}</Lbl><Val>{d.count}回 [{pct(d.count, total)}]</Val></Row>
           ))}
         </>
       )}
@@ -343,22 +315,15 @@ function ZoneBlock({ label, data }: { label: string; data: { zone: string; count
 
 function zoneColor(z: string): string {
   const n = parseInt(z); if (isNaN(n)) return "#757575";
-  if (n <= 100) return "#1565c0";
-  if (n <= 200) return "#2e7d32";
-  if (n <= 300) return "#e65100";
-  if (n <= 400) return "#ad1457";
-  if (n <= 500) return "#6a1b9a";
-  return "#b71c1c";
+  if (n <= 100) return "#1565c0"; if (n <= 200) return "#2e7d32"; if (n <= 300) return "#e65100";
+  if (n <= 400) return "#ad1457"; if (n <= 500) return "#6a1b9a"; return "#b71c1c";
 }
 
 // ── 集計ヘルパー ────────────────────────────────────────────────────────────
 
 function computeZoneDistribution(blocks: NormalBlock[], mode: "all" | "afterAT") {
-  const filtered = mode === "all"
-    ? blocks
-    : blocks.filter((_, i) => i === 0 || blocks[i - 1].atWin);
-  const zones = [...TG_ZONES].filter((z) => z !== "不明");
-  return zones.map((zone) => ({ zone, count: filtered.filter((b) => b.zone === zone).length }));
+  const filtered = mode === "all" ? blocks : blocks.filter((_, i) => i === 0 || blocks[i - 1].atWin);
+  return [...TG_ZONES].filter((z) => z !== "不明").map((zone) => ({ zone, count: filtered.filter((b) => b.zone === zone).length }));
 }
 
 function computeArimaPositions(atEntries: TGATEntry[]) {
@@ -384,21 +349,15 @@ function inferSetting(czFail: string[], endScreen: string[], blocks: NormalBlock
   }
   const allTrophies = [...blocks.map((b) => b.trophy), ...getAllSets(atEntries).map((s) => s.trophy ?? "")].filter(Boolean);
   for (const t of allTrophies) {
-    if (t.includes("虹")) hints.push("6確定濃厚");
-    else if (t.includes("喰種柄")) hints.push("5以上濃厚");
-    else if (t.includes("金")) hints.push("4以上濃厚");
-    else if (t.includes("銀")) hints.push("3以上濃厚");
+    if (t.includes("虹")) hints.push("6確定濃厚"); else if (t.includes("喰種柄")) hints.push("5以上濃厚");
+    else if (t.includes("金")) hints.push("4以上濃厚"); else if (t.includes("銀")) hints.push("3以上濃厚");
     else if (t.includes("銅")) hints.push("2以上濃厚");
   }
-  for (const entry of atEntries) {
-    for (const row of entry.rows) {
-      if (row.rowType !== "set" || !row.endingCard) continue;
-      const ec = row.endingCard;
-      if (ec.confirmed4 > 0) hints.push("6確定濃厚");
-      if (ec.confirmed3 > 0) hints.push("5以上濃厚");
-      if (ec.confirmed2 > 0) hints.push("4以上濃厚");
-      if (ec.confirmed1 > 0) hints.push("3以上濃厚");
-    }
+  for (const entry of atEntries) for (const row of entry.rows) {
+    if (row.rowType !== "set" || !row.endingCard) continue;
+    const ec = row.endingCard;
+    if (ec.confirmed4 > 0) hints.push("6確定濃厚"); if (ec.confirmed3 > 0) hints.push("5以上濃厚");
+    if (ec.confirmed2 > 0) hints.push("4以上濃厚"); if (ec.confirmed1 > 0) hints.push("3以上濃厚");
   }
   if (hints.length === 0) return "情報不足";
   const priority = ["6確定濃厚", "5以上濃厚", "4以上濃厚", "3以上濃厚", "2以上濃厚", "1否定"];
