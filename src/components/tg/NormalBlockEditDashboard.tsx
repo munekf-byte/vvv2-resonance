@@ -82,9 +82,16 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
     const cz = form.czCounter ?? { bell: 0, replay: 0, weakRare: 0, strongRare: 0, hitRole: "" };
     setField("czCounter", { ...cz, [key]: Math.max(0, (cz[key as keyof typeof cz] as number) + delta) });
   }
+  const [czOverlay, setCZOverlay] = useState(false);
   function setCZHit(key: string) {
     const cz = form.czCounter ?? { bell: 0, replay: 0, weakRare: 0, strongRare: 0, hitRole: "" };
-    setField("czCounter", { ...cz, hitRole: cz.hitRole === key ? "" : key });
+    // カウント+1 + hitRole設定 + オーバーレイ表示
+    setField("czCounter", {
+      ...cz,
+      [key]: (cz[key as keyof typeof cz] as number) + 1,
+      hitRole: key,
+    });
+    setCZOverlay(true);
   }
 
   /** スロット方式の個別セット (kakugan / shinsekai / invitation) */
@@ -253,7 +260,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
                 }} />
 
               {/* 当選時オーバーレイ: after_hit — 最前面に被せてびっくりさせる */}
-              {hasHit && (
+              {czOverlay && hasHit && (
                 <div className="absolute inset-0 z-50 animate-[fadeIn_0.15s_ease-out]"
                   style={{
                     backgroundImage: "url(/images/after_hit.png)",
@@ -261,8 +268,8 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
                     backgroundPosition: "center",
                     opacity: 0.85,
                   }}>
-                  {/* タップで閉じる */}
-                  <button className="absolute inset-0 w-full h-full" onClick={() => setCZHit(cz.hitRole)} />
+                  {/* タップでオーバーレイだけ閉じる（hitRoleは維持） */}
+                  <button className="absolute inset-0 w-full h-full" onClick={() => setCZOverlay(false)} />
                 </div>
               )}
 
@@ -300,17 +307,14 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
                         </button>
                         <button onClick={() => setCZHit(key)}
                           className="w-9 h-9 rounded-full font-mono font-black text-sm active:scale-95 transition-transform"
-                          style={{
-                            backgroundColor: isHit ? "#b91c1c" : "#ef4444",
-                            color: "#ffffff",
-                            boxShadow: isHit ? "0 0 0 3px #fca5a5, 0 0 12px rgba(185,28,28,0.5)" : "none",
-                          }}>
+                          style={isHit
+                            ? { backgroundColor: "#b91c1c", color: "#ffffff", boxShadow: "0 0 0 3px #fca5a5, 0 0 12px rgba(185,28,28,0.5)" }
+                            : { backgroundColor: "transparent", color: "#dc2626", border: "2px solid #dc2626" }
+                          }>
                           当
                         </button>
                       </div>
-                      {isHit && (
-                        <span className="text-[16px] shrink-0 mr-0.5" style={{ color: "#f59e0b" }}>★</span>
-                      )}
+                      <span className="text-[22px] shrink-0 mr-0.5" style={{ color: isHit ? "#f59e0b" : "transparent" }}>★</span>
                       <div className="flex items-center justify-center font-mono font-black text-xl shrink-0"
                         style={{ width: "48px", height: "48px", border: "2px solid #374151", borderRadius: "4px", marginRight: "4px",
                           backgroundColor: isHit ? "#b91c1c" : val > 0 ? "#1f2937" : "#f9fafb",
