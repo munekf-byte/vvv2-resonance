@@ -202,7 +202,13 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
   function buildRow(): TGATRow {
     const battles    = form.battles.filter((b) => b.trigger || b.result);
     const directAdds = form.directAdds.filter((d) => d.trigger || d.coins != null);
-    return { id: initial?.id ?? crypto.randomUUID(), ...form, battles, directAdds };
+    return {
+      id: initial?.id ?? crypto.randomUUID(),
+      ...form,
+      battles,
+      directAdds,
+      createdAt: (initial as TGATSet | null)?.createdAt ?? new Date().toISOString(),
+    };
   }
 
   function handleSave()     { onSave(buildRow()); }
@@ -676,8 +682,8 @@ function ArimaForm({ initial, onSave, onTempSave }: {
       </div>
 
       <SaveBar
-        onTempSave={() => onTempSave({ id: initial?.id ?? crypto.randomUUID(), ...form })}
-        onSave={() => onSave({ id: initial?.id ?? crypto.randomUUID(), ...form })}
+        onTempSave={() => onTempSave({ id: initial?.id ?? crypto.randomUUID(), ...form, createdAt: initial?.createdAt ?? new Date().toISOString() })}
+        onSave={() => onSave({ id: initial?.id ?? crypto.randomUUID(), ...form, createdAt: initial?.createdAt ?? new Date().toISOString() })}
         color="#f9a825"
         textColor="#000000"
         disabled={!form.result}

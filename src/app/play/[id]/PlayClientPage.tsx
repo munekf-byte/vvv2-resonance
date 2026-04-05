@@ -107,7 +107,16 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   function handleNormalEdit(block: NormalBlock, index: number) {
     setNormalEdit({ open: true, block, index: index + 1 });
   }
+  const [showEmptyBlockAlert, setShowEmptyBlockAlert] = useState(false);
   function handleNormalOpenNew() {
+    // 空白チェック: 最後の周期に実G数が未入力なら追加不可
+    if (blocks.length > 0) {
+      const last = blocks[blocks.length - 1];
+      if (last.jisshuG == null) {
+        setShowEmptyBlockAlert(true);
+        return;
+      }
+    }
     setNormalEdit({ open: true, block: null, index: blocks.length + 1 });
   }
   function handleNormalTempSave(block: NormalBlock) {
@@ -126,12 +135,20 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
   // ── ATハンドラ ─────────────────────────────────────────────────────────────
   function handleATAddRow(atKey: string, rowType: "set" | "arima") {
+    // 空白チェック: 最後のSET行にキャラ未設定なら追加不可
+    const entry = atEntries.find((e) => e.atKey === atKey);
+    if (entry && entry.rows.length > 0) {
+      const lastRow = entry.rows[entry.rows.length - 1];
+      if (lastRow.rowType === "set" && !lastRow.character) {
+        setShowEmptyBlockAlert(true);
+        return;
+      }
+    }
     // ATEntryが存在しない場合は自動生成
-    if (!atEntries.find((e) => e.atKey === atKey)) {
+    if (!entry) {
       appendTGATEntry({ atKey, rows: [] });
     }
     // 直前のSET行のAT種別を引き継ぐ
-    const entry = atEntries.find((e) => e.atKey === atKey);
     const sets = (entry?.rows ?? []).filter((r): r is TGATSet => r.rowType === "set");
     const defaultAtType = sets.length > 0 ? sets[sets.length - 1].atType : undefined;
     setATEdit({ open: true, atKey, row: null, defaultRowType: rowType, defaultAtType });
@@ -341,6 +358,29 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           onTempSave={handleATTempSave}
           onClose={() => setATEdit(AT_CLOSED)}
         />
+      )}
+
+      {/* ===== 空白周期アラート ===== */}
+      {showEmptyBlockAlert && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4"
+          onClick={(e) => e.target === e.currentTarget && setShowEmptyBlockAlert(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="px-5 py-4" style={{ backgroundColor: "#92400e" }}>
+              <p className="text-white font-mono font-bold text-sm">入力が必要です</p>
+            </div>
+            <div className="px-5 py-4 space-y-2">
+              <p className="text-gray-700 font-mono text-sm">
+                前の行にデータが入力されていません。先に現在の行を入力してから追加してください。
+              </p>
+            </div>
+            <div className="border-t border-gray-200">
+              <button onClick={() => setShowEmptyBlockAlert(false)}
+                className="w-full py-3.5 text-sm font-mono font-bold text-gray-700 hover:bg-gray-50">
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

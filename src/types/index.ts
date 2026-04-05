@@ -50,6 +50,8 @@ export interface TGNormalBlock {
   czCounter?: TGCZCounter;
   /** フリーメモ */
   memo?: string;
+  /** 生成タイムスタンプ（不正検知用） */
+  createdAt?: string;
 }
 
 /** Store 互換エイリアス */
@@ -94,6 +96,8 @@ export interface TGEndingCard {
 export interface TGATSet {
   id: string;
   rowType: "set";
+  /** 生成タイムスタンプ（不正検知用） */
+  createdAt?: string;
   atType: string;       // 通常AT / 裏AT / 隠れ裏AT（推測）
   character: string;    // 敵キャラ
   disadvantage: string; // - / 不利益⭕️ / 不利益❌  ※フォーム非表示・型は保持
@@ -112,6 +116,8 @@ export interface TGATSet {
 export interface TGArimaJudgment {
   id: string;
   rowType: "arima";
+  /** 生成タイムスタンプ（不正検知用） */
+  createdAt?: string;
   result: string;          // 成功 / 失敗
   role: string;            // 小役ナシ / リプレイ / レア役
   ccgCoins: number | null; // 500 / 1000 / 2000

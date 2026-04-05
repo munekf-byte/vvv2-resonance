@@ -119,7 +119,11 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
   }
 
   function buildBlock(): NormalBlock {
-    return { id: block?.id ?? crypto.randomUUID(), ...form };
+    return {
+      id: block?.id ?? crypto.randomUUID(),
+      ...form,
+      createdAt: block?.createdAt ?? new Date().toISOString(),
+    };
   }
 
   function handleSave()     { onSave(buildBlock()); }
