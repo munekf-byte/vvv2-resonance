@@ -6,7 +6,7 @@
 // nd-10/12/14: 5スロット独立プルダウン方式（最大5回入力）
 // =============================================================================
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { NormalBlock } from "@/types";
 import {
   TG_ZONES, TG_MODES, TG_WIN_TRIGGERS, TG_EVENTS,
@@ -87,6 +87,8 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
     setField("czCounter", { ...cz, [key]: Math.max(0, (cz[key as keyof typeof cz] as number) + delta) });
   }
   const [czOverlay, setCZOverlay] = useState(false);
+  const [czOverlayPhase, setCZOverlayPhase] = useState<1 | 2>(1);
+  const czTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   function setCZHit(key: string) {
     const cz = form.czCounter ?? { bell: 0, replay: 0, weakRare: 0, strongRare: 0, hitRole: "" };
     // カウント+1 + hitRole設定 + AT Get自動ON + オーバーレイ表示
@@ -99,7 +101,10 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
         hitRole: key,
       },
     }));
+    setCZOverlayPhase(1);
     setCZOverlay(true);
+    if (czTimerRef.current) clearTimeout(czTimerRef.current);
+    czTimerRef.current = setTimeout(() => setCZOverlayPhase(2), 3000);
   }
 
   /** スロット方式の個別セット (kakugan / shinsekai / invitation) */
@@ -271,17 +276,24 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
                   opacity: 0.08,
                 }} />
 
-              {/* 当選時オーバーレイ: after_hit — 最前面に被せてびっくりさせる */}
+              {/* 当選時オーバーレイ: after_hit → 3秒後に after_hit_2 へ切替 */}
               {czOverlay && hasHit && (
-                <div className="absolute inset-0 z-50 animate-[fadeIn_0.15s_ease-out]"
+                <div
+                  key={czOverlayPhase}
+                  className="absolute inset-0 z-50 animate-[fadeIn_0.15s_ease-out]"
                   style={{
-                    backgroundImage: "url(/images/after_hit.png)",
+                    backgroundImage: czOverlayPhase === 1
+                      ? "url(/images/after_hit.png)"
+                      : "url(/images/after_hit_2.png)",
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     opacity: 0.85,
                   }}>
                   {/* タップでオーバーレイだけ閉じる（hitRoleは維持） */}
-                  <button className="absolute inset-0 w-full h-full" onClick={() => setCZOverlay(false)} />
+                  <button className="absolute inset-0 w-full h-full" onClick={() => {
+                    if (czTimerRef.current) clearTimeout(czTimerRef.current);
+                    setCZOverlay(false);
+                  }} />
                 </div>
               )}
 
