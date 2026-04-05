@@ -30,6 +30,7 @@ export function DashboardShell() {
           </span>
           {isPro && <span className="text-[9px] font-mono font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded">PRO</span>}
           {isAdmin && <span className="text-[9px] font-mono font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">ADMIN</span>}
+          <span className="text-[8px] font-mono text-orange-500">Pro:{String(isPro)} Admin:{String(isAdmin)}</span>
         </div>
         <div className="flex items-center gap-2">
           {isAdmin && (
