@@ -5,7 +5,8 @@
 // カテゴリ縦長・2〜3列横並び / 画像出力テキスト修正済み
 // =============================================================================
 
-import { useRef, useCallback, useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
+import { captureAndDownload } from "@/lib/tg/captureImage";
 import type { NormalBlock, TGATEntry, TGATSet, TGArimaJudgment } from "@/types";
 import {
   TG_KAKUGAN, TG_SHINSEKAI,
@@ -102,15 +103,10 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
   const zoneAll = computeZoneDistribution(blocks, "all");
   const zoneAfterAT = computeZoneDistribution(blocks, "afterAT");
 
-  const handleCapture = useCallback(async () => {
+  function handleCapture() {
     if (!captureRef.current) return;
-    const html2canvas = (await import("html2canvas")).default;
-    const canvas = await html2canvas(captureRef.current, { scale: 3, backgroundColor: "#ffffff", useCORS: true });
-    const link = document.createElement("a");
-    link.download = `TG_Summary_${new Date().toISOString().slice(0, 10)}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  }, []);
+    captureAndDownload(captureRef.current, `TG_Summary_${new Date().toISOString().slice(0, 10)}.png`);
+  }
 
   return (
     <div className="pb-24">

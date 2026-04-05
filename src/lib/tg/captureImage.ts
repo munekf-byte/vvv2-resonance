@@ -1,18 +1,20 @@
+import { toPng } from "html-to-image";
+
 /**
  * 指定要素を高解像度PNG画像として保存
+ * html-to-image (SVG foreignObject) を使用 — テキスト忠実再現
  */
 export async function captureAndDownload(
   element: HTMLElement,
   filename: string,
 ): Promise<void> {
-  const html2canvas = (await import("html2canvas")).default;
-  const canvas = await html2canvas(element, {
-    scale: 3,
+  const dataUrl = await toPng(element, {
+    pixelRatio: 3,
     backgroundColor: "#ffffff",
-    useCORS: true,
+    cacheBust: true,
   });
   const link = document.createElement("a");
   link.download = filename;
-  link.href = canvas.toDataURL("image/png");
+  link.href = dataUrl;
   link.click();
 }
