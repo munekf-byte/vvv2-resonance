@@ -14,6 +14,8 @@ export interface TGCZCounter {
   replay: number;  // リプレイ
   weakRare: number; // 弱レア役
   strongRare: number; // 強レア役
+  /** どの役で当選したか ("bell"|"replay"|"weakRare"|"strongRare"|"") */
+  hitRole: string;
 }
 
 export interface TGNormalBlock {
