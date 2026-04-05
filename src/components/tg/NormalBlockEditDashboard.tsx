@@ -282,7 +282,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
                   const val = cz[key] as number;
                   const isHit = cz.hitRole === key;
                   return (
-                    <div key={key} className="flex items-center border-b border-gray-200 last:border-b-0" style={{ minHeight: "48px" }}>
+                    <div key={key} className="flex items-center" style={{ minHeight: "48px", borderBottom: "2px solid #374151" }}>
                       <div className="flex items-center justify-center font-mono font-bold text-[13px] shrink-0"
                         style={{ width: "68px", height: "48px", backgroundColor: bg, color, borderRight: "2px solid #374151" }}>
                         {label}
@@ -308,9 +308,13 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
                           当
                         </button>
                       </div>
+                      {isHit && (
+                        <span className="text-[16px] shrink-0 mr-0.5" style={{ color: "#f59e0b" }}>★</span>
+                      )}
                       <div className="flex items-center justify-center font-mono font-black text-xl shrink-0"
                         style={{ width: "48px", height: "48px", border: "2px solid #374151", borderRadius: "4px", marginRight: "4px",
-                          backgroundColor: val > 0 ? "#1f2937" : "#f9fafb", color: val > 0 ? "#ffffff" : "#9ca3af" }}>
+                          backgroundColor: isHit ? "#b91c1c" : val > 0 ? "#1f2937" : "#f9fafb",
+                          color: val > 0 || isHit ? "#ffffff" : "#9ca3af" }}>
                         {val}
                       </div>
                     </div>

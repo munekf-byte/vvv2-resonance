@@ -74,6 +74,18 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
   const sum1 = totalGInput ? parseInt(totalGInput) || sum2 : sum2;
 
   const czCount = blocks.filter((b) => b.event === "レミニセンス" || b.event === "大喰いの利世").length;
+
+  // CZ内容集計
+  const czBlocks = blocks.filter((b) => b.czCounter && (b.czCounter.bell > 0 || b.czCounter.replay > 0 || b.czCounter.weakRare > 0 || b.czCounter.strongRare > 0));
+  const czTotalBell = czBlocks.reduce((s, b) => s + (b.czCounter?.bell ?? 0), 0);
+  const czTotalReplay = czBlocks.reduce((s, b) => s + (b.czCounter?.replay ?? 0), 0);
+  const czTotalWeakRare = czBlocks.reduce((s, b) => s + (b.czCounter?.weakRare ?? 0), 0);
+  const czTotalStrongRare = czBlocks.reduce((s, b) => s + (b.czCounter?.strongRare ?? 0), 0);
+  const czHitBell = czBlocks.filter((b) => b.czCounter?.hitRole === "bell").length;
+  const czHitReplay = czBlocks.filter((b) => b.czCounter?.hitRole === "replay").length;
+  const czHitWeakRare = czBlocks.filter((b) => b.czCounter?.hitRole === "weakRare").length;
+  const czHitStrongRare = czBlocks.filter((b) => b.czCounter?.hitRole === "strongRare").length;
+  const czSuccessCount = czBlocks.filter((b) => !!b.czCounter?.hitRole).length;
   const epiCount = blocks.filter((b) => b.event === "エピソードボーナス").length;
   const directATCount = blocks.filter((b) => b.event === "直撃AT").length;
   const atWinCount = blocks.filter((b) => b.atWin).length;
@@ -170,6 +182,15 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
             <Row i={3} grade={gradeByProb(epiCount, sum2, [...EPI_PROB])}><Lbl b>エピボ</Lbl><Val>{epiCount}回 {prob(epiCount, sum2)}</Val></Row>
             <Row i={4} grade={gradeByProb(directATCount, sum2, [...DIRECT_AT_PROB])}><Lbl b>AT直撃</Lbl><Val>{directATCount}回 {prob(directATCount, sum2)}</Val></Row>
             <Row i={5} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])}><Lbl b>AT初当たり</Lbl><Val>{atWinCount}回 {prob(atWinCount, sum2)}</Val></Row>
+          </Cat>
+
+          {/* CZ内容 */}
+          <Cat color="#7b1fa2" title="CZ内容">
+            <Row i={0}><Lbl b>CZ記録数</Lbl><Val>{czBlocks.length}回 (成功{czSuccessCount})</Val></Row>
+            <Row i={1}><Lbl>押/斜🔔</Lbl><Val>{czTotalBell}回 {czHitBell > 0 ? `★当${czHitBell}` : ""}</Val></Row>
+            <Row i={2}><Lbl>リプ</Lbl><Val>{czTotalReplay}回 {czHitReplay > 0 ? `★当${czHitReplay}` : ""}</Val></Row>
+            <Row i={3}><Lbl>弱レア</Lbl><Val>{czTotalWeakRare}回 {czHitWeakRare > 0 ? `★当${czHitWeakRare}` : ""}</Val></Row>
+            <Row i={4}><Lbl>強レア</Lbl><Val>{czTotalStrongRare}回 {czHitStrongRare > 0 ? `★当${czHitStrongRare}` : ""}</Val></Row>
           </Cat>
 
           <Cat color="#b71c1c" title="赫眼 / 精神世界">

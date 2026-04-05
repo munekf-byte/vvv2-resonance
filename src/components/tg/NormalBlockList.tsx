@@ -94,13 +94,15 @@ export function NormalBlockList({ blocks, atLabels, modeProbs, onEdit, onDelete 
             const suggValue = block.endingSuggestion || block.trophy;
             const suggLines = suggValue ? getSuggestionListLines(suggValue) : null;
 
+            const hasCZ = block.czCounter && (block.czCounter.bell > 0 || block.czCounter.replay > 0 || block.czCounter.weakRare > 0 || block.czCounter.strongRare > 0);
             const hasExtras =
               block.kakugan.length > 0 ||
               block.shinsekai.length > 0 ||
               block.invitation.length > 0 ||
               block.zencho.length > 0 ||
               !!block.memo ||
-              !!modeProbs?.[index];
+              !!modeProbs?.[index] ||
+              !!hasCZ;
 
             return (
               <div key={block.id} className={`${ROW_BORDER} bg-white`}>
@@ -214,6 +216,32 @@ export function NormalBlockList({ blocks, atLabels, modeProbs, onEdit, onDelete 
                         </div>
                       )}
                     </div>
+
+                    {/* CZ内容 */}
+                    {hasCZ && block.czCounter && (
+                      <div className="col-span-2 mb-1">
+                        <p className="text-[9px] text-gray-500 font-mono mb-1">CZ内容</p>
+                        <div className="flex gap-1.5">
+                          {([
+                            { key: "bell" as const, label: "押/斜🔔", bg: "#fef9c3", fg: "#713f12" },
+                            { key: "replay" as const, label: "リプ", bg: "#cffafe", fg: "#155e75" },
+                            { key: "weakRare" as const, label: "弱レア", bg: "#ede9fe", fg: "#5b21b6" },
+                            { key: "strongRare" as const, label: "強レア", bg: "#c084fc", fg: "#fff" },
+                          ]).map(({ key, label, bg, fg }) => {
+                            const v = block.czCounter![key];
+                            const isHit = block.czCounter!.hitRole === key;
+                            if (v === 0 && !isHit) return null;
+                            return (
+                              <span key={key} className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded inline-flex items-center gap-0.5"
+                                style={{ backgroundColor: bg, color: fg, border: isHit ? "2px solid #b91c1c" : "1px solid #d1d5db" }}>
+                                {isHit && <span style={{ color: "#f59e0b" }}>★</span>}
+                                {label}:{v}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
 
                     {/* モード推定確率 */}
                     {modeProbs?.[index] && (
