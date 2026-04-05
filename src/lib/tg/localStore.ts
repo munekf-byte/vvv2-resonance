@@ -1,6 +1,6 @@
 // =============================================================================
-// TOKYO GHOUL RESONANCE: localStorage セッション永続化
-// Supabase 認証バイパス中の一次ストレージ
+// TOKYO GHOUL RESONANCE: セッション永続化
+// localStorage (即時) + Supabase API (非同期)
 // =============================================================================
 
 import type { PlaySession } from "@/types";
@@ -16,6 +16,8 @@ export interface SessionMeta {
   blockCount: number;
   atCount: number;
 }
+
+// ── localStorage 操作 ──────────────────────────────────────────────────────
 
 export function lsGetSessionList(): SessionMeta[] {
   if (typeof window === "undefined") return [];
@@ -42,7 +44,10 @@ export function lsSaveSession(session: PlaySession): void {
     if (idx >= 0) list[idx] = meta;
     else list.unshift(meta);
     localStorage.setItem(LIST_KEY, JSON.stringify(list));
-  } catch { /* storage full etc — ignore */ }
+  } catch { /* storage full */ }
+
+  // Supabase 非同期保存（失敗しても無視）
+  dbSaveSession(session);
 }
 
 export function lsLoadSession(id: string): PlaySession | null {
@@ -60,15 +65,66 @@ export function lsDeleteSession(id: string): void {
     const list = lsGetSessionList().filter((s) => s.id !== id);
     localStorage.setItem(LIST_KEY, JSON.stringify(list));
   } catch {}
+
+  // Supabase からも削除
+  fetch(`/api/session/${id}`, { method: "DELETE" }).catch(() => {});
 }
 
-export function lsCreateSession(machineName: string): PlaySession {
-  const id = `local-${crypto.randomUUID()}`;
+// ── Supabase 連携 ──────────────────────────────────────────────────────────
+
+/** Supabase にセッション作成し、IDを返す */
+export async function dbCreateSession(machineName: string): Promise<{ id: string; userId: string } | null> {
+  try {
+    const res = await fetch("/api/session/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ machineName }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+/** Supabase からセッション一覧を取得 */
+export async function dbGetSessionList(): Promise<SessionMeta[]> {
+  try {
+    const res = await fetch("/api/sessions");
+    if (!res.ok) return [];
+    return await res.json();
+  } catch { return []; }
+}
+
+/** Supabase にセッションを保存（debounce無し・呼び出し側でdebounceすること） */
+function dbSaveSession(session: PlaySession): void {
+  fetch(`/api/session/${session.id}/save`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(session),
+  }).catch(() => {});
+}
+
+/** Supabase からセッション全体を読み込む */
+export async function dbLoadSession(id: string): Promise<PlaySession | null> {
+  try {
+    const res = await fetch(`/api/session/${id}/load`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+/** localStorage 用のセッションを作成 + Supabase にも保存 */
+export async function createSessionWithCloud(machineName: string): Promise<PlaySession> {
+  // まず Supabase に作成
+  const dbResult = await dbCreateSession(machineName);
+
+  const id = dbResult?.id ?? `local-${crypto.randomUUID()}`;
+  const userId = dbResult?.userId ?? "guest-user";
   const now = new Date().toISOString();
+
   const session: PlaySession = {
     id,
-    userId: "guest-user",
-    machineName,
+    userId,
+    machineName: machineName || "東京喰種 RESONANCE",
     startedAt: now,
     endedAt: null,
     status: "ACTIVE",

@@ -1,9 +1,10 @@
 // =============================================================================
-// VALVRAVE-RESONANCE: 実戦セッション画面 [BYPASS MODE]
-// ID不明・DB取得失敗でも必ずゲスト用空セッションを表示する
+// TOKYO GHOUL RESONANCE: 実戦セッション画面
+// 認証済みユーザーのセッションをDBから読み込む
 // =============================================================================
 
 import { loadSessionById } from "@/lib/supabase/session-db";
+import { getCurrentUser } from "@/lib/supabase/server";
 import { PlayClientPage } from "./PlayClientPage";
 import type { PlaySession } from "@/types";
 
@@ -11,10 +12,10 @@ interface PlayPageProps {
   params: Promise<{ id: string }>;
 }
 
-function makeMockSession(id: string): PlaySession {
+function makeFallbackSession(id: string, userId: string): PlaySession {
   return {
     id,
-    userId: "guest-user",
+    userId,
     machineName: "東京喰種 RESONANCE",
     startedAt: new Date().toISOString(),
     endedAt: null,
@@ -33,15 +34,15 @@ function makeMockSession(id: string): PlaySession {
 
 export default async function PlayPage({ params }: PlayPageProps) {
   const { id } = await params;
+  const user = await getCurrentUser();
+  const userId = user?.id ?? "guest-user";
 
-  // DB取得を試みる（失敗時はモックで継続）
   let session: PlaySession | null = null;
   try {
-    session = await loadSessionById(id, "guest-user");
+    session = await loadSessionById(id, userId);
   } catch {
-    // DB接続エラー等 → モックで継続
+    // DB接続エラー → フォールバック
   }
 
-  // notFound() は呼ばない — 必ずゲスト用空セッションで表示
-  return <PlayClientPage initialSession={session ?? makeMockSession(id)} />;
+  return <PlayClientPage initialSession={session ?? makeFallbackSession(id, userId)} />;
 }
