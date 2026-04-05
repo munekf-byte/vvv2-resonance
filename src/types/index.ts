@@ -8,6 +8,14 @@ export type SessionStatus = "ACTIVE" | "PAUSED" | "COMPLETED";
 // TGNormalBlock: 通常時の1周期
 // -----------------------------------------------------------------------------
 
+/** CZ中の成立役カウンター */
+export interface TGCZCounter {
+  bell: number;    // 押し順・斜めベル
+  replay: number;  // リプレイ
+  weakRare: number; // 弱レア役
+  strongRare: number; // 強レア役
+}
+
 export interface TGNormalBlock {
   id: string;
   /** 実G数 */
@@ -36,6 +44,8 @@ export interface TGNormalBlock {
   zencho: string[];
   /** アイキャッチ (TG_EYECATCH | "") */
   eyecatch: string;
+  /** CZ内容カウンター { 押/斜🔔, リプ, 弱レア, 強レア } */
+  czCounter?: TGCZCounter;
   /** フリーメモ */
   memo?: string;
 }
