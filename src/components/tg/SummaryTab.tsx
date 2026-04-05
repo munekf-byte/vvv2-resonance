@@ -120,8 +120,19 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
 
   const bitesStats = [...TG_BITES_TYPES].map((bt) => ({ label: getBitesShort(bt), count: allSets.filter((s) => s.bitesType === bt).length }));
   const bitesTotal = allSets.filter((s) => s.bitesType).length;
-  const bitesHistory = allSets.filter((s) => s.bitesCoins).map((s) => ({ table: getBitesShort(s.bitesType), coins: s.bitesCoins }));
-  const directAddHistory = allSets.flatMap((s) => s.directAdds.filter((d) => d.trigger || d.coins != null).map((d) => ({ trigger: d.trigger, coins: d.coins })));
+  // BITES獲得履歴 — AT単位でグループ化
+  const bitesHistoryByAT: { atKey: string; items: { table: string; coins: string }[] }[] = atEntries.map((e) => ({
+    atKey: e.atKey,
+    items: e.rows.filter((r): r is TGATSet => r.rowType === "set" && !!r.bitesCoins)
+      .map((s) => ({ table: getBitesShort(s.bitesType), coins: s.bitesCoins })),
+  })).filter((g) => g.items.length > 0);
+
+  // 直乗せ履歴 — AT単位でグループ化
+  const directHistoryByAT: { atKey: string; items: { trigger: string; coins: number | null }[] }[] = atEntries.map((e) => ({
+    atKey: e.atKey,
+    items: e.rows.filter((r): r is TGATSet => r.rowType === "set")
+      .flatMap((s) => s.directAdds.filter((d) => d.trigger || d.coins != null).map((d) => ({ trigger: d.trigger, coins: d.coins }))),
+  })).filter((g) => g.items.length > 0);
   const arimaByPos = computeArimaPositions(atEntries);
 
   const zoneAll = computeZoneDistribution(blocks, "all");
@@ -159,7 +170,6 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
             <Row i={3} grade={gradeByProb(epiCount, sum2, [...EPI_PROB])}><Lbl b>エピボ</Lbl><Val>{epiCount}回 {prob(epiCount, sum2)}</Val></Row>
             <Row i={4} grade={gradeByProb(directATCount, sum2, [...DIRECT_AT_PROB])}><Lbl b>AT直撃</Lbl><Val>{directATCount}回 {prob(directATCount, sum2)}</Val></Row>
             <Row i={5} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])}><Lbl b>AT初当たり</Lbl><Val>{atWinCount}回 {prob(atWinCount, sum2)}</Val></Row>
-            <Row i={6} grade={gradeByRate(hikimodoCount, atWinCount, HIKIMODOHI_RATE[0], HIKIMODOHI_RATE[5])}><Lbl b>引き戻し</Lbl><Val>{hikimodoCount}回 {atWinCount > 0 ? `[${pct(hikimodoCount, atWinCount)}]` : ""}</Val></Row>
           </Cat>
 
           <Cat color="#b71c1c" title="赫眼 / 精神世界">
@@ -202,7 +212,8 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
         {/* ===== AT ===== */}
         <Cat color="#2e7d32" title="AT" mb>
           <Row i={0} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])}><Lbl b>AT初当たり</Lbl><Val>{atWinCount}回 {prob(atWinCount, sum2)}</Val></Row>
-          <Row i={1} grade={gradeByRate(uraATEntryCount, atWinCount, URA_AT_RATE[0], URA_AT_RATE[5])}><Lbl b>裏AT突入率</Lbl><Val>{uraATEntryCount}回 {atWinCount > 0 ? `[${pct(uraATEntryCount, atWinCount)}]` : "—"}</Val></Row>
+          <Row i={1} grade={gradeByRate(hikimodoCount, atWinCount, HIKIMODOHI_RATE[0], HIKIMODOHI_RATE[5])}><Lbl b>引き戻し率</Lbl><Val>{hikimodoCount}回 {atWinCount > 0 ? `[${pct(hikimodoCount, atWinCount)}]` : "—"}</Val></Row>
+          <Row i={2} grade={gradeByRate(uraATEntryCount, atWinCount, URA_AT_RATE[0], URA_AT_RATE[5])}><Lbl b>裏AT突入率</Lbl><Val>{uraATEntryCount}回 {atWinCount > 0 ? `[${pct(uraATEntryCount, atWinCount)}]` : "—"}</Val></Row>
         </Cat>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
@@ -219,7 +230,7 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
         </div>
 
         {arimaByPos.some((a) => a.total > 0) && (
-          <Cat color="#455a64" title="有馬set（1,3,5セット目）" mb>
+          <Cat color="#f59e0b" title="有馬set（1,3,5セット目）" mb>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2px", padding: "4px" }}>
               {arimaByPos.map(({ pos, count, total }) => (
                 <div key={pos} style={{ textAlign: "center", backgroundColor: "#f9fafb", borderRadius: "2px", padding: "3px 0" }}>
@@ -231,18 +242,34 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
           </Cat>
         )}
 
-        {bitesHistory.length > 0 && (
+        {bitesHistoryByAT.length > 0 && (
           <Cat color="#14532d" title="BITES獲得履歴" mb>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "1px", padding: "4px" }}>
-              {bitesHistory.map((h, i) => <SqIcon key={i} top={h.table} bottom={h.coins} bg="#14532d" />)}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "2px", padding: "4px" }}>
+              {bitesHistoryByAT.map((group, gi) => {
+                const bgColor = gi % 2 === 0 ? "#e8f5e9" : "#fff8e1";
+                return (
+                  <div key={group.atKey} style={{ display: "flex", alignItems: "center", gap: "1px", backgroundColor: bgColor, borderRadius: "3px", padding: "2px 3px" }}>
+                    <span style={{ fontSize: "7px", fontWeight: 700, color: "#374151", marginRight: "2px", lineHeight: 1.5 }}>{group.atKey}</span>
+                    {group.items.map((h, i) => <SqIcon key={i} top={h.table} bottom={h.coins} bg="#14532d" />)}
+                  </div>
+                );
+              })}
             </div>
           </Cat>
         )}
 
-        {directAddHistory.length > 0 && (
+        {directHistoryByAT.length > 0 && (
           <Cat color="#1565c0" title="直乗せ履歴" mb>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "1px", padding: "4px" }}>
-              {directAddHistory.map((d, i) => <SqIcon key={i} top={d.trigger} bottom={d.coins != null ? String(d.coins) : "—"} bg="#1565c0" />)}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "2px", padding: "4px" }}>
+              {directHistoryByAT.map((group, gi) => {
+                const bgColor = gi % 2 === 0 ? "#e3f2fd" : "#fce4ec";
+                return (
+                  <div key={group.atKey} style={{ display: "flex", alignItems: "center", gap: "1px", backgroundColor: bgColor, borderRadius: "3px", padding: "2px 3px" }}>
+                    <span style={{ fontSize: "7px", fontWeight: 700, color: "#374151", marginRight: "2px", lineHeight: 1.5 }}>{group.atKey}</span>
+                    {group.items.map((d, i) => <SqIcon key={i} top={d.trigger} bottom={d.coins != null ? String(d.coins) : "—"} bg="#1565c0" />)}
+                  </div>
+                );
+              })}
             </div>
           </Cat>
         )}
@@ -255,7 +282,13 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
               const name = sep !== -1 ? inv.slice(0, sep) : inv;
               const hint = sep !== -1 ? inv.slice(sep + 3) : "";
               const c = allInvitations.filter((v) => v === inv).length;
-              return <Row key={inv} i={i}><Lbl>{name}</Lbl><Val>{c}回{hint ? ` (${hint})` : ""}</Val></Row>;
+              return (
+                <Row key={inv} i={i}>
+                  <Lbl>{name}</Lbl>
+                  <span style={{ width: "28px", fontSize: "9px", fontWeight: 700, textAlign: "left", flexShrink: 0, lineHeight: 1.5 }}>{c}回</span>
+                  <span style={{ flex: 1, fontSize: "7px", color: "#6b7280", lineHeight: 1.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hint}</span>
+                </Row>
+              );
             })}
           </Cat>
         )}
