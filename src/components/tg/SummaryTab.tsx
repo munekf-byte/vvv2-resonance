@@ -12,8 +12,14 @@ import {
   TG_KAKUGAN, TG_SHINSEKAI,
   TG_ENDING_SUGGESTIONS, TG_TROPHIES,
   TG_AT_CHARACTERS, TG_BITES_TYPES,
-  TG_ZONES,
+  TG_ZONES, TG_INVITATIONS,
 } from "@/lib/engine/constants";
+import {
+  gradeByProb, gradeByRate, SETTING_COLORS,
+  CZ_PROB, EPI_PROB, DIRECT_AT_PROB, AT_COMBINED_PROB,
+  URA_AT_RATE, HIKIMODOHI_RATE,
+  type SettingGrade,
+} from "@/lib/tg/settingDiff";
 
 interface Props {
   blocks: NormalBlock[];
@@ -87,7 +93,25 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
   const trophyCount = blocks.filter((b) => b.trophy).length + getAllSets(atEntries).filter((s) => s.trophy).length;
   const settingHints = inferSetting(czFailSuggestions, allEndScreenFromAT, blocks, atEntries);
 
+  // 引き戻し（イベント"引き戻し"）
+  const hikimodoCount = blocks.filter((b) => b.event === "引き戻し").length;
+
+  // 裏AT
   const allSets = getAllSets(atEntries);
+  const uraATCount = allSets.filter((s) => s.atType === "裏AT" || s.atType === "隠れ裏AT（推測）").length;
+  // AT当選回数ベースの裏AT率 (各ATEntryの最初のSETのatTypeで判定)
+  const atEntriesWithType = atEntries.map((e) => {
+    const firstSet = e.rows.find((r): r is TGATSet => r.rowType === "set");
+    return firstSet?.atType ?? "通常AT";
+  });
+  const uraATEntryCount = atEntriesWithType.filter((t) => t === "裏AT" || t === "隠れ裏AT（推測）").length;
+
+  // 招待状集計（設定差あり項目）
+  const allInvitations = blocks.flatMap((b) => b.invitation);
+  const invSettingItems = [...TG_INVITATIONS].filter((inv) =>
+    inv.includes("偶数") || inv.includes("設定") || inv.includes("存分に") || inv.includes("特別な夜")
+  );
+
   const charStats = [...TG_AT_CHARACTERS].filter((c) => c !== "EDボナ").map((char) => {
     const sets = allSets.filter((s) => s.character === char);
     const battles = sets.flatMap((s) => s.battles).filter((b) => b.result);
@@ -131,10 +155,11 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
               </Val>
             </Row>
             <Row i={1}><Lbl b>通常時G</Lbl><Val>{sum2.toLocaleString()} G</Val></Row>
-            <Row i={2}><Lbl b>CZ(レミニ&利世)</Lbl><Val>{czCount}回 {prob(czCount, sum2)}</Val></Row>
-            <Row i={3}><Lbl b>エピボ</Lbl><Val>{epiCount}回 {prob(epiCount, sum2)}</Val></Row>
-            <Row i={4}><Lbl b>AT直撃</Lbl><Val>{directATCount}回 {prob(directATCount, sum2)}</Val></Row>
-            <Row i={5}><Lbl b>AT初当たり</Lbl><Val>{atWinCount}回 {prob(atWinCount, sum2)}</Val></Row>
+            <Row i={2} grade={gradeByProb(czCount, sum2, [...CZ_PROB])}><Lbl b>CZ(レミニ&利世)</Lbl><Val>{czCount}回 {prob(czCount, sum2)}</Val></Row>
+            <Row i={3} grade={gradeByProb(epiCount, sum2, [...EPI_PROB])}><Lbl b>エピボ</Lbl><Val>{epiCount}回 {prob(epiCount, sum2)}</Val></Row>
+            <Row i={4} grade={gradeByProb(directATCount, sum2, [...DIRECT_AT_PROB])}><Lbl b>AT直撃</Lbl><Val>{directATCount}回 {prob(directATCount, sum2)}</Val></Row>
+            <Row i={5} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])}><Lbl b>AT初当たり</Lbl><Val>{atWinCount}回 {prob(atWinCount, sum2)}</Val></Row>
+            <Row i={6} grade={gradeByRate(hikimodoCount, atWinCount, HIKIMODOHI_RATE[0], HIKIMODOHI_RATE[5])}><Lbl b>引き戻し</Lbl><Val>{hikimodoCount}回 {atWinCount > 0 ? `[${pct(hikimodoCount, atWinCount)}]` : ""}</Val></Row>
           </Cat>
 
           <Cat color="#b71c1c" title="赫眼 / 精神世界">
@@ -144,7 +169,10 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
             ))}
             <Row i={kakuganBD.length + 1}><Lbl b>精神世界</Lbl><Val>{shinsekaiTotal}回 {prob(shinsekaiTotal, sum2)}</Val></Row>
             {shinsekaiBS.map((s, i) => (
-              <Row key={s.label} i={kakuganBD.length + 2 + i}><Lbl>　{s.label}</Lbl><Val>{s.count}回 [{pct(s.count, shinsekaiTotal)}]</Val></Row>
+              <Row key={s.label} i={kakuganBD.length + 2 + i}
+                grade={s.label === "精神33G" && s.count > 0 ? gradeByRate(s.count, shinsekaiTotal, 25, 60) : undefined}>
+                <Lbl>　{s.label}</Lbl><Val>{s.count}回 [{pct(s.count, shinsekaiTotal)}]</Val>
+              </Row>
             ))}
           </Cat>
         </div>
@@ -173,7 +201,8 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
 
         {/* ===== AT ===== */}
         <Cat color="#2e7d32" title="AT" mb>
-          <Row i={0}><Lbl b>AT初当たり</Lbl><Val>{atWinCount}回 {prob(atWinCount, sum2)}</Val></Row>
+          <Row i={0} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])}><Lbl b>AT初当たり</Lbl><Val>{atWinCount}回 {prob(atWinCount, sum2)}</Val></Row>
+          <Row i={1} grade={gradeByRate(uraATEntryCount, atWinCount, URA_AT_RATE[0], URA_AT_RATE[5])}><Lbl b>裏AT突入率</Lbl><Val>{uraATEntryCount}回 {atWinCount > 0 ? `[${pct(uraATEntryCount, atWinCount)}]` : "—"}</Val></Row>
         </Cat>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
@@ -218,6 +247,19 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
           </Cat>
         )}
 
+        {/* 招待状（設定差あり） */}
+        {invSettingItems.length > 0 && (
+          <Cat color="#4a148c" title="招待状（設定示唆）" mb>
+            {invSettingItems.map((inv, i) => {
+              const sep = inv.indexOf(" - ");
+              const name = sep !== -1 ? inv.slice(0, sep) : inv;
+              const hint = sep !== -1 ? inv.slice(sep + 3) : "";
+              const c = allInvitations.filter((v) => v === inv).length;
+              return <Row key={inv} i={i}><Lbl>{name}</Lbl><Val>{c}回{hint ? ` (${hint})` : ""}</Val></Row>;
+            })}
+          </Cat>
+        )}
+
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <ZoneBlock label="ゾーン [全体]" data={zoneAll} />
           <ZoneBlock label="ゾーン [リセ頭]" data={zoneAfterAT} />
@@ -243,13 +285,17 @@ function Cat({ color, title, children, mb }: {
   );
 }
 
-function Row({ children, i }: { children: React.ReactNode; i: number }) {
+function Row({ children, i, grade }: { children: React.ReactNode; i: number; grade?: SettingGrade }) {
+  const sc = grade ? SETTING_COLORS[grade] : null;
+  const baseBg = i % 2 === 0 ? "#ffffff" : "#f7f7f7";
   return (
     <div style={{
       display: "flex", alignItems: "center", padding: "3px 4px",
-      backgroundColor: i % 2 === 0 ? "#ffffff" : "#f7f7f7",
+      backgroundColor: sc && grade !== "neutral" ? sc.bg : baseBg,
+      color: sc && grade !== "neutral" ? sc.color : undefined,
       borderBottom: "1px solid #e5e7eb",
       lineHeight: 1.5,
+      ...(grade === "vhigh" ? { fontWeight: 700 } : {}),
     }}>
       {children}
     </div>
