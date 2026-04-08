@@ -179,7 +179,7 @@ function ATBlock({
   return (
     <div className="border border-gray-400 mb-4 mx-3 rounded overflow-hidden">
 
-      {/* ── ATサマリーヘッダー (コンパクト) ── */}
+      {/* ── ATサマリーヘッダー ── */}
       <div
         className="flex items-stretch border-b-2 border-green-900"
         style={{ backgroundColor: "#14532d" }}
@@ -187,10 +187,12 @@ function ATBlock({
         <div className="px-1.5 py-0.5 flex items-center justify-center border-r border-green-900 shrink-0">
           <span className="text-white font-mono font-black text-sm">{atKey}</span>
         </div>
-        <SummaryCell label="Set" value={`${summary.setCount}`} />
-        <SummaryCell label="BITES" value={`${summary.bitesTotal.toLocaleString()}`} />
-        <SummaryCell label="直乗せ" value={`${summary.directTotal.toLocaleString()}`} />
-        <SummaryCell label="合計" value={`${summary.total.toLocaleString()}`} highlight />
+        <div className="flex-1 flex items-stretch justify-evenly">
+          <SummaryCell label="Set" value={`${summary.setCount}`} />
+          <SummaryCell label="BITES" value={`${summary.bitesTotal.toLocaleString()}枚`} />
+          <SummaryCell label="直乗せ" value={`${summary.directTotal.toLocaleString()}枚`} />
+          <SummaryCell label="合計" value={`${summary.total.toLocaleString()}枚`} highlight />
+        </div>
         {(summary.endingSuggestion || summary.trophy) && (
           <>
             {summary.endingSuggestion && (
@@ -282,7 +284,7 @@ function ATBlock({
 
 function SummaryCell({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center px-1 py-0.5 border-r border-green-900 shrink-0">
+    <div className="flex flex-col items-center justify-center px-1 py-0.5 border-r border-green-900 flex-1">
       <span className="text-[6px] font-mono text-gray-400 leading-none">{label}</span>
       <span className={`text-[9px] font-mono font-bold leading-tight ${highlight ? "text-yellow-300" : "text-white"}`}>
         {value}
@@ -308,13 +310,19 @@ function BattleResultGrid({ battles }: { battles: TGATSet["battles"] }) {
   const top    = battles.slice(0, 5);
   const bottom = battles.slice(5, 10);
   const hasTwoRows = battles.length > 5;
+  const fontSize = hasTwoRows ? "8px" : "13px";
+
+  function resultStyle(result: string): React.CSSProperties {
+    if (result === "○") return { backgroundColor: "#ffffff", color: "#16a34a" };
+    if (result === "×") return { backgroundColor: "#ffffff", color: "#dc2626" };
+    return { backgroundColor: "#f5f5f5", color: "#d1d5db" };
+  }
 
   function ResultCell({ result }: { result: string }) {
-    const color = getBattleResultColor(result);
     return (
       <div
-        className="flex items-center justify-center flex-1 text-[8px] font-bold"
-        style={{ ...color, minHeight: hasTwoRows ? "14px" : "16px" }}
+        className="flex items-center justify-center flex-1 font-black"
+        style={{ ...resultStyle(result), fontSize, minHeight: hasTwoRows ? "14px" : "18px" }}
       >
         {result || ""}
       </div>
@@ -323,13 +331,11 @@ function BattleResultGrid({ battles }: { battles: TGATSet["battles"] }) {
 
   return (
     <div className="flex flex-col w-full h-full divide-y divide-gray-300">
-      {/* 上段: 対決1〜5 */}
       <div className="flex flex-1 divide-x divide-gray-300">
         {Array.from({ length: 5 }, (_, i) => (
           <ResultCell key={i} result={top[i]?.result ?? ""} />
         ))}
       </div>
-      {/* 下段: 6個以上ある場合のみ表示 */}
       {hasTwoRows && (
         <div className="flex flex-1 divide-x divide-gray-300">
           {Array.from({ length: 5 }, (_, i) => (
