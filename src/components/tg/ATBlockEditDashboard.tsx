@@ -29,6 +29,18 @@ const ENDING_SUGGESTIONS_AT = TG_ENDING_SUGGESTIONS.filter((s) =>
   s.startsWith("[終了画面]")
 );
 
+// 終了画面示唆 → 画像ファイルマッピング
+const ENDING_IMAGE_MAP: Record<string, string> = {
+  "[終了画面] 金木研 - デフォルト":                          "/images/after_at/金木研.png",
+  "[終了画面] 亜門鋼太朗＆真戸暁 - 奇数設定示唆":            "/images/after_at/亜門＆真戸.png",
+  "[終了画面] 鈴屋什造＆篠原幸紀 - 偶数設定示唆":            "/images/after_at/鈴屋＆篠原.png",
+  "[終了画面] 神代利世 - 設定1否定":                          "/images/after_at/神代利世.png",
+  "[終了画面] 笛口雛実＆笛口リョーコ - 高設定示唆［弱］":     "/images/after_at/笛口親子.png",
+  "[終了画面] 四方蓮示＆イトリ＆ウタ - 高設定示唆［強］":     "/images/after_at/四方＆イトリ＆ウタ.png",
+  "[終了画面] 金木研＆霧嶋董香 - 設定4以上濃厚":              "/images/after_at/設定4以上濃厚.png",
+  "[終了画面] あんていく全員集合 - 設定6濃厚":                "/images/after_at/設定6濃厚.png",
+};
+
 interface Props {
   atKey: string;
   row: TGATRow | null;
@@ -363,31 +375,27 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           </div>
         </Section>
 
-        {/* 終了画面示唆 (nd-13) + トロフィー (nd-14) */}
+        {/* 終了画面示唆 (nd-13) — 画像付きピッカー */}
         <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-wide">終了画面示唆</span>
-              <PickerCell
-                value={form.endingSuggestion ?? ""}
-                onChange={(v) => setField("endingSuggestion", v)}
-                options={["", ...ENDING_SUGGESTIONS_AT]}
-                colorFn={getEndingCellColor}
-                labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
-                emptyLabel="なし"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-wide">トロフィー</span>
-              <PickerCell
-                value={form.trophy ?? ""}
-                onChange={(v) => setField("trophy", v)}
-                options={["", ...TG_TROPHIES]}
-                colorFn={getTrophyCellColor}
-                labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
-                emptyLabel="なし"
-              />
-            </div>
+          <span className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-wide">終了画面示唆</span>
+          <EndingImagePicker
+            value={form.endingSuggestion ?? ""}
+            onChange={(v) => setField("endingSuggestion", v)}
+          />
+        </div>
+
+        {/* トロフィー (nd-14) */}
+        <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
+          <span className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-wide">トロフィー</span>
+          <div className="mt-2">
+            <PickerCell
+              value={form.trophy ?? ""}
+              onChange={(v) => setField("trophy", v)}
+              options={["", ...TG_TROPHIES]}
+              colorFn={getTrophyCellColor}
+              labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
+              emptyLabel="なし"
+            />
           </div>
         </div>
 
@@ -759,7 +767,114 @@ function EndingCardCounter({
   );
 }
 
-// ─── PickerCell (終了画面示唆・トロフィー用) ──────────────────────────────────
+// ─── EndingImagePicker (終了画面示唆 画像付きグリッド) ────────────────────────
+
+function EndingImagePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const hasValue = value !== "";
+  const color = hasValue ? getEndingCellColor(value) : null;
+  const lines = hasValue ? getSuggestionListLines(value) : null;
+  const imgSrc = hasValue ? ENDING_IMAGE_MAP[value] : null;
+
+  return (
+    <>
+      {/* 現在の選択値を表示するボタン */}
+      <button
+        onClick={() => setOpen(true)}
+        className="mt-2 w-full rounded overflow-hidden active:scale-95 transition-transform"
+        style={{ minHeight: "56px", border: "2px solid #374151" }}
+      >
+        {hasValue ? (
+          <div className="flex items-center gap-2 px-2 py-1.5" style={color ?? {}}>
+            {imgSrc && (
+              <img src={imgSrc} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+            )}
+            <div className="flex flex-col items-start min-w-0 flex-1">
+              <span className="text-[11px] font-mono font-bold truncate w-full text-left">{lines?.name ?? value}</span>
+              {lines?.hint && <span className="text-[9px] font-mono opacity-70 truncate w-full text-left">{lines.hint}</span>}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-14" style={{ backgroundColor: "#f3f4f6", color: "#9ca3af" }}>
+            <span className="text-[11px] font-mono">タップして選択</span>
+          </div>
+        )}
+      </button>
+
+      {/* 選択モーダル */}
+      {open && (
+        <div
+          className="fixed inset-0 z-[70] bg-black/60 flex items-end justify-center"
+          onClick={(e) => e.target === e.currentTarget && setOpen(false)}
+        >
+          <div className="bg-white rounded-t-2xl w-full max-w-lg max-h-[80dvh] flex flex-col safe-area-bottom">
+            <div className="px-4 py-3 border-b border-gray-300 flex items-center justify-between">
+              <p className="text-sm font-mono font-bold text-gray-700">終了画面示唆を選択</p>
+              <button
+                onClick={() => setOpen(false)}
+                className="text-xs font-mono text-gray-400 px-2 py-1"
+              >
+                閉じる
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+              {/* なし */}
+              <button
+                onClick={() => { onChange(""); setOpen(false); }}
+                className="w-full rounded-lg py-3 text-center font-mono text-sm active:scale-95 transition-transform"
+                style={
+                  !hasValue
+                    ? { backgroundColor: "#1f2937", color: "#fff", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "1px solid #d1d5db" }
+                }
+              >
+                なし
+              </button>
+
+              {/* 画像付き選択肢 */}
+              {ENDING_SUGGESTIONS_AT.map((opt) => {
+                const optLines = getSuggestionListLines(opt);
+                const optColor = getEndingCellColor(opt);
+                const optImg = ENDING_IMAGE_MAP[opt];
+                const isSelected = value === opt;
+
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => { onChange(opt); setOpen(false); }}
+                    className="w-full rounded-lg overflow-hidden active:scale-95 transition-transform"
+                    style={{
+                      border: isSelected ? "none" : "1px solid #d1d5db",
+                      boxShadow: isSelected ? "0 0 0 2px #1f2937" : "none",
+                    }}
+                  >
+                    <div className="flex items-center gap-3 px-3 py-2" style={optColor}>
+                      {optImg && (
+                        <img src={optImg} alt="" className="w-14 h-14 rounded object-cover flex-shrink-0" />
+                      )}
+                      <div className="flex flex-col items-start min-w-0 flex-1">
+                        <span className="text-[12px] font-mono font-bold truncate w-full text-left">
+                          {optLines?.name ?? opt}
+                        </span>
+                        {optLines?.hint && (
+                          <span className="text-[10px] font-mono opacity-80 truncate w-full text-left">
+                            {optLines.hint}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── PickerCell (トロフィー用) ────────────────────────────────────────────────
 function PickerCell({
   value, onChange, options, colorFn, labelFn, emptyLabel = "なし",
 }: {
