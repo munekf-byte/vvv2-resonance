@@ -157,9 +157,12 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
 
   return (
     <div className="pb-24">
-      <div className="sticky top-0 z-20 bg-gray-100 border-b border-gray-300 px-3 py-2 flex justify-end">
+      <div className="sticky top-0 z-20 bg-gray-100 border-b border-gray-300 px-3 py-2 flex items-center justify-between">
+        <p className="text-[10px] font-mono font-bold text-red-600 leading-tight">
+          ※ 総消化ゲーム数はご自身で入力してください
+        </p>
         <button onClick={handleCapture}
-          className="text-[11px] font-mono font-bold px-4 py-2 rounded bg-gray-800 text-white active:scale-95 transition-transform">
+          className="text-[11px] font-mono font-bold px-4 py-2 rounded bg-gray-800 text-white active:scale-95 transition-transform flex-shrink-0 ml-2">
           画像で保存
         </button>
       </div>
@@ -186,11 +189,39 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
 
           {/* CZ内容 */}
           <Cat color="#7b1fa2" title="CZ内容">
-            <Row i={0}><Lbl b>CZ記録数</Lbl><Val>{czBlocks.length}回 (成功{czSuccessCount})</Val></Row>
-            <Row i={1}><Lbl>押/斜🔔</Lbl><Val>{czTotalBell}回 {czHitBell > 0 ? `★当${czHitBell}` : ""}</Val></Row>
-            <Row i={2}><Lbl>リプ</Lbl><Val>{czTotalReplay}回 {czHitReplay > 0 ? `★当${czHitReplay}` : ""}</Val></Row>
-            <Row i={3}><Lbl>弱レア</Lbl><Val>{czTotalWeakRare}回 {czHitWeakRare > 0 ? `★当${czHitWeakRare}` : ""}</Val></Row>
-            <Row i={4}><Lbl>強レア</Lbl><Val>{czTotalStrongRare}回 {czHitStrongRare > 0 ? `★当${czHitStrongRare}` : ""}</Val></Row>
+            <Row i={0}>
+              <Lbl b>CZ記録数</Lbl>
+              <Val>{czBlocks.length}回 / 成功{czSuccessCount} / 成功率{czBlocks.length > 0 ? pct(czSuccessCount, czBlocks.length) : "—"}</Val>
+            </Row>
+            {/* テーブルヘッダー */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 40px 40px 48px", borderBottom: "2px solid #7b1fa2", backgroundColor: "#f3e8ff", padding: "2px 4px" }}>
+              <span style={{ fontSize: "7px", fontWeight: 700, color: "#6b7280", lineHeight: 1.5 }}>役</span>
+              <span style={{ fontSize: "7px", fontWeight: 700, color: "#6b7280", textAlign: "right", lineHeight: 1.5 }}>発生</span>
+              <span style={{ fontSize: "7px", fontWeight: 700, color: "#6b7280", textAlign: "right", lineHeight: 1.5 }}>当選</span>
+              <span style={{ fontSize: "7px", fontWeight: 700, color: "#6b7280", textAlign: "right", lineHeight: 1.5 }}>当選率</span>
+            </div>
+            {([
+              { label: "押/斜🔔", total: czTotalBell, hit: czHitBell },
+              { label: "リプ", total: czTotalReplay, hit: czHitReplay },
+              { label: "弱レア", total: czTotalWeakRare, hit: czHitWeakRare },
+              { label: "強レア", total: czTotalStrongRare, hit: czHitStrongRare },
+            ] as const).map((r, i) => (
+              <div key={r.label} style={{
+                display: "grid", gridTemplateColumns: "1fr 40px 40px 48px",
+                padding: "3px 4px",
+                backgroundColor: i % 2 === 0 ? "#ffffff" : "#f7f7f7",
+                borderBottom: "1px solid #e5e7eb",
+              }}>
+                <span style={{ fontSize: "8px", color: "#4b5563", lineHeight: 1.5 }}>{r.label}</span>
+                <span style={{ fontSize: "9px", fontWeight: 700, color: "#111827", textAlign: "right", lineHeight: 1.5 }}>{r.total}回</span>
+                <span style={{ fontSize: "9px", fontWeight: 700, color: r.hit > 0 ? "#b91c1c" : "#9ca3af", textAlign: "right", lineHeight: 1.5 }}>
+                  {r.hit > 0 ? `★${r.hit}` : "—"}
+                </span>
+                <span style={{ fontSize: "9px", fontWeight: 700, color: "#111827", textAlign: "right", lineHeight: 1.5 }}>
+                  {r.total > 0 ? pct(r.hit, r.total) : "—"}
+                </span>
+              </div>
+            ))}
           </Cat>
 
           <Cat color="#b71c1c" title="赫眼 / 精神世界">
