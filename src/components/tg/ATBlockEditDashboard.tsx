@@ -408,6 +408,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
               return (
                 <EndingCardCounter
                   key={key}
+                  cardKey={key}
                   label={label}
                   color={color}
                   textColor={textColor}
@@ -425,6 +426,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
             {TG_COPPER_CARD_TYPES.map(({ key, label, character, color, textColor }) => (
               <EndingCardCounter
                 key={key}
+                cardKey={key}
                 label={`${label} — ${character}`}
                 color={color}
                 textColor={textColor}
@@ -441,6 +443,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
             {TG_CONFIRMED_CARD_TYPES.map(({ key, label, character, color, textColor, rainbow }) => (
               <EndingCardCounter
                 key={key}
+                cardKey={key}
                 label={`${label} — ${character}`}
                 color={color}
                 textColor={textColor}
@@ -702,8 +705,26 @@ function ArimaForm({ initial, onSave, onTempSave }: {
 
 // ─── EndingCardCounter (ad-16〜21) ────────────────────────────────────────────
 
+// エンディングカード → 画像マッピング
+const ENDING_CARD_IMAGE_MAP: Record<string, string> = {
+  whiteWeak:  "/images/ending_card/奇数設定示唆（弱）.png",
+  whiteStrong: "/images/ending_card/奇数設定示唆（強）.png",
+  blueWeak:   "/images/ending_card/偶数設定示唆（弱）.png",
+  blueStrong: "/images/ending_card/偶数設定示唆（強）.png",
+  redWeak:    "/images/ending_card/高設定示唆（弱）.png",
+  redStrong:  "/images/ending_card/高設定示唆（強）.png",
+  copper1:    "/images/ending_card/設定1否定.png",
+  copper2:    "/images/ending_card/設定2否定.png",
+  copper3:    "/images/ending_card/設定3否定.png",
+  copper4:    "/images/ending_card/設定4否定.png",
+  confirmed1: "/images/ending_card/設定3以上濃厚.png",
+  confirmed2: "/images/ending_card/設定4以上濃厚.png",
+  confirmed3: "/images/ending_card/設定5以上濃厚.png",
+  confirmed4: "/images/ending_card/設定6濃厚.png",
+};
+
 function EndingCardCounter({
-  label, color, textColor, value, onChange, characters, rainbow,
+  label, color, textColor, value, onChange, characters, rainbow, cardKey,
 }: {
   label: string;
   color: string;
@@ -712,56 +733,81 @@ function EndingCardCounter({
   onChange: (v: number) => void;
   characters: readonly string[];
   rainbow?: boolean;
+  cardKey?: string;
 }) {
+  const imgSrc = cardKey ? ENDING_CARD_IMAGE_MAP[cardKey] : undefined;
+  const isWideImage = cardKey && ["whiteWeak", "whiteStrong", "blueWeak", "blueStrong", "redWeak", "redStrong"].includes(cardKey);
+
   return (
     <div
-      className="flex items-stretch gap-2 p-2 rounded border-2"
+      className="rounded border-2 overflow-hidden"
       style={{ borderColor: color }}
     >
-      {/* PUSH / − / 回数 */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        <button
-          onClick={() => onChange(value + 1)}
-          className="w-11 h-11 rounded-full font-mono font-black text-[10px] active:scale-95 transition-transform shadow-sm"
-          style={{ backgroundColor: "#c8e6c9", color: "#1b5e20" }}
-        >
-          PUSH
-        </button>
-        <button
-          onClick={() => onChange(Math.max(0, value - 1))}
-          className="w-11 h-11 rounded-full font-mono font-black text-base active:scale-95 transition-transform shadow-sm"
-          style={{ backgroundColor: "#fce4ec", color: "#880e4f" }}
-        >
-          −
-        </button>
-        <div
-          className="w-12 h-11 rounded border-2 flex items-center justify-center font-mono font-bold"
-          style={{
-            borderColor: value > 0 ? color : "#e5e7eb",
-            backgroundColor: value > 0 ? "#1f2937" : "#f9fafb",
-            color: value > 0 ? "#ffffff" : "#9ca3af",
-          }}
-        >
-          <span className="text-sm">{value}</span>
-          <span className="text-[8px] ml-0.5">回</span>
-        </div>
-      </div>
-      {/* カード情報 */}
-      <div className="flex-1 min-w-0 flex flex-col justify-center">
-        <p
-          className="text-[9px] font-mono font-bold leading-tight px-1 py-0.5 rounded"
-          style={rainbow
-            ? { background: "linear-gradient(90deg,#ef4444,#f59e0b,#22c55e,#3b82f6,#8b5cf6,#ec4899)", color: "#fff" }
-            : { backgroundColor: color, color: textColor }
-          }
-        >
-          {label}
-        </p>
-        {characters.length > 0 && (
-          <p className="text-[8px] font-mono text-gray-400 leading-snug mt-0.5 px-0.5">
-            {characters.join("　")}
-          </p>
+      {/* 横長画像（白/青/赤カード） */}
+      {isWideImage && imgSrc && (
+        <img
+          src={imgSrc}
+          alt={label}
+          className="w-full object-cover"
+          style={{ maxHeight: "72px" }}
+        />
+      )}
+
+      <div className="flex items-stretch gap-2 p-2">
+        {/* 単独画像サムネイル（銅/確定カード） */}
+        {!isWideImage && imgSrc && (
+          <img
+            src={imgSrc}
+            alt={label}
+            className="w-11 h-11 rounded object-cover flex-shrink-0 self-center"
+          />
         )}
+
+        {/* PUSH / − / 回数 */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => onChange(value + 1)}
+            className="w-11 h-11 rounded-full font-mono font-black text-[10px] active:scale-95 transition-transform shadow-sm"
+            style={{ backgroundColor: "#c8e6c9", color: "#1b5e20" }}
+          >
+            PUSH
+          </button>
+          <button
+            onClick={() => onChange(Math.max(0, value - 1))}
+            className="w-11 h-11 rounded-full font-mono font-black text-base active:scale-95 transition-transform shadow-sm"
+            style={{ backgroundColor: "#fce4ec", color: "#880e4f" }}
+          >
+            −
+          </button>
+          <div
+            className="w-12 h-11 rounded border-2 flex items-center justify-center font-mono font-bold"
+            style={{
+              borderColor: value > 0 ? color : "#e5e7eb",
+              backgroundColor: value > 0 ? "#1f2937" : "#f9fafb",
+              color: value > 0 ? "#ffffff" : "#9ca3af",
+            }}
+          >
+            <span className="text-sm">{value}</span>
+            <span className="text-[8px] ml-0.5">回</span>
+          </div>
+        </div>
+        {/* カード情報 */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          <p
+            className="text-[9px] font-mono font-bold leading-tight px-1 py-0.5 rounded"
+            style={rainbow
+              ? { background: "linear-gradient(90deg,#ef4444,#f59e0b,#22c55e,#3b82f6,#8b5cf6,#ec4899)", color: "#fff" }
+              : { backgroundColor: color, color: textColor }
+            }
+          >
+            {label}
+          </p>
+          {characters.length > 0 && (
+            <p className="text-[8px] font-mono text-gray-400 leading-snug mt-0.5 px-0.5">
+              {characters.join("　")}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
