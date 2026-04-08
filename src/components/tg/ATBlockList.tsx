@@ -6,7 +6,7 @@
 // =============================================================================
 
 import { useState } from "react";
-import type { TGATEntry, TGATSet, TGArimaJudgment, TGATRow, TGEndingCard } from "@/types";
+import type { NormalBlock, TGATEntry, TGATSet, TGArimaJudgment, TGATRow, TGEndingCard } from "@/types";
 import {
   getATCharColor,
   getBitesTypeCellColor,
@@ -21,6 +21,8 @@ import { TG_ENDING_CARD_LABELS, TG_COPPER_CARD_TYPES, TG_CONFIRMED_CARD_TYPES } 
 interface Props {
   atKeyList: string[];
   atEntries: TGATEntry[];
+  atEventMap?: Map<string, string>;
+  blocks?: NormalBlock[];
   onAddRow: (atKey: string, rowType: "set" | "arima") => void;
   onEditRow: (atKey: string, row: TGATRow, rowIndex: number) => void;
   onDeleteRow: (atKey: string, rowId: string) => void;
@@ -72,7 +74,18 @@ function buildSetNumbers(rows: TGATRow[]): Map<string, number> {
 
 // ─── メインコンポーネント ─────────────────────────────────────────────────────
 
-export function ATBlockList({ atKeyList, atEntries, onAddRow, onEditRow, onDeleteRow }: Props) {
+export function ATBlockList({ atKeyList, atEntries, atEventMap, blocks, onAddRow, onEditRow, onDeleteRow }: Props) {
+  // ATキー → エピソードボーナス経由か判定
+  function isEpisodeBonus(atKey: string): boolean {
+    if (!atEventMap || !blocks) return false;
+    for (const [blockId, label] of atEventMap) {
+      if (label === atKey) {
+        const block = blocks.find((b) => b.id === blockId);
+        return block?.event === "エピソードボーナス";
+      }
+    }
+    return false;
+  }
   const [expandedRows,  setExpandedRows]  = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<{ atKey: string; rowId: string } | null>(null);
 
@@ -102,6 +115,8 @@ export function ATBlockList({ atKeyList, atEntries, onAddRow, onEditRow, onDelet
           const entry      = atEntries.find((e) => e.atKey === atKey) ?? { atKey, rows: [] };
           const summary    = computeSummary(entry);
           const setNumbers = buildSetNumbers(entry.rows);
+          const isEpi      = isEpisodeBonus(atKey);
+          const baseCoins  = isEpi ? 250 : 150;
 
           return (
             <ATBlock
@@ -109,6 +124,7 @@ export function ATBlockList({ atKeyList, atEntries, onAddRow, onEditRow, onDelet
               atKey={atKey}
               entry={entry}
               summary={summary}
+              baseCoins={baseCoins}
               setNumbers={setNumbers}
               expandedRows={expandedRows}
               toggleRow={toggleRow}
@@ -164,6 +180,7 @@ interface ATBlockProps {
   atKey: string;
   entry: TGATEntry;
   summary: ReturnType<typeof computeSummary>;
+  baseCoins: number;
   setNumbers: Map<string, number>;
   expandedRows: Set<string>;
   toggleRow: (id: string) => void;
@@ -173,7 +190,7 @@ interface ATBlockProps {
 }
 
 function ATBlock({
-  atKey, entry, summary, setNumbers, expandedRows, toggleRow,
+  atKey, entry, summary, baseCoins, setNumbers, expandedRows, toggleRow,
   onAddRow, onEditRow, onDeleteRow,
 }: ATBlockProps) {
   return (
@@ -198,8 +215,8 @@ function ATBlock({
           <ATHeaderCoinCell label="BITES" coins={summary.bitesTotal} />
           {/* 直乗せ */}
           <ATHeaderCoinCell label="直乗せ" coins={summary.directTotal} />
-          {/* 合計獲得 */}
-          <ATHeaderCoinCell label="合計獲得" coins={summary.total} highlight />
+          {/* 合計獲得（概算） */}
+          <ATHeaderCoinCell label="合計獲得(概算)" coins={summary.total + baseCoins} highlight />
           {/* 終了画面/トロフィー（hint表示） */}
           {(summary.endingSuggestion || summary.trophy) ? (
             <div className="flex items-center justify-center px-1.5 border-l border-green-900" style={{ backgroundColor: "#1a3d1f" }}>
@@ -291,13 +308,13 @@ function ATBlock({
 
 // ─── SummaryCell ─────────────────────────────────────────────────────────────
 
-/** ATヘッダー枚数セル: ラベル + 右に枚数（緑ヘッダー内） */
+/** ATヘッダー枚数セル: ラベル+枚数密着（緑ヘッダー内） */
 function ATHeaderCoinCell({ label, coins, highlight = false }: { label: string; coins: number; highlight?: boolean }) {
   return (
-    <div className="flex items-center px-1 py-0.5 border-r border-green-900 gap-0.5">
-      <span className="text-[6px] font-mono text-gray-400 font-bold leading-tight shrink-0">{label}</span>
+    <div className="flex items-center justify-center px-1 py-0.5 border-r border-green-900">
+      <span className="text-[6px] font-mono text-white font-bold leading-tight shrink-0 mr-0.5">{label}</span>
       <span
-        className="text-[11px] font-mono font-black leading-none flex-1 text-right"
+        className="text-[11px] font-mono font-black leading-none"
         style={{ color: highlight ? "#fde047" : "#ffffff" }}
       >
         {coins.toLocaleString()}<span className="text-[7px]">枚</span>

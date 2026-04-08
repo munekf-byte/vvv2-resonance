@@ -220,7 +220,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               <p className="text-sm font-mono font-bold text-white truncate">
                 {session?.machineName ?? "セッション"}
               </p>
-              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v3.5.5</span>
+              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v3.5.6</span>
             </div>
             <p className="text-[10px] font-mono text-gray-400">
               {activeTab === "normal"
@@ -324,6 +324,8 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               <ATBlockList
                 atKeyList={atKeyList}
                 atEntries={atEntries}
+                atEventMap={atLabels}
+                blocks={blocks}
                 onAddRow={handleATAddRow}
                 onEditRow={(atKey, row) => handleATEditRow(atKey, row)}
                 onDeleteRow={handleATDeleteRow}

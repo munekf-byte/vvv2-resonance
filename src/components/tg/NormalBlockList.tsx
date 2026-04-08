@@ -484,13 +484,13 @@ function MultiColorField({ label, values, color }: { label: string; values: stri
   );
 }
 
-/** ATサマリー枚数セル: ラベル2行 + 右に枚数 */
+/** ATサマリー枚数セル: ラベル+枚数密着 */
 function ATSummaryCoinCell({ label, coins, color }: { label: string; coins: number; color?: string }) {
   return (
-    <div className="flex items-center px-1 border-r border-gray-300 gap-0.5">
-      <span className="text-[6px] font-mono text-gray-500 font-bold leading-tight shrink-0">{label}</span>
+    <div className="flex items-center justify-center px-1 border-r border-gray-300">
+      <span className="text-[6px] font-mono text-gray-600 font-bold leading-tight shrink-0 mr-0.5">{label}</span>
       <span
-        className="text-[11px] font-mono font-black leading-none flex-1 text-right"
+        className="text-[11px] font-mono font-black leading-none"
         style={{ color: color ?? "#1f2937" }}
       >
         {coins.toLocaleString()}<span className="text-[7px]">枚</span>
