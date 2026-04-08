@@ -15,6 +15,8 @@ export interface SessionMeta {
   updatedAt: string;
   blockCount: number;
   atCount: number;
+  totalGames: number;
+  balance: number | null;
 }
 
 // ── localStorage 操作 ──────────────────────────────────────────────────────
@@ -32,6 +34,11 @@ export function lsSaveSession(session: PlaySession): void {
   try {
     localStorage.setItem(sessionKey(session.id), JSON.stringify(session));
     const list = lsGetSessionList();
+    const totalGames = session.normalBlocks.reduce((sum, b) => sum + (b.jisshuG ?? 0), 0);
+    const sh = session.shushi;
+    const balance = sh
+      ? (sh.exchangeCoins ?? 0) - ((sh.handCoins ?? 0) + (sh.cashInvestK ?? 0) * sh.coinRate)
+      : null;
     const meta: SessionMeta = {
       id: session.id,
       machineName: session.machineName,
@@ -39,6 +46,8 @@ export function lsSaveSession(session: PlaySession): void {
       updatedAt: new Date().toISOString(),
       blockCount: session.normalBlocks.length,
       atCount: session.normalBlocks.filter((b) => b.atWin).length,
+      totalGames,
+      balance,
     };
     const idx = list.findIndex((s) => s.id === session.id);
     if (idx >= 0) list[idx] = meta;

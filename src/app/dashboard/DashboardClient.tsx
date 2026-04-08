@@ -53,17 +53,15 @@ export function DashboardClient() {
   }
 
   function generateAutoName(): string {
-    const d = sessionDate.replace(/-/g, "/").slice(5); // "04/08"
-    const parts = [d];
-    if (hallName.trim()) parts.push(hallName.trim());
-    if (machineNumber.trim()) parts.push(`台${machineNumber.trim()}`);
-    return parts.join(" ");
+    const d = sessionDate ? sessionDate.replace(/-/g, "/").slice(5) : "-";
+    const h = hallName.trim() || "-";
+    const m = machineNumber.trim() ? `[${machineNumber.trim()}]番台` : "-";
+    return `${d} ${h} ${m}`;
   }
 
-  async function handleCreate() {
+  async function handleCreateWithName(name: string) {
     if (creating) return;
     setCreating(true);
-    const name = sessionName.trim() || "東京喰種 RESONANCE";
     const session = await createSessionWithCloud(name);
     setShowModal(false);
     setSessionName("");
@@ -71,6 +69,15 @@ export function DashboardClient() {
     setMachineNumber("");
     setCreating(false);
     router.push(`/play/${session.id}`);
+  }
+
+  async function handleCreate() {
+    const name = sessionName.trim() || "東京喰種 RESONANCE";
+    await handleCreateWithName(name);
+  }
+
+  async function handleAutoCreate() {
+    await handleCreateWithName(generateAutoName());
   }
 
   function handleOpen(id: string) {
@@ -101,17 +108,30 @@ export function DashboardClient() {
             <div key={s.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="flex items-stretch">
                 <button onClick={() => handleOpen(s.id)}
-                  className="flex-1 text-left px-4 py-3 hover:bg-gray-50 transition-colors">
-                  <p className="font-mono font-bold text-gray-900 text-sm truncate">{s.machineName}</p>
-                  <div className="flex gap-3 mt-1">
-                    <span className="text-[11px] font-mono text-gray-500">{formatDate(s.updatedAt)}</span>
-                    <span className="text-[11px] font-mono text-gray-500">{s.blockCount} 周期</span>
+                  className="flex-1 text-left px-4 py-2.5 hover:bg-gray-50 transition-colors min-w-0">
+                  {/* セッション名 */}
+                  <p className="font-mono font-bold text-gray-900 text-[13px] break-all line-clamp-2 leading-tight">{s.machineName}</p>
+                  {/* 稼働実績 */}
+                  <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mt-1.5">
+                    <span className="text-[10px] font-mono text-gray-400">{formatDate(s.updatedAt)}</span>
+                    <span className="text-[10px] font-mono text-gray-600">{s.blockCount}周期</span>
+                    {s.totalGames > 0 && (
+                      <span className="text-[10px] font-mono text-gray-600">{s.totalGames.toLocaleString()}G</span>
+                    )}
                     {s.atCount > 0 && (
-                      <span className="text-[11px] font-mono font-bold text-green-700">AT ×{s.atCount}</span>
+                      <span className="text-[10px] font-mono font-bold text-green-700">AT×{s.atCount}</span>
+                    )}
+                    {s.balance != null && (
+                      <span
+                        className="text-[10px] font-mono font-bold"
+                        style={{ color: s.balance >= 0 ? "#16a34a" : "#dc2626" }}
+                      >
+                        {s.balance >= 0 ? "+" : ""}{s.balance.toLocaleString()}枚
+                      </span>
                     )}
                   </div>
                 </button>
-                <div className="flex flex-col border-l border-gray-200">
+                <div className="flex flex-col border-l border-gray-200 shrink-0">
                   <button onClick={() => handleOpen(s.id)}
                     className="flex-1 px-3 text-[11px] font-mono font-bold text-blue-600 hover:bg-blue-50 transition-colors border-b border-gray-200 whitespace-nowrap">
                     再開
@@ -227,14 +247,20 @@ export function DashboardClient() {
                 />
               </div>
 
-              {/* セッション名自動生成ボタン */}
+              {/* 上記の情報でセッション作成 */}
               <button
-                onClick={() => setSessionName(generateAutoName())}
-                className="w-full py-2.5 rounded-lg font-mono font-bold text-sm active:scale-95 transition-transform"
-                style={{ backgroundColor: "#2563eb", color: "#fff" }}
+                onClick={handleAutoCreate}
+                className="w-full py-3 rounded-lg font-mono font-bold text-sm active:scale-95 transition-transform"
+                style={{ backgroundColor: "#b91c1c", color: "#fff" }}
+                disabled={creating}
               >
-                上記からセッション名を自動生成
+                上記の情報でセッション開始
               </button>
+
+              {/* プレビュー */}
+              <p className="text-[10px] font-mono text-gray-400 text-center">
+                → {generateAutoName()}
+              </p>
 
               {/* セパレーター */}
               <div className="flex items-center gap-2">
@@ -254,9 +280,7 @@ export function DashboardClient() {
                 />
               </div>
 
-              <p className="text-[10px] text-gray-400 font-mono">※ 空欄の場合は「東京喰種 RESONANCE」で作成されます</p>
-
-              {/* アクションボタン */}
+              {/* フリー入力でのアクションボタン */}
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => { setShowModal(false); setSessionName(""); setHallName(""); setMachineNumber(""); }}
@@ -268,10 +292,10 @@ export function DashboardClient() {
                 <button
                   onClick={handleCreate}
                   className="flex-1 py-3 rounded-lg text-white font-mono text-sm font-bold active:scale-95 transition-transform"
-                  style={{ backgroundColor: "#b91c1c" }}
+                  style={{ backgroundColor: "#374151" }}
                   disabled={creating}
                 >
-                  開始
+                  この題名にする
                 </button>
               </div>
             </div>
