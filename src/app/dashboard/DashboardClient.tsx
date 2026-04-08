@@ -108,25 +108,37 @@ export function DashboardClient() {
             <div key={s.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="flex items-stretch">
                 <button onClick={() => handleOpen(s.id)}
-                  className="flex-1 text-left px-4 py-2.5 hover:bg-gray-50 transition-colors min-w-0">
+                  className="flex-1 text-left px-3 py-2.5 hover:bg-gray-50 transition-colors min-w-0">
                   {/* セッション名 */}
                   <p className="font-mono font-bold text-gray-900 text-[13px] break-all line-clamp-2 leading-tight">{s.machineName}</p>
-                  {/* 稼働実績 */}
-                  <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mt-1.5">
-                    <span className="text-[10px] font-mono text-gray-400">{formatDate(s.updatedAt)}</span>
-                    <span className="text-[10px] font-mono text-gray-600">{s.blockCount}周期</span>
+                  {/* 稼働実績バッジ */}
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    <span className="text-[9px] font-mono text-gray-400 self-center mr-0.5">{formatDate(s.updatedAt)}</span>
                     {s.totalGames > 0 && (
-                      <span className="text-[10px] font-mono text-gray-600">{s.totalGames.toLocaleString()}G</span>
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                        style={{ backgroundColor: "#e0e7ff", color: "#3730a3" }}>
+                        総G数 {s.totalGames.toLocaleString()}G
+                      </span>
                     )}
                     {s.atCount > 0 && (
-                      <span className="text-[10px] font-mono font-bold text-green-700">AT×{s.atCount}</span>
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                        style={{ backgroundColor: "#dcfce7", color: "#14532d" }}>
+                        AT初当たり {s.atCount}回
+                      </span>
                     )}
                     {s.balance != null && (
-                      <span
-                        className="text-[10px] font-mono font-bold"
-                        style={{ color: s.balance >= 0 ? "#16a34a" : "#dc2626" }}
-                      >
-                        {s.balance >= 0 ? "+" : ""}{s.balance.toLocaleString()}枚
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                        style={{
+                          backgroundColor: s.balance >= 0 ? "#f0fdf4" : "#fef2f2",
+                          color: s.balance >= 0 ? "#16a34a" : "#dc2626",
+                        }}>
+                        収支 {s.balance >= 0 ? "+" : ""}{s.balance.toLocaleString()}枚
+                      </span>
+                    )}
+                    {s.settingHint && (
+                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                        style={{ backgroundColor: "#fef3c7", color: "#92400e" }}>
+                        設定 {s.settingHint}
                       </span>
                     )}
                   </div>

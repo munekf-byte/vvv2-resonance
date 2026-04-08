@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { inferSetting } from "@/components/tg/SummaryTab";
 
 export async function GET() {
   const supabase = await createServerSupabaseClient();
@@ -23,6 +24,16 @@ export async function GET() {
     const balance = sh
       ? ((sh.exchangeCoins ?? 0) - ((sh.handCoins ?? 0) + (sh.cashInvestK ?? 0) * (sh.coinRate ?? 46)))
       : null;
+    // 推定設定
+    type Block = { endingSuggestion?: string; trophy?: string; atWin?: boolean; event?: string };
+    type ATRow = { rowType: string; endingSuggestion?: string; trophy?: string; endingCard?: Record<string, number> };
+    type ATEntry = { atKey: string; rows: ATRow[] };
+    const typedBlocks = blocks as Block[];
+    const typedEntries = (Array.isArray(row.at_entries) ? row.at_entries : []) as ATEntry[];
+    const czFail = typedBlocks.filter((b) => (b.endingSuggestion ?? "").startsWith("[cz失敗]")).map((b) => b.endingSuggestion!);
+    const sets = typedEntries.flatMap((e) => e.rows.filter((r) => r.rowType === "set"));
+    const endScreen = sets.map((s) => s.endingSuggestion ?? "").filter((s) => s.startsWith("[終了画面]"));
+    const settingHint = inferSetting(czFail, endScreen, typedBlocks as never[], typedEntries as never[]);
     return {
       id: row.id as string,
       machineName: row.machine_name as string,
@@ -32,6 +43,7 @@ export async function GET() {
       atCount,
       totalGames,
       balance,
+      settingHint,
     };
   });
 

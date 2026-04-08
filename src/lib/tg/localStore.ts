@@ -3,7 +3,8 @@
 // localStorage (即時) + Supabase API (非同期)
 // =============================================================================
 
-import type { PlaySession } from "@/types";
+import type { PlaySession, TGATSet } from "@/types";
+import { inferSetting } from "@/components/tg/SummaryTab";
 
 const LIST_KEY = "tgr_sessions";
 const sessionKey = (id: string) => `tgr_session_${id}`;
@@ -17,6 +18,7 @@ export interface SessionMeta {
   atCount: number;
   totalGames: number;
   balance: number | null;
+  settingHint: string;
 }
 
 // ── localStorage 操作 ──────────────────────────────────────────────────────
@@ -39,6 +41,10 @@ export function lsSaveSession(session: PlaySession): void {
     const balance = sh
       ? (sh.exchangeCoins ?? 0) - ((sh.handCoins ?? 0) + (sh.cashInvestK ?? 0) * sh.coinRate)
       : null;
+    const czFail = session.normalBlocks.filter((b) => b.endingSuggestion.startsWith("[cz失敗]")).map((b) => b.endingSuggestion);
+    const allSets = session.atEntries.flatMap((e) => e.rows.filter((r): r is TGATSet => r.rowType === "set"));
+    const endScreen = allSets.map((s) => s.endingSuggestion ?? "").filter((s) => s.startsWith("[終了画面]"));
+    const settingHint = inferSetting(czFail, endScreen, session.normalBlocks, session.atEntries);
     const meta: SessionMeta = {
       id: session.id,
       machineName: session.machineName,
@@ -48,6 +54,7 @@ export function lsSaveSession(session: PlaySession): void {
       atCount: session.normalBlocks.filter((b) => b.atWin).length,
       totalGames,
       balance,
+      settingHint,
     };
     const idx = list.findIndex((s) => s.id === session.id);
     if (idx >= 0) list[idx] = meta;
