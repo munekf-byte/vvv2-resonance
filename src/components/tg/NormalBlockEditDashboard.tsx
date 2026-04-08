@@ -104,7 +104,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
     setCZOverlayPhase(1);
     setCZOverlay(true);
     if (czTimerRef.current) clearTimeout(czTimerRef.current);
-    czTimerRef.current = setTimeout(() => setCZOverlayPhase(2), 3000);
+    czTimerRef.current = setTimeout(() => setCZOverlayPhase(2), 4500);
   }
 
   /** スロット方式の個別セット (kakugan / shinsekai / invitation) */

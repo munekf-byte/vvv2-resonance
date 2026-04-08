@@ -27,6 +27,10 @@ export function DashboardClient() {
   const [showModal, setShowModal] = useState(false);
   const [showLimitDialog, setShowLimitDialog] = useState(false);
   const [sessionName, setSessionName] = useState("");
+  const [sessionDate, setSessionDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [hallName, setHallName] = useState("");
+  const [machineNumber, setMachineNumber] = useState("");
+  const [creating, setCreating] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -48,11 +52,24 @@ export function DashboardClient() {
     setShowModal(true);
   }
 
+  function generateAutoName(): string {
+    const d = sessionDate.replace(/-/g, "/").slice(5); // "04/08"
+    const parts = [d];
+    if (hallName.trim()) parts.push(hallName.trim());
+    if (machineNumber.trim()) parts.push(`台${machineNumber.trim()}`);
+    return parts.join(" ");
+  }
+
   async function handleCreate() {
+    if (creating) return;
+    setCreating(true);
     const name = sessionName.trim() || "東京喰種 RESONANCE";
     const session = await createSessionWithCloud(name);
     setShowModal(false);
     setSessionName("");
+    setHallName("");
+    setMachineNumber("");
+    setCreating(false);
     router.push(`/play/${session.id}`);
   }
 
@@ -159,26 +176,103 @@ export function DashboardClient() {
         </div>
       )}
 
-      {/* ===== セッション名入力モーダル ===== */}
+      {/* ===== セッション作成モーダル ===== */}
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4"
-          onClick={(e) => e.target === e.currentTarget && setShowModal(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+          onClick={(e) => !creating && e.target === e.currentTarget && setShowModal(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden relative">
+
+            {/* 作成中オーバーレイ */}
+            {creating && (
+              <div className="absolute inset-0 z-10 bg-white/80 flex flex-col items-center justify-center gap-3 rounded-2xl">
+                <div className="w-8 h-8 border-4 border-gray-300 border-t-red-600 rounded-full animate-spin" />
+                <p className="text-sm font-mono font-bold text-gray-700">セッション作成中...</p>
+              </div>
+            )}
+
             <div className="px-5 py-4 border-b border-gray-200" style={{ backgroundColor: "#1f2937" }}>
               <p className="text-white font-mono font-bold text-sm">新規セッション開始</p>
-              <p className="text-gray-400 text-xs font-mono mt-0.5">セッション名を入力してください</p>
             </div>
-            <div className="px-5 py-5 space-y-4">
-              <input type="text" autoFocus placeholder="例: 台番123 / 〇〇ホール"
-                className="w-full text-sm font-mono border-2 border-gray-300 rounded-lg px-3 py-3 focus:outline-none focus:border-gray-500"
-                value={sessionName} onChange={(e) => setSessionName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreate()} maxLength={30} />
-              <p className="text-[11px] text-gray-400 font-mono">※ 空欄の場合は「東京喰種 RESONANCE」で作成されます</p>
-              <div className="flex gap-2">
-                <button onClick={() => { setShowModal(false); setSessionName(""); }}
-                  className="flex-1 py-3 rounded-lg border-2 border-gray-300 text-gray-600 font-mono text-sm font-bold hover:bg-gray-50">キャンセル</button>
-                <button onClick={handleCreate}
-                  className="flex-1 py-3 rounded-lg text-white font-mono text-sm font-bold" style={{ backgroundColor: "#b91c1c" }}>開始</button>
+            <div className="px-5 py-4 space-y-3">
+
+              {/* 日付 */}
+              <div>
+                <p className="text-[10px] font-mono text-gray-500 mb-1">日付</p>
+                <input type="date"
+                  className="w-full text-sm font-mono border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500"
+                  value={sessionDate}
+                  onChange={(e) => setSessionDate(e.target.value)}
+                />
+              </div>
+
+              {/* ホール名 */}
+              <div>
+                <p className="text-[10px] font-mono text-gray-500 mb-1">ホール名</p>
+                <input type="text" placeholder="例: マルハン新宿"
+                  className="w-full text-sm font-mono border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500"
+                  value={hallName}
+                  onChange={(e) => setHallName(e.target.value)}
+                  maxLength={20}
+                />
+              </div>
+
+              {/* 台番号 */}
+              <div>
+                <p className="text-[10px] font-mono text-gray-500 mb-1">台番号</p>
+                <input type="text" inputMode="numeric" placeholder="例: 123"
+                  className="w-full text-sm font-mono border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500"
+                  value={machineNumber}
+                  onChange={(e) => setMachineNumber(e.target.value)}
+                  maxLength={10}
+                />
+              </div>
+
+              {/* セッション名自動生成ボタン */}
+              <button
+                onClick={() => setSessionName(generateAutoName())}
+                className="w-full py-2.5 rounded-lg font-mono font-bold text-sm active:scale-95 transition-transform"
+                style={{ backgroundColor: "#2563eb", color: "#fff" }}
+              >
+                上記からセッション名を自動生成
+              </button>
+
+              {/* セパレーター */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 border-t border-gray-300" />
+                <span className="text-[9px] font-mono text-gray-400">または</span>
+                <div className="flex-1 border-t border-gray-300" />
+              </div>
+
+              {/* フリー入力 */}
+              <div>
+                <p className="text-[10px] font-mono text-gray-500 mb-1">セッション名（フリー入力）</p>
+                <input type="text" placeholder="例: 東京喰種 夕方実戦"
+                  className="w-full text-sm font-mono border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500"
+                  value={sessionName}
+                  onChange={(e) => setSessionName(e.target.value)}
+                  maxLength={30}
+                />
+              </div>
+
+              <p className="text-[10px] text-gray-400 font-mono">※ 空欄の場合は「東京喰種 RESONANCE」で作成されます</p>
+
+              {/* アクションボタン */}
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => { setShowModal(false); setSessionName(""); setHallName(""); setMachineNumber(""); }}
+                  className="flex-1 py-3 rounded-lg border-2 border-gray-300 text-gray-600 font-mono text-sm font-bold hover:bg-gray-50"
+                  disabled={creating}
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleCreate}
+                  className="flex-1 py-3 rounded-lg text-white font-mono text-sm font-bold active:scale-95 transition-transform"
+                  style={{ backgroundColor: "#b91c1c" }}
+                  disabled={creating}
+                >
+                  開始
+                </button>
               </div>
             </div>
           </div>

@@ -220,7 +220,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               <p className="text-sm font-mono font-bold text-white truncate">
                 {session?.machineName ?? "セッション"}
               </p>
-              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v3.3.8</span>
+              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v3.4</span>
             </div>
             <p className="text-[10px] font-mono text-gray-400">
               {activeTab === "normal"
@@ -347,21 +347,21 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
         <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center gap-2 px-4 max-w-2xl mx-auto">
           <button
             onClick={() => setUchidashiOpen(true)}
-            className="flex items-center gap-1 font-mono font-bold text-[11px] px-4 py-3 rounded-full shadow-lg active:scale-95 transition-transform"
+            className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
             style={{ backgroundColor: "#1e40af", color: "#fff" }}
           >
             打ち出し設定
           </button>
           <button
             onClick={() => setShushiOpen(true)}
-            className="flex items-center gap-1 font-mono font-bold text-[11px] px-4 py-3 rounded-full shadow-lg active:scale-95 transition-transform"
+            className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
             style={{ backgroundColor: "#059669", color: "#fff" }}
           >
             収支入力
           </button>
           <button
             onClick={handleNormalOpenNew}
-            className="flex items-center gap-1 bg-v2-red text-white font-mono font-bold text-[11px] px-4 py-3 rounded-full shadow-lg active:scale-95 transition-transform"
+            className="flex items-center gap-1 bg-v2-red text-white font-mono font-bold text-[15px] px-6 py-4 rounded-full shadow-lg active:scale-95 transition-transform"
           >
             ＋ 周期追加
           </button>
