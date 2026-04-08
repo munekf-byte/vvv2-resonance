@@ -869,12 +869,41 @@ function EndingCardAccordion({
       {/* トグルボタン */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-4 py-3.5 active:scale-[0.98] transition-transform"
+        className="relative w-full flex items-center justify-between px-4 py-4 active:scale-[0.98] transition-transform overflow-hidden"
         style={{
           background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
+          minHeight: "64px",
         }}
       >
-        <div className="flex items-center gap-2">
+        {/* 扇状カードオブジェクト */}
+        <div className="absolute right-12 top-1/2 -translate-y-1/2" style={{ width: "90px", height: "56px" }}>
+          {[
+            { src: "/images/ending_card/設定6濃厚.png", rotate: -15, z: 1 },
+            { src: "/images/ending_card/設定4以上濃厚.png", rotate: -7, z: 2 },
+            { src: "/images/ending_card/設定3以上濃厚.png", rotate: 0, z: 3 },
+            { src: "/images/ending_card/設定1否定.png", rotate: 8, z: 4 },
+            { src: "/images/ending_card/設定2否定.png", rotate: 16, z: 5 },
+          ].map(({ src, rotate, z }) => (
+            <img
+              key={src}
+              src={src}
+              alt=""
+              className="absolute rounded shadow-md"
+              style={{
+                width: "36px",
+                height: "44px",
+                objectFit: "cover",
+                left: "50%",
+                top: "50%",
+                transform: `translate(-50%, -50%) rotate(${rotate}deg)`,
+                zIndex: z,
+                border: "1.5px solid rgba(255,255,255,0.5)",
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="flex flex-col items-start gap-0.5 relative z-10">
           <span className="text-white font-mono font-bold text-sm">エンディングカード入力</span>
           {totalCount > 0 && (
             <span className="bg-white/20 text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">
@@ -882,7 +911,7 @@ function EndingCardAccordion({
             </span>
           )}
         </div>
-        <span className="text-white text-sm font-bold">{expanded ? "▲" : "▼"}</span>
+        <span className="text-white text-sm font-bold relative z-10">{expanded ? "▲" : "▼"}</span>
       </button>
 
       {/* アコーディオン中身 */}
