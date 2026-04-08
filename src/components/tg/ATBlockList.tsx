@@ -27,7 +27,7 @@ interface Props {
 }
 
 // ─── グリッド定義 ─────────────────────────────────────────────────────────────
-const COLS = "grid-cols-[36px_36px_48px_26px_50px_36px_minmax(90px,1fr)_24px]";
+const COLS = "grid-cols-[32px_32px_44px_30px_46px_34px_minmax(80px,1fr)_22px]";
 
 const HDR_BG   = "#1f2937";
 const HDR_TEXT = "#f9fafb";
@@ -179,13 +179,13 @@ function ATBlock({
   return (
     <div className="border border-gray-400 mb-4 mx-3 rounded overflow-hidden">
 
-      {/* ── ATサマリーヘッダー (全体を深緑に統一) ── */}
+      {/* ── ATサマリーヘッダー (コンパクト) ── */}
       <div
         className="flex items-stretch border-b-2 border-green-900"
         style={{ backgroundColor: "#14532d" }}
       >
-        <div className="px-2 py-2 flex items-center justify-center border-r border-green-900 shrink-0">
-          <span className="text-white font-mono font-black text-base">{atKey}</span>
+        <div className="px-1.5 py-0.5 flex items-center justify-center border-r border-green-900 shrink-0">
+          <span className="text-white font-mono font-black text-sm">{atKey}</span>
         </div>
         <SummaryCell label="Set" value={`${summary.setCount}`} />
         <SummaryCell label="BITES" value={`${summary.bitesTotal.toLocaleString()}`} />
@@ -205,23 +205,21 @@ function ATBlock({
 
       {/* ── 列ヘッダー ── */}
       <div className={`grid ${COLS} border-b border-gray-400`} style={{ backgroundColor: "#374151" }}>
-        {["✎", "セット", "キャラ", "不利益", "BITES", "直乗せ"].map((h, i) => (
+        {["✎", "SET", "キャラ", "不利益", "BITES", "直乗"].map((h, i) => (
           <div
             key={i}
             style={{ color: HDR_TEXT }}
-            className={`text-[8px] font-mono font-bold text-center px-0.5 py-1.5 leading-tight ${COL_BR}`}
+            className={`text-[7px] font-mono font-bold text-center px-0.5 py-1 leading-tight ${COL_BR}`}
           >
             {h}
           </div>
         ))}
-        {/* 対決成績ヘッダー */}
         <div
           style={{ color: "#9ca3af" }}
-          className={`text-[8px] font-mono font-bold text-center py-1.5 leading-tight ${COL_BR}`}
+          className={`text-[7px] font-mono font-bold text-center py-1 leading-tight ${COL_BR}`}
         >
           対決
         </div>
-        {/* ▼ */}
         <div />
       </div>
 
@@ -284,9 +282,9 @@ function ATBlock({
 
 function SummaryCell({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center px-1 py-1 border-r border-green-900 shrink-0">
-      <span className="text-[7px] font-mono text-gray-400 leading-none">{label}</span>
-      <span className={`text-[10px] font-mono font-bold mt-0.5 ${highlight ? "text-yellow-300" : "text-white"}`}>
+    <div className="flex flex-col items-center justify-center px-1 py-0.5 border-r border-green-900 shrink-0">
+      <span className="text-[6px] font-mono text-gray-400 leading-none">{label}</span>
+      <span className={`text-[9px] font-mono font-bold leading-tight ${highlight ? "text-yellow-300" : "text-white"}`}>
         {value}
       </span>
     </div>
@@ -309,13 +307,14 @@ function SuggestionBadge({ value }: { value: string }) {
 function BattleResultGrid({ battles }: { battles: TGATSet["battles"] }) {
   const top    = battles.slice(0, 5);
   const bottom = battles.slice(5, 10);
+  const hasTwoRows = battles.length > 5;
 
   function ResultCell({ result }: { result: string }) {
     const color = getBattleResultColor(result);
     return (
       <div
-        className="flex items-center justify-center flex-1 text-[9px] font-bold"
-        style={{ ...color, minHeight: "18px" }}
+        className="flex items-center justify-center flex-1 text-[8px] font-bold"
+        style={{ ...color, minHeight: hasTwoRows ? "14px" : "16px" }}
       >
         {result || ""}
       </div>
@@ -330,12 +329,14 @@ function BattleResultGrid({ battles }: { battles: TGATSet["battles"] }) {
           <ResultCell key={i} result={top[i]?.result ?? ""} />
         ))}
       </div>
-      {/* 下段: 対決6〜10 */}
-      <div className="flex flex-1 divide-x divide-gray-300">
-        {Array.from({ length: 5 }, (_, i) => (
-          <ResultCell key={i} result={bottom[i]?.result ?? ""} />
-        ))}
-      </div>
+      {/* 下段: 6個以上ある場合のみ表示 */}
+      {hasTwoRows && (
+        <div className="flex flex-1 divide-x divide-gray-300">
+          {Array.from({ length: 5 }, (_, i) => (
+            <ResultCell key={i} result={bottom[i]?.result ?? ""} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -451,7 +452,7 @@ function SetRow({
         {/* 編集 */}
         <button
           onClick={onEdit}
-          className={`flex items-center justify-center min-h-[44px] transition-colors active:bg-blue-100 ${COL_BR}`}
+          className={`flex items-center justify-center min-h-[32px] transition-colors active:bg-blue-100 ${COL_BR}`}
           style={{ backgroundColor: "rgba(0,0,0,0.04)" }}
         >
           <span className="text-lg text-gray-500">✎</span>
@@ -459,7 +460,7 @@ function SetRow({
 
         {/* セット番号 (2行) - AT種別で色変え */}
         <div
-          className={`flex flex-col items-center justify-center px-0.5 min-h-[44px] ${COL_BR}`}
+          className={`flex flex-col items-center justify-center px-0.5 min-h-[32px] ${COL_BR}`}
           style={setBg}
         >
           <span className="text-[8px] font-mono leading-tight opacity-70">SET</span>
@@ -468,7 +469,7 @@ function SetRow({
 
         {/* キャラ + ATタイプ */}
         <div
-          className={`flex flex-col items-center justify-center px-0.5 py-1 min-h-[44px] ${COL_BR}`}
+          className={`flex flex-col items-center justify-center px-0.5 py-1 min-h-[32px] ${COL_BR}`}
           style={charColor}
         >
           <span className="text-[9px] font-mono font-black leading-tight text-center w-full truncate text-center">
@@ -483,7 +484,7 @@ function SetRow({
 
         {/* 不利益 */}
         <div
-          className={`flex items-center justify-center px-0.5 min-h-[44px] ${COL_BR}`}
+          className={`flex items-center justify-center px-0.5 min-h-[32px] ${COL_BR}`}
           style={disadvColor}
         >
           <span className="text-[9px] font-mono font-bold text-center leading-tight">
@@ -494,7 +495,7 @@ function SetRow({
 
         {/* BITES */}
         <div
-          className={`flex flex-col items-center justify-center px-0.5 py-1 min-h-[44px] ${COL_BR}`}
+          className={`flex flex-col items-center justify-center px-0.5 py-1 min-h-[32px] ${COL_BR}`}
           style={bitesColor}
         >
           <span className="text-[8px] font-mono font-bold leading-tight text-center w-full truncate text-center">
@@ -508,21 +509,21 @@ function SetRow({
         </div>
 
         {/* 直乗せ合計 */}
-        <div className={`flex items-center justify-center px-0.5 min-h-[44px] ${COL_BR}`}>
+        <div className={`flex items-center justify-center px-0.5 min-h-[32px] ${COL_BR}`}>
           <span className="text-[10px] font-mono font-bold text-gray-700">
             {dTotal > 0 ? `${dTotal}枚` : "—"}
           </span>
         </div>
 
         {/* 対決成績 2階建て */}
-        <div className={`min-h-[44px] ${COL_BR}`}>
+        <div className={`min-h-[32px] ${COL_BR}`}>
           <BattleResultGrid battles={row.battles} />
         </div>
 
         {/* ▼ */}
         <button
           onClick={onToggle}
-          className="flex items-center justify-center min-h-[44px] text-[10px] font-bold transition-colors"
+          className="flex items-center justify-center min-h-[32px] text-[10px] font-bold transition-colors"
           style={{ backgroundColor: "#374151", color: "#f9fafb" }}
         >
           {isExpanded ? "▲" : "▼"}
@@ -627,7 +628,7 @@ function ArimaRow({
 
   return (
     <div className={`${ROW_BR}`}>
-      <div className="flex items-stretch min-h-[44px]" style={resultColor}>
+      <div className="flex items-stretch min-h-[32px]" style={resultColor}>
         {/* 編集 */}
         <button
           onClick={onEdit}

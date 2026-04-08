@@ -61,7 +61,7 @@ const COLS = "grid-cols-[52px_1fr_1fr_1fr_46px_46px_46px_56px_26px]";
 const HDR_BG       = "#1f2937";
 const HDR_TEXT     = "#f9fafb";
 const COL_BORDER_R = "border-r border-gray-400";
-const ROW_BORDER   = "border-b border-gray-400";
+const ROW_BORDER   = "border-b-2 border-gray-500";
 
 export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit, onDelete }: Props) {
   const [expandedId,    setExpandedId]    = useState<string | null>(null);
@@ -136,7 +136,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                   {/* 編集ボタン: 鉛筆マークのみ */}
                   <button
                     onClick={() => onEdit(block, index)}
-                    className={`flex items-center justify-center min-h-[44px] transition-colors active:bg-blue-100 ${COL_BORDER_R}`}
+                    className={`flex items-center justify-center min-h-[34px] transition-colors active:bg-blue-100 ${COL_BORDER_R}`}
                     style={{ backgroundColor: "#eef2f7" }}
                     title="タップして編集"
                   >
@@ -186,7 +186,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
 
                   {/* 示唆 (2行) */}
                   <div
-                    className={`flex items-center justify-center py-1 px-0.5 min-h-[44px] ${COL_BORDER_R}`}
+                    className={`flex items-center justify-center py-1 px-0.5 min-h-[34px] ${COL_BORDER_R}`}
                     style={suggColor}
                   >
                     {suggLines ? (
@@ -202,7 +202,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                   {/* アコーディオントグル */}
                   <button
                     onClick={() => hasExtras && setExpandedId(isExpanded ? null : block.id)}
-                    className="flex items-center justify-center min-h-[44px] text-[10px] font-bold transition-colors"
+                    className="flex items-center justify-center min-h-[34px] text-[10px] font-bold transition-colors"
                     style={
                       hasExtras
                         ? { backgroundColor: "#374151", color: "#f9fafb" }
@@ -222,20 +222,20 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                   const baseCoins = isEpisode ? 250 : 150;
                   const grandTotal = s.total + baseCoins;
                   return (
-                    <div className="flex border-t border-gray-300">
+                    <div className="flex">
                       {/* 左余白（編集列と揃える） */}
                       <div className="shrink-0" style={{ width: "44px" }} />
                       {/* サマリー本体 */}
                       <div
                         className="flex-1 flex items-stretch rounded-bl"
-                        style={{ border: "2px solid #14532d" }}
+                        style={{ border: "1.5px solid #14532d" }}
                       >
                         {/* AT番号セル（緑塗り） */}
                         <div
-                          className="px-2 py-1.5 flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: "#14532d", minWidth: "40px" }}
+                          className="px-1.5 py-0.5 flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: "#14532d", minWidth: "36px" }}
                         >
-                          <span className="text-white font-mono font-black text-[11px]">{atLabel}</span>
+                          <span className="text-white font-mono font-black text-[10px]">{atLabel}</span>
                         </div>
                         {/* データセル群 */}
                         <ATSummaryCell label="Set" value={`${s.setCount}`} />
@@ -243,15 +243,15 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                         <ATSummaryCell label="直乗せ" value={`${s.directTotal.toLocaleString()}枚`} />
                         <ATSummaryCell label="合計獲得（概算）" value={`${grandTotal.toLocaleString()}枚`} highlight />
                         {s.endingSuggestion && (
-                          <div className="flex items-center justify-center px-1.5 py-1 border-l border-gray-300 shrink-0">
-                            <span className="text-[8px] font-mono text-gray-700 leading-tight text-center font-bold">
+                          <div className="flex items-center justify-center px-1 py-0.5 border-l border-gray-300 shrink-0">
+                            <span className="text-[7px] font-mono text-gray-700 leading-tight text-center font-bold">
                               {getSuggestionListLines(s.endingSuggestion)?.name ?? s.endingSuggestion}
                             </span>
                           </div>
                         )}
                         {s.trophy && (
-                          <div className="flex items-center justify-center px-1.5 py-1 border-l border-gray-300 shrink-0">
-                            <span className="text-[8px] font-mono text-gray-700 leading-tight text-center font-bold">
+                          <div className="flex items-center justify-center px-1 py-0.5 border-l border-gray-300 shrink-0">
+                            <span className="text-[7px] font-mono text-gray-700 leading-tight text-center font-bold">
                               {s.trophy}
                             </span>
                           </div>
@@ -427,7 +427,7 @@ function Cell({
   return (
     <div
       style={color}
-      className={`flex items-center justify-center py-2 px-0.5 text-center min-h-[44px] overflow-hidden ${borderR ? COL_BORDER_R : ""}`}
+      className={`flex items-center justify-center py-1 px-0.5 text-center min-h-[34px] overflow-hidden ${borderR ? COL_BORDER_R : ""}`}
     >
       <span className="truncate w-full text-center">{children}</span>
     </div>
@@ -484,13 +484,13 @@ function MultiColorField({ label, values, color }: { label: string; values: stri
   );
 }
 
-/** ATサマリーセル（ライトモード） */
+/** ATサマリーセル（ライトモード・コンパクト） */
 function ATSummaryCell({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center px-1.5 py-1 border-r border-gray-300 shrink-0">
-      <span className="text-[7px] font-mono text-gray-400 leading-none">{label}</span>
+    <div className="flex flex-col items-center justify-center px-1 py-0.5 border-r border-gray-300 shrink-0">
+      <span className="text-[6px] font-mono text-gray-400 leading-none">{label}</span>
       <span
-        className="text-[10px] font-mono font-bold mt-0.5"
+        className="text-[9px] font-mono font-bold leading-tight"
         style={{ color: highlight ? "#14532d" : "#1f2937" }}
       >
         {value}
