@@ -181,28 +181,37 @@ function ATBlock({
 
       {/* ── ATサマリーヘッダー ── */}
       <div
-        className="flex items-stretch border-b-2 border-green-900"
+        className="border-b-2 border-green-900"
         style={{ backgroundColor: "#14532d" }}
       >
-        <div className="px-1.5 py-0.5 flex items-center justify-center border-r border-green-900 shrink-0">
-          <span className="text-white font-mono font-black text-sm">{atKey}</span>
+        <div style={{ display: "grid", gridTemplateColumns: "40px 42px 1fr 1fr 1fr auto" }}>
+          {/* AT番号 */}
+          <div className="flex items-center justify-center border-r border-green-900 py-0.5">
+            <span className="text-white font-mono font-black text-sm">{atKey}</span>
+          </div>
+          {/* セット数 */}
+          <div className="flex items-center justify-center border-r border-green-900 py-0.5">
+            <span className="text-[16px] font-mono font-black text-white leading-none">{summary.setCount}</span>
+            <span className="text-[7px] font-mono font-bold text-gray-400 ml-0.5">set</span>
+          </div>
+          {/* BITES */}
+          <ATHeaderCoinCell label="BITES" coins={summary.bitesTotal} />
+          {/* 直乗せ */}
+          <ATHeaderCoinCell label="直乗せ" coins={summary.directTotal} />
+          {/* 合計獲得 */}
+          <ATHeaderCoinCell label="合計獲得" coins={summary.total} highlight />
+          {/* 終了画面/トロフィー（hint表示） */}
+          {(summary.endingSuggestion || summary.trophy) ? (
+            <div className="flex items-center justify-center px-1.5 border-l border-green-900" style={{ backgroundColor: "#1a3d1f" }}>
+              <span className="text-[7px] font-mono text-green-300 leading-tight text-center font-bold">
+                {(() => {
+                  const v = summary.endingSuggestion || summary.trophy;
+                  return getSuggestionListLines(v)?.hint ?? v;
+                })()}
+              </span>
+            </div>
+          ) : <div />}
         </div>
-        <div className="flex-1 flex items-stretch justify-evenly">
-          <SummaryCell label="Set" value={`${summary.setCount}`} />
-          <SummaryCell label="BITES" value={`${summary.bitesTotal.toLocaleString()}枚`} />
-          <SummaryCell label="直乗せ" value={`${summary.directTotal.toLocaleString()}枚`} />
-          <SummaryCell label="合計" value={`${summary.total.toLocaleString()}枚`} highlight />
-        </div>
-        {(summary.endingSuggestion || summary.trophy) && (
-          <>
-            {summary.endingSuggestion && (
-              <SuggestionBadge value={summary.endingSuggestion} />
-            )}
-            {summary.trophy && (
-              <SuggestionBadge value={summary.trophy} />
-            )}
-          </>
-        )}
       </div>
 
       {/* ── 列ヘッダー ── */}
@@ -282,23 +291,16 @@ function ATBlock({
 
 // ─── SummaryCell ─────────────────────────────────────────────────────────────
 
-function SummaryCell({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+/** ATヘッダー枚数セル: ラベル + 右に枚数（緑ヘッダー内） */
+function ATHeaderCoinCell({ label, coins, highlight = false }: { label: string; coins: number; highlight?: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center px-1 py-0.5 border-r border-green-900 flex-1">
-      <span className="text-[6px] font-mono text-gray-400 leading-none">{label}</span>
-      <span className={`text-[9px] font-mono font-bold leading-tight ${highlight ? "text-yellow-300" : "text-white"}`}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function SuggestionBadge({ value }: { value: string }) {
-  const lines = getSuggestionListLines(value);
-  return (
-    <div className="flex items-center justify-center px-1.5 py-1 border-l border-green-900 shrink-0" style={{ backgroundColor: "#1a3d1f" }}>
-      <span className="text-[8px] font-mono text-green-300 leading-tight text-center">
-        {lines ? lines.name : value}
+    <div className="flex items-center px-1 py-0.5 border-r border-green-900 gap-0.5">
+      <span className="text-[6px] font-mono text-gray-400 font-bold leading-tight shrink-0">{label}</span>
+      <span
+        className="text-[11px] font-mono font-black leading-none flex-1 text-right"
+        style={{ color: highlight ? "#fde047" : "#ffffff" }}
+      >
+        {coins.toLocaleString()}<span className="text-[7px]">枚</span>
       </span>
     </div>
   );

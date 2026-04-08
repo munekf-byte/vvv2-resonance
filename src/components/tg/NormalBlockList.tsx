@@ -227,50 +227,35 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                     <div className="flex">
                       <div className="shrink-0" style={{ width: "44px" }} />
                       <div
-                        className="flex-1 flex items-stretch rounded-bl"
+                        className="flex-1 rounded-bl overflow-hidden"
                         style={{ border: "1.5px solid #14532d" }}
                       >
-                        {/* AT番号セル */}
-                        <div
-                          className="px-1.5 py-0.5 flex items-center justify-center shrink-0"
-                          style={{ backgroundColor: "#14532d", minWidth: "36px" }}
-                        >
-                          <span className="text-white font-mono font-black text-[10px]">{atLabel}</span>
-                        </div>
-                        {/* セット数: Nset 大きく1行 */}
-                        <div className="flex items-center justify-center px-1.5 border-r border-gray-300 shrink-0">
-                          <span className="text-[14px] font-mono font-black text-gray-900 leading-none">{s.setCount}</span>
-                          <span className="text-[7px] font-mono font-bold text-gray-500 ml-0.5">set</span>
-                        </div>
-                        {/* BITES */}
-                        <ATSummaryCell label="BITES" value={`${s.bitesTotal.toLocaleString()}枚`} />
-                        {/* 直乗せ */}
-                        <ATSummaryCell label="直乗せ" value={`${s.directTotal.toLocaleString()}枚`} />
-                        {/* 合計獲得: 説明2行 + 右に大きな枚数 */}
-                        <div className="flex items-center flex-1 px-1 border-l border-gray-300 min-w-0">
-                          <div className="flex flex-col shrink-0 mr-0.5">
-                            <span className="text-[6px] font-mono text-gray-500 leading-tight">合計獲得</span>
-                            <span className="text-[6px] font-mono text-gray-500 leading-tight">（概算）</span>
+                        {/* 固定グリッド: AT番号 | Set | BITES | 直乗せ | 合計獲得 | 示唆 */}
+                        <div style={{ display: "grid", gridTemplateColumns: "36px 38px 1fr 1fr 1fr auto" }}>
+                          {/* AT番号 */}
+                          <div className="flex items-center justify-center" style={{ backgroundColor: "#14532d" }}>
+                            <span className="text-white font-mono font-black text-[10px]">{atLabel}</span>
                           </div>
-                          <span className="text-[13px] font-mono font-black leading-none flex-1 text-right" style={{ color: "#14532d" }}>
-                            {grandTotal.toLocaleString()}<span className="text-[8px]">枚</span>
-                          </span>
+                          {/* セット数 */}
+                          <div className="flex items-center justify-center border-r border-gray-300">
+                            <span className="text-[14px] font-mono font-black text-gray-900 leading-none">{s.setCount}</span>
+                            <span className="text-[7px] font-mono font-bold text-gray-500 ml-0.5">set</span>
+                          </div>
+                          {/* BITES */}
+                          <ATSummaryCoinCell label="BITES" coins={s.bitesTotal} />
+                          {/* 直乗せ */}
+                          <ATSummaryCoinCell label="直乗せ" coins={s.directTotal} />
+                          {/* 合計獲得（概算） */}
+                          <ATSummaryCoinCell label="合計獲得(概算)" coins={grandTotal} color="#14532d" />
+                          {/* 終了画面/トロフィー */}
+                          {(suggHint || trophyHint) ? (
+                            <div className="flex items-center justify-center px-1 border-l border-gray-300">
+                              <span className="text-[7px] font-mono text-gray-700 leading-tight text-center font-bold">
+                                {suggHint || trophyHint}
+                              </span>
+                            </div>
+                          ) : <div />}
                         </div>
-                        {/* 終了画面示唆（hint表示） */}
-                        {suggHint && (
-                          <div className="flex items-center justify-center px-1 py-0.5 border-l border-gray-300 shrink-0">
-                            <span className="text-[7px] font-mono text-gray-700 leading-tight text-center font-bold">
-                              {suggHint}
-                            </span>
-                          </div>
-                        )}
-                        {trophyHint && (
-                          <div className="flex items-center justify-center px-1 py-0.5 border-l border-gray-300 shrink-0">
-                            <span className="text-[7px] font-mono text-gray-700 leading-tight text-center font-bold">
-                              {trophyHint}
-                            </span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   );
@@ -499,13 +484,16 @@ function MultiColorField({ label, values, color }: { label: string; values: stri
   );
 }
 
-/** ATサマリーセル（ライトモード・コンパクト） */
-function ATSummaryCell({ label, value }: { label: string; value: string; highlight?: boolean }) {
+/** ATサマリー枚数セル: ラベル2行 + 右に枚数 */
+function ATSummaryCoinCell({ label, coins, color }: { label: string; coins: number; color?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center px-1 py-0.5 border-r border-gray-300 shrink-0">
-      <span className="text-[6px] font-mono text-gray-500 font-bold leading-none">{label}</span>
-      <span className="text-[9px] font-mono font-bold leading-tight text-gray-900">
-        {value}
+    <div className="flex items-center px-1 border-r border-gray-300 gap-0.5">
+      <span className="text-[6px] font-mono text-gray-500 font-bold leading-tight shrink-0">{label}</span>
+      <span
+        className="text-[11px] font-mono font-black leading-none flex-1 text-right"
+        style={{ color: color ?? "#1f2937" }}
+      >
+        {coins.toLocaleString()}<span className="text-[7px]">枚</span>
       </span>
     </div>
   );
