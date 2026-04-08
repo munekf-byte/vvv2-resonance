@@ -6,7 +6,7 @@
 // =============================================================================
 
 import { useRef, useState, useEffect } from "react";
-import { captureAndDownload } from "@/lib/tg/captureImage";
+import { captureAndDownload, captureAndShare } from "@/lib/tg/captureImage";
 import type { NormalBlock, TGATEntry, TGATSet, TGArimaJudgment } from "@/types";
 import {
   TG_KAKUGAN, TG_SHINSEKAI,
@@ -247,10 +247,18 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
         <p className="text-[10px] font-mono font-bold text-red-600 leading-tight">
           ※ 総消化ゲーム数はご自身で入力してください
         </p>
-        <button onClick={handleCapture}
-          className="text-[11px] font-mono font-bold px-4 py-2 rounded bg-gray-800 text-white active:scale-95 transition-transform flex-shrink-0 ml-2">
-          画像で保存
-        </button>
+        <div className="flex gap-1.5 flex-shrink-0 ml-2">
+          <button
+            onClick={() => captureRef.current && captureAndShare(captureRef.current, `TG_Summary_${new Date().toISOString().slice(0, 10)}.png`, `#東京喰種レゾナンス #パチスロ`)}
+            className="text-[10px] font-mono font-bold px-3 py-2 rounded text-white active:scale-95 transition-transform"
+            style={{ backgroundColor: "#000000" }}>
+            𝕏 共有
+          </button>
+          <button onClick={handleCapture}
+            className="text-[10px] font-mono font-bold px-3 py-2 rounded bg-gray-800 text-white active:scale-95 transition-transform">
+            画像で保存
+          </button>
+        </div>
       </div>
 
       <div ref={captureRef} style={{ padding: "8px 6px", backgroundColor: "#ffffff", fontFamily: "monospace" }}>

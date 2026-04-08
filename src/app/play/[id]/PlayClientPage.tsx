@@ -17,7 +17,8 @@ import { UchidashiEditDashboard } from "@/components/tg/UchidashiEditDashboard";
 import { ShushiEditDashboard } from "@/components/tg/ShushiEditDashboard";
 import { lsLoadSession, lsSaveSession } from "@/lib/tg/localStore";
 import { estimateAllModes } from "@/lib/engine/modeEstimation";
-import { captureAndDownload } from "@/lib/tg/captureImage";
+import { captureAndDownload, captureAndShare } from "@/lib/tg/captureImage";
+import { inferSetting } from "@/components/tg/SummaryTab";
 
 interface PlayClientPageProps {
   initialSession: PlaySession;
@@ -106,6 +107,18 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const atEntries  = session?.atEntries   ?? [];
   const uchidashi  = session?.uchidashi   ?? null;
   const shushi     = session?.shushi      ?? null;
+
+  // ヘッダー用サマリー
+  const totalGames = blocks.reduce((s, b) => s + (b.jisshuG ?? 0), 0);
+  const headerBalance = shushi
+    ? (shushi.exchangeCoins ?? 0) - ((shushi.handCoins ?? 0) + (shushi.cashInvestK ?? 0) * shushi.coinRate)
+    : null;
+  const headerSetting = useMemo(() => {
+    const czFail = blocks.filter((b) => b.endingSuggestion.startsWith("[cz失敗]")).map((b) => b.endingSuggestion);
+    const allSets = atEntries.flatMap((e) => e.rows.filter((r): r is import("@/types").TGATSet => r.rowType === "set"));
+    const endScreen = allSets.map((s) => s.endingSuggestion ?? "").filter((s) => s.startsWith("[終了画面]"));
+    return inferSetting(czFail, endScreen, blocks, atEntries);
+  }, [blocks, atEntries]);
   const atLabels   = computeAtLabels(blocks);
   const atKeyList  = computeAtKeyList(blocks);
   const atCount    = blocks.filter((b) => b.atWin).length;
@@ -208,31 +221,47 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
         className="flex-none border-b-2 border-gray-600 safe-area-top shadow-md"
         style={{ backgroundColor: "#1f2937" }}
       >
-        <div className="max-w-2xl mx-auto px-3 h-14 flex items-center gap-3">
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="text-gray-300 hover:text-white text-sm font-mono flex-shrink-0 transition-colors"
-          >
-            ← 戻る
-          </button>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-1.5">
-              <p className="text-sm font-mono font-bold text-white truncate">
-                {session?.machineName ?? "セッション"}
-              </p>
-              <span className="text-[9px] font-mono text-gray-600 flex-shrink-0">v3.5.6</span>
-            </div>
-            <p className="text-[10px] font-mono text-gray-400">
-              {activeTab === "normal"
-                ? `通常時 · ${blocks.length} 周期`
-                : `AT記録 · ${atCount} 初当たり`}
+        <div className="max-w-2xl mx-auto px-3 py-1.5">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push("/dashboard")}
+              className="text-gray-300 hover:text-white text-sm font-mono flex-shrink-0 transition-colors"
+            >
+              ← 戻る
+            </button>
+            <p className="text-sm font-mono font-bold text-white truncate flex-1 min-w-0">
+              {session?.machineName ?? "セッション"}
             </p>
           </div>
-          {atCount > 0 && (
-            <span className="text-xs font-mono font-bold text-green-400 flex-shrink-0">
-              AT ×{atCount}
-            </span>
-          )}
+          <div className="flex flex-wrap gap-1 mt-1">
+            {totalGames > 0 && (
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                style={{ backgroundColor: "#e0e7ff", color: "#3730a3" }}>
+                総G数 {totalGames.toLocaleString()}G
+              </span>
+            )}
+            {atCount > 0 && (
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                style={{ backgroundColor: "#dcfce7", color: "#14532d" }}>
+                AT初当たり {atCount}回
+              </span>
+            )}
+            {headerBalance != null && (
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                style={{
+                  backgroundColor: headerBalance >= 0 ? "#f0fdf4" : "#fef2f2",
+                  color: headerBalance >= 0 ? "#16a34a" : "#dc2626",
+                }}>
+                収支 {headerBalance >= 0 ? "+" : ""}{headerBalance.toLocaleString()}枚
+              </span>
+            )}
+            {headerSetting && (
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded truncate max-w-[140px]"
+                style={{ backgroundColor: "#fef3c7", color: "#92400e" }}>
+                設定 {headerSetting}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* タブバー */}
@@ -279,7 +308,14 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
         {/* 通常時タブ */}
         {activeTab === "normal" && (
           <>
-            <div className="flex justify-end px-3 py-1.5 border-b border-gray-200">
+            <div className="flex justify-end gap-1.5 px-3 py-1.5 border-b border-gray-200">
+              <button
+                onClick={() => normalListRef.current && captureAndShare(normalListRef.current, `TG_Normal_${new Date().toISOString().slice(0, 10)}.png`, `#東京喰種レゾナンス #パチスロ`)}
+                className="text-[10px] font-mono px-3 py-1 rounded text-white active:scale-95 transition-transform"
+                style={{ backgroundColor: "#000000" }}
+              >
+                𝕏 共有
+              </button>
               <button
                 onClick={() => normalListRef.current && captureAndDownload(normalListRef.current, `TG_Normal_${new Date().toISOString().slice(0, 10)}.png`)}
                 className="text-[10px] font-mono px-3 py-1 rounded bg-gray-700 text-white active:scale-95 transition-transform"
@@ -312,7 +348,14 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
         {/* AT記録タブ */}
         {activeTab === "at" && (
           <>
-            <div className="flex justify-end px-3 py-1.5 border-b border-gray-200">
+            <div className="flex justify-end gap-1.5 px-3 py-1.5 border-b border-gray-200">
+              <button
+                onClick={() => atListRef.current && captureAndShare(atListRef.current, `TG_AT_${new Date().toISOString().slice(0, 10)}.png`, `#東京喰種レゾナンス #パチスロ`)}
+                className="text-[10px] font-mono px-3 py-1 rounded text-white active:scale-95 transition-transform"
+                style={{ backgroundColor: "#000000" }}
+              >
+                𝕏 共有
+              </button>
               <button
                 onClick={() => atListRef.current && captureAndDownload(atListRef.current, `TG_AT_${new Date().toISOString().slice(0, 10)}.png`)}
                 className="text-[10px] font-mono px-3 py-1 rounded bg-gray-700 text-white active:scale-95 transition-transform"
