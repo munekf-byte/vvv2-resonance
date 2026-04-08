@@ -384,77 +384,17 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           />
         </div>
 
-        {/* トロフィー (nd-14) */}
+        {/* トロフィー (nd-14) — 画像付きピッカー */}
         <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
           <span className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-wide">トロフィー</span>
-          <div className="mt-2">
-            <PickerCell
-              value={form.trophy ?? ""}
-              onChange={(v) => setField("trophy", v)}
-              options={["", ...TG_TROPHIES]}
-              colorFn={getTrophyCellColor}
-              labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
-              emptyLabel="なし"
-            />
-          </div>
+          <TrophyImagePicker
+            value={form.trophy ?? ""}
+            onChange={(v) => setField("trophy", v)}
+          />
         </div>
 
-        {/* エンディングカード (ad-15) */}
-        <Section title="エンディングカード">
-          {/* 白/青/赤 カード カウンター (ad-16〜21) */}
-          <div className="space-y-2">
-            {TG_ENDING_CARD_LABELS.map(({ key, label, color, textColor, characters }) => {
-              const count = ec[key as keyof TGEndingCard] as number;
-              return (
-                <EndingCardCounter
-                  key={key}
-                  cardKey={key}
-                  label={label}
-                  color={color}
-                  textColor={textColor}
-                  value={count}
-                  characters={characters}
-                  onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
-                />
-              );
-            })}
-          </div>
-
-          {/* 銅カード (ad-22/23) — カウンター形式 */}
-          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-            <p className="text-[9px] font-mono font-bold text-gray-500 mb-1">【銅カード】</p>
-            {TG_COPPER_CARD_TYPES.map(({ key, label, character, color, textColor }) => (
-              <EndingCardCounter
-                key={key}
-                cardKey={key}
-                label={`${label} — ${character}`}
-                color={color}
-                textColor={textColor}
-                value={(ec[key as keyof TGEndingCard] as number) ?? 0}
-                characters={[]}
-                onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
-              />
-            ))}
-          </div>
-
-          {/* 確定カード (ad-24〜28) — カウンター形式 */}
-          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-            <p className="text-[9px] font-mono font-bold text-gray-500 mb-1">【確定カード】</p>
-            {TG_CONFIRMED_CARD_TYPES.map(({ key, label, character, color, textColor, rainbow }) => (
-              <EndingCardCounter
-                key={key}
-                cardKey={key}
-                label={`${label} — ${character}`}
-                color={color}
-                textColor={textColor}
-                value={(ec[key as keyof TGEndingCard] as number) ?? 0}
-                characters={[]}
-                onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
-                rainbow={rainbow}
-              />
-            ))}
-          </div>
-        </Section>
+        {/* エンディングカード (ad-15) — アコーディオン */}
+        <EndingCardAccordion ec={ec} setEndingCardField={setEndingCardField} />
 
         {/* フリーメモ */}
         <Section title="フリーメモ">
@@ -809,6 +749,197 @@ function EndingCardCounter({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── TrophyImagePicker (トロフィー 画像付きモーダル) ──────────────────────────
+
+const TROPHY_IMAGE_MAP: Record<string, string> = {
+  "[終了画面] 銅トロフィー - 設定2以上濃厚":      "/images/trophy/銅トロフィー.webp",
+  "[終了画面] 銀トロフィー - 設定3以上濃厚":      "/images/trophy/銀トロフィー.webp",
+  "[終了画面] 金トロフィー - 設定4以上濃厚":      "/images/trophy/金トロフィー.webp",
+  "[終了画面] 喰種柄トロフィー - 設定5以上濃厚":  "/images/trophy/喰トロフィー.webp",
+  "[終了画面] 虹トロフィー - 設定6濃厚":          "/images/trophy/虹トロフィー.webp",
+  "[終了画面] 黒トロフィー - 次回トロフィー出現濃厚": "/images/trophy/黒トロフィー.webp",
+};
+
+function TrophyImagePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const hasValue = value !== "";
+  const color = hasValue ? getTrophyCellColor(value) : null;
+  const lines = hasValue ? getSuggestionListLines(value) : null;
+  const imgSrc = hasValue ? TROPHY_IMAGE_MAP[value] : null;
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="mt-2 w-full rounded overflow-hidden active:scale-95 transition-transform"
+        style={{ minHeight: "56px", border: "2px solid #374151" }}
+      >
+        {hasValue ? (
+          <div className="flex items-center gap-2 px-2 py-1.5" style={color ?? {}}>
+            {imgSrc && (
+              <img src={imgSrc} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
+            )}
+            <div className="flex flex-col items-start min-w-0 flex-1">
+              <span className="text-[11px] font-mono font-bold truncate w-full text-left">{lines?.name ?? value}</span>
+              {lines?.hint && <span className="text-[9px] font-mono opacity-70 truncate w-full text-left">{lines.hint}</span>}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-14" style={{ backgroundColor: "#f3f4f6", color: "#9ca3af" }}>
+            <span className="text-[11px] font-mono">タップして選択</span>
+          </div>
+        )}
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-[70] bg-black/60 flex items-end justify-center"
+          onClick={(e) => e.target === e.currentTarget && setOpen(false)}
+        >
+          <div className="bg-white rounded-t-2xl w-full max-w-lg max-h-[80dvh] flex flex-col safe-area-bottom">
+            <div className="px-4 py-3 border-b border-gray-300 flex items-center justify-between">
+              <p className="text-sm font-mono font-bold text-gray-700">トロフィーを選択</p>
+              <button onClick={() => setOpen(false)} className="text-xs font-mono text-gray-400 px-2 py-1">閉じる</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+              <button
+                onClick={() => { onChange(""); setOpen(false); }}
+                className="w-full rounded-lg py-3 text-center font-mono text-sm active:scale-95 transition-transform"
+                style={!hasValue
+                  ? { backgroundColor: "#1f2937", color: "#fff", boxShadow: "0 0 0 2px #1f2937" }
+                  : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "1px solid #d1d5db" }
+                }
+              >
+                なし
+              </button>
+              {TG_TROPHIES.map((opt) => {
+                const optLines = getSuggestionListLines(opt);
+                const optColor = getTrophyCellColor(opt);
+                const optImg = TROPHY_IMAGE_MAP[opt];
+                const isSelected = value === opt;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => { onChange(opt); setOpen(false); }}
+                    className="w-full rounded-lg overflow-hidden active:scale-95 transition-transform"
+                    style={{
+                      border: isSelected ? "none" : "1px solid #d1d5db",
+                      boxShadow: isSelected ? "0 0 0 2px #1f2937" : "none",
+                    }}
+                  >
+                    <div className="flex items-center gap-3 px-3 py-2" style={optColor}>
+                      {optImg && (
+                        <img src={optImg} alt="" className="w-14 h-14 rounded object-cover flex-shrink-0" />
+                      )}
+                      <div className="flex flex-col items-start min-w-0 flex-1">
+                        <span className="text-[12px] font-mono font-bold truncate w-full text-left">{optLines?.name ?? opt}</span>
+                        {optLines?.hint && <span className="text-[10px] font-mono opacity-80 truncate w-full text-left">{optLines.hint}</span>}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── EndingCardAccordion (エンディングカード アコーディオン) ──────────────────
+
+function EndingCardAccordion({
+  ec, setEndingCardField,
+}: {
+  ec: TGEndingCard;
+  setEndingCardField: (k: keyof TGEndingCard, v: number) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  // 入力済みカード数を集計
+  const totalCount = Object.values(ec).reduce((sum, v) => sum + (typeof v === "number" ? v : 0), 0);
+
+  return (
+    <div className="bg-white rounded border border-gray-400 overflow-hidden">
+      {/* トグルボタン */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-4 py-3.5 active:scale-[0.98] transition-transform"
+        style={{
+          background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-white font-mono font-bold text-sm">エンディングカード入力</span>
+          {totalCount > 0 && (
+            <span className="bg-white/20 text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">
+              {totalCount}枚記録済
+            </span>
+          )}
+        </div>
+        <span className="text-white text-sm font-bold">{expanded ? "▲" : "▼"}</span>
+      </button>
+
+      {/* アコーディオン中身 */}
+      {expanded && (
+        <div className="px-3 pt-3 pb-4">
+          {/* 白/青/赤 カード */}
+          <div className="space-y-2">
+            {TG_ENDING_CARD_LABELS.map(({ key, label, color, textColor, characters }) => (
+              <EndingCardCounter
+                key={key}
+                cardKey={key}
+                label={label}
+                color={color}
+                textColor={textColor}
+                value={(ec[key as keyof TGEndingCard] as number) ?? 0}
+                characters={characters}
+                onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
+              />
+            ))}
+          </div>
+
+          {/* 銅カード */}
+          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+            <p className="text-[9px] font-mono font-bold text-gray-500 mb-1">【銅カード】</p>
+            {TG_COPPER_CARD_TYPES.map(({ key, label, character, color, textColor }) => (
+              <EndingCardCounter
+                key={key}
+                cardKey={key}
+                label={`${label} — ${character}`}
+                color={color}
+                textColor={textColor}
+                value={(ec[key as keyof TGEndingCard] as number) ?? 0}
+                characters={[]}
+                onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
+              />
+            ))}
+          </div>
+
+          {/* 確定カード */}
+          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+            <p className="text-[9px] font-mono font-bold text-gray-500 mb-1">【確定カード】</p>
+            {TG_CONFIRMED_CARD_TYPES.map(({ key, label, character, color, textColor, rainbow }) => (
+              <EndingCardCounter
+                key={key}
+                cardKey={key}
+                label={`${label} — ${character}`}
+                color={color}
+                textColor={textColor}
+                value={(ec[key as keyof TGEndingCard] as number) ?? 0}
+                characters={[]}
+                onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
+                rainbow={rainbow}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
