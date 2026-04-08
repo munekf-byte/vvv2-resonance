@@ -111,36 +111,30 @@ export function DashboardClient() {
                   className="flex-1 text-left px-3 py-2.5 hover:bg-gray-50 transition-colors min-w-0">
                   {/* セッション名 */}
                   <p className="font-mono font-bold text-gray-900 text-[13px] break-all line-clamp-2 leading-tight">{s.machineName}</p>
-                  {/* 稼働実績バッジ */}
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    <span className="text-[9px] font-mono text-gray-400 self-center mr-0.5">{formatDate(s.updatedAt)}</span>
-                    {s.totalGames > 0 && (
-                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-                        style={{ backgroundColor: "#e0e7ff", color: "#3730a3" }}>
-                        総G数 {s.totalGames.toLocaleString()}G
-                      </span>
-                    )}
-                    {s.atCount > 0 && (
-                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-                        style={{ backgroundColor: "#dcfce7", color: "#14532d" }}>
-                        AT初当たり {s.atCount}回
-                      </span>
-                    )}
-                    {s.balance != null && (
-                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-                        style={{
-                          backgroundColor: s.balance >= 0 ? "#f0fdf4" : "#fef2f2",
-                          color: s.balance >= 0 ? "#16a34a" : "#dc2626",
-                        }}>
-                        収支 {s.balance >= 0 ? "+" : ""}{s.balance.toLocaleString()}枚
-                      </span>
-                    )}
-                    {s.settingHint && (
-                      <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
-                        style={{ backgroundColor: "#fef3c7", color: "#92400e" }}>
-                        設定 {s.settingHint}
-                      </span>
-                    )}
+                  {/* 稼働実績バッジ（固定位置グリッド） */}
+                  <div className="grid grid-cols-2 gap-x-1.5 gap-y-1 mt-1.5">
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: "#e0e7ff", color: "#3730a3" }}>
+                      総G数 {s.totalGames > 0 ? `${s.totalGames.toLocaleString()}G` : "—"}
+                    </span>
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                      style={{ backgroundColor: "#dcfce7", color: "#14532d" }}>
+                      AT初当たり {s.atCount > 0 ? `${s.atCount}回` : "—"}
+                    </span>
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded"
+                      style={{
+                        backgroundColor: s.balance != null ? (s.balance >= 0 ? "#f0fdf4" : "#fef2f2") : "#f3f4f6",
+                        color: s.balance != null ? (s.balance >= 0 ? "#16a34a" : "#dc2626") : "#9ca3af",
+                      }}>
+                      収支 {s.balance != null ? `${s.balance >= 0 ? "+" : ""}${s.balance.toLocaleString()}枚` : "—"}
+                    </span>
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded truncate"
+                      style={{
+                        backgroundColor: s.settingHint ? "#fef3c7" : "#f3f4f6",
+                        color: s.settingHint ? "#92400e" : "#9ca3af",
+                      }}>
+                      設定 {s.settingHint || "—"}
+                    </span>
                   </div>
                 </button>
                 <div className="flex flex-col border-l border-gray-200 shrink-0">
