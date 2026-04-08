@@ -221,38 +221,53 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                   const isEpisode = block.event === "エピソードボーナス";
                   const baseCoins = isEpisode ? 250 : 150;
                   const grandTotal = s.total + baseCoins;
+                  const suggHint = s.endingSuggestion ? getSuggestionListLines(s.endingSuggestion)?.hint : null;
+                  const trophyHint = s.trophy ? getSuggestionListLines(s.trophy)?.hint : null;
                   return (
                     <div className="flex">
-                      {/* 左余白（編集列と揃える） */}
                       <div className="shrink-0" style={{ width: "44px" }} />
-                      {/* サマリー本体 */}
                       <div
                         className="flex-1 flex items-stretch rounded-bl"
                         style={{ border: "1.5px solid #14532d" }}
                       >
-                        {/* AT番号セル（緑塗り） */}
+                        {/* AT番号セル */}
                         <div
                           className="px-1.5 py-0.5 flex items-center justify-center shrink-0"
                           style={{ backgroundColor: "#14532d", minWidth: "36px" }}
                         >
                           <span className="text-white font-mono font-black text-[10px]">{atLabel}</span>
                         </div>
-                        {/* データセル群 */}
-                        <ATSummaryCell label="Set" value={`${s.setCount}`} />
+                        {/* セット数: Nset 大きく1行 */}
+                        <div className="flex items-center justify-center px-1.5 border-r border-gray-300 shrink-0">
+                          <span className="text-[14px] font-mono font-black text-gray-900 leading-none">{s.setCount}</span>
+                          <span className="text-[7px] font-mono font-bold text-gray-500 ml-0.5">set</span>
+                        </div>
+                        {/* BITES */}
                         <ATSummaryCell label="BITES" value={`${s.bitesTotal.toLocaleString()}枚`} />
+                        {/* 直乗せ */}
                         <ATSummaryCell label="直乗せ" value={`${s.directTotal.toLocaleString()}枚`} />
-                        <ATSummaryCell label="合計獲得（概算）" value={`${grandTotal.toLocaleString()}枚`} highlight />
-                        {s.endingSuggestion && (
+                        {/* 合計獲得: 説明2行 + 右に大きな枚数 */}
+                        <div className="flex items-center flex-1 px-1 border-l border-gray-300 min-w-0">
+                          <div className="flex flex-col shrink-0 mr-0.5">
+                            <span className="text-[6px] font-mono text-gray-500 leading-tight">合計獲得</span>
+                            <span className="text-[6px] font-mono text-gray-500 leading-tight">（概算）</span>
+                          </div>
+                          <span className="text-[13px] font-mono font-black leading-none flex-1 text-right" style={{ color: "#14532d" }}>
+                            {grandTotal.toLocaleString()}<span className="text-[8px]">枚</span>
+                          </span>
+                        </div>
+                        {/* 終了画面示唆（hint表示） */}
+                        {suggHint && (
                           <div className="flex items-center justify-center px-1 py-0.5 border-l border-gray-300 shrink-0">
                             <span className="text-[7px] font-mono text-gray-700 leading-tight text-center font-bold">
-                              {getSuggestionListLines(s.endingSuggestion)?.name ?? s.endingSuggestion}
+                              {suggHint}
                             </span>
                           </div>
                         )}
-                        {s.trophy && (
+                        {trophyHint && (
                           <div className="flex items-center justify-center px-1 py-0.5 border-l border-gray-300 shrink-0">
                             <span className="text-[7px] font-mono text-gray-700 leading-tight text-center font-bold">
-                              {s.trophy}
+                              {trophyHint}
                             </span>
                           </div>
                         )}
@@ -485,14 +500,11 @@ function MultiColorField({ label, values, color }: { label: string; values: stri
 }
 
 /** ATサマリーセル（ライトモード・コンパクト） */
-function ATSummaryCell({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+function ATSummaryCell({ label, value }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center px-1 py-0.5 border-r border-gray-300 shrink-0">
-      <span className="text-[6px] font-mono text-gray-400 leading-none">{label}</span>
-      <span
-        className="text-[9px] font-mono font-bold leading-tight"
-        style={{ color: highlight ? "#14532d" : "#1f2937" }}
-      >
+      <span className="text-[6px] font-mono text-gray-500 font-bold leading-none">{label}</span>
+      <span className="text-[9px] font-mono font-bold leading-tight text-gray-900">
         {value}
       </span>
     </div>
