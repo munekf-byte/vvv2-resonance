@@ -21,6 +21,10 @@ import {
   type SettingGrade,
 } from "@/lib/tg/settingDiff";
 import { inferSetting } from "@/components/tg/SummaryTab";
+import {
+  multiSessionZoneExact, multiSessionZoneProrate,
+  type ZoneData,
+} from "@/lib/tg/analytics";
 
 // ── ユーティリティ ──────────────────────────────────────────────────────────
 
@@ -122,26 +126,24 @@ function TRow({ cols, values, i, grade }: {
 
 export function TotalAnalysis() {
   const captureRef = useRef<HTMLDivElement>(null);
-  const [allBlocks, setAllBlocks] = useState<NormalBlock[]>([]);
-  const [allATEntries, setAllATEntries] = useState<TGATEntry[]>([]);
-  const [sessionCount, setSessionCount] = useState(0);
+  const [sessions, setSessions] = useState<PlaySession[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const list = lsGetSessionList();
-    const blocks: NormalBlock[] = [];
-    const atEntries: TGATEntry[] = [];
+    const loaded: PlaySession[] = [];
     for (const meta of list) {
       const session = lsLoadSession(meta.id);
-      if (!session) continue;
-      blocks.push(...session.normalBlocks);
-      atEntries.push(...session.atEntries);
+      if (session) loaded.push(session);
     }
-    setAllBlocks(blocks);
-    setAllATEntries(atEntries);
-    setSessionCount(list.length);
+    setSessions(loaded);
     setLoading(false);
   }, []);
+
+  // セッション独立性を保持したまま、集計用にブロック・ATエントリを収集
+  const allBlocks = sessions.flatMap((s) => s.normalBlocks);
+  const allATEntries = sessions.flatMap((s) => s.atEntries);
+  const sessionCount = sessions.length;
 
   if (loading) return <p className="text-center text-gray-500 font-mono py-8">読み込み中...</p>;
   if (sessionCount === 0) return (
@@ -212,10 +214,12 @@ export function TotalAnalysis() {
     inv.includes("偶数") || inv.includes("設定") || inv.includes("存分に") || inv.includes("特別な夜")
   );
 
-  const zoneAllExact = computeZoneExact(allBlocks, "all");
-  const zoneAllProrate = computeZoneProrate(allBlocks, "all");
-  const zoneATExact = computeZoneExact(allBlocks, "afterAT");
-  const zoneATProrate = computeZoneProrate(allBlocks, "afterAT");
+  const zoneAllExact     = multiSessionZoneExact(sessions, "all");
+  const zoneAllProrate   = multiSessionZoneProrate(sessions, "all");
+  const zoneAsaichiExact = multiSessionZoneExact(sessions, "asaichi");
+  const zoneAsaichiPro   = multiSessionZoneProrate(sessions, "asaichi");
+  const zoneATExact      = multiSessionZoneExact(sessions, "afterAT");
+  const zoneATProrate    = multiSessionZoneProrate(sessions, "afterAT");
 
   const settingHints = inferSetting(czFailSuggestions, allEndScreenFromAT, allBlocks, allATEntries);
 
@@ -300,13 +304,15 @@ export function TotalAnalysis() {
         </div>
 
         {/* ゲーム数ゾーン集計 */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <ZoneBlock label="全体 [確定のみ]" data={zoneAllExact} />
-          <ZoneBlock label="リセ頭 [確定のみ]" data={zoneATExact} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+          <ZoneBlock label="全体[確定]" data={zoneAllExact} />
+          <ZoneBlock label="朝一[確定]" data={zoneAsaichiExact} />
+          <ZoneBlock label="AT後[確定]" data={zoneATExact} />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <ZoneBlock label="全体 [按分込]" data={zoneAllProrate} prorated />
-          <ZoneBlock label="リセ頭 [按分込]" data={zoneATProrate} prorated />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+          <ZoneBlock label="全体[按分]" data={zoneAllProrate} prorated />
+          <ZoneBlock label="朝一[按分]" data={zoneAsaichiPro} prorated />
+          <ZoneBlock label="AT後[按分]" data={zoneATProrate} prorated />
         </div>
 
         {/* 設定示唆 */}
@@ -429,51 +435,4 @@ function zoneColor(z: string): string {
   if (n <= 400) return "#ad1457"; if (n <= 500) return "#6a1b9a"; return "#b71c1c";
 }
 
-// ── ゾーン集計（確定のみ / 按分込み） ────────────────────────────────────────
-
-const EXACT_ZONES = ["50", "100", "150", "200", "250", "300", "400", "500", "600"] as const;
-
-const AMBIGUOUS_ZONE_MAP: Record<string, string[]> = {
-  "50or100":    ["50", "100"],
-  "200以内":    ["50", "100", "150", "200"],
-  "300以内":    ["50", "100", "150", "200", "250", "300"],
-  "200以上":    ["200", "250", "300", "400", "500", "600"],
-  "300以上":    ["300", "400", "500", "600"],
-  "300 or 400": ["300", "400"],
-  "400 or 500": ["400", "500"],
-  "500 or 600": ["500", "600"],
-  "600否定":    ["50", "100", "150", "200", "250", "300", "400", "500"],
-};
-
-function filterBlocks(blocks: NormalBlock[], mode: "all" | "afterAT"): NormalBlock[] {
-  return mode === "all" ? blocks : blocks.filter((_, i) => i === 0 || blocks[i - 1].atWin);
-}
-
-function computeZoneExact(blocks: NormalBlock[], mode: "all" | "afterAT") {
-  const filtered = filterBlocks(blocks, mode);
-  return EXACT_ZONES.map((zone) => ({
-    zone,
-    count: filtered.filter((b) => b.zone === zone).length,
-  }));
-}
-
-function computeZoneProrate(blocks: NormalBlock[], mode: "all" | "afterAT") {
-  const filtered = filterBlocks(blocks, mode);
-  const counts: Record<string, number> = {};
-  for (const z of EXACT_ZONES) counts[z] = 0;
-  for (const b of filtered) {
-    const z = b.zone;
-    if (z === "不明" || z === "") continue;
-    if ((EXACT_ZONES as readonly string[]).includes(z)) {
-      counts[z] += 1;
-    } else if (AMBIGUOUS_ZONE_MAP[z]) {
-      const targets = AMBIGUOUS_ZONE_MAP[z];
-      const share = 1 / targets.length;
-      for (const t of targets) counts[t] += share;
-    }
-  }
-  return EXACT_ZONES.map((zone) => ({
-    zone,
-    count: Math.round(counts[zone] * 10) / 10,
-  }));
-}
+// ゾーン集計ロジックは src/lib/tg/analytics.ts に集約

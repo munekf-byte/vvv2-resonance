@@ -393,6 +393,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
             atEntries={atEntries}
             sessionId={initialSession.id}
             userSettingGuess={userSettingGuess}
+            uchidashi={uchidashi}
           />
         )}
       </main>
