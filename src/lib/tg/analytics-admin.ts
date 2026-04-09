@@ -27,17 +27,26 @@ export type SettingSegment = (typeof SETTING_SEGMENTS)[number];
 
 // ── セグメント判定ロジック ──────────────────────────────────────────────────
 
+/** セッションのフィールドを安全に配列化 */
+function safeBlocks(session: PlaySession): NormalBlock[] {
+  return Array.isArray(session.normalBlocks) ? session.normalBlocks : [];
+}
+function safeEntries(session: PlaySession): TGATEntry[] {
+  return Array.isArray(session.atEntries) ? session.atEntries : [];
+}
+
 /** 確定要素の最上位を判定 */
 function detectConfirmedSetting(session: PlaySession): string | null {
-  const blocks = session.normalBlocks;
-  const allSets = session.atEntries.flatMap((e) =>
-    e.rows.filter((r): r is TGATSet => r.rowType === "set")
+  const blocks = safeBlocks(session);
+  const entries = safeEntries(session);
+  const allSets = entries.flatMap((e) =>
+    (Array.isArray(e.rows) ? e.rows : []).filter((r): r is TGATSet => r.rowType === "set")
   );
 
   const hints: string[] = [];
 
   // CZ失敗終了画面 + AT終了画面示唆
-  const czFail = blocks.filter((b) => b.endingSuggestion.startsWith("[cz失敗]")).map((b) => b.endingSuggestion);
+  const czFail = blocks.filter((b) => (b.endingSuggestion ?? "").startsWith("[cz失敗]")).map((b) => b.endingSuggestion);
   const endScreen = allSets.map((s) => s.endingSuggestion ?? "").filter((s) => s.startsWith("[終了画面]"));
   for (const s of [...czFail, ...endScreen]) {
     if (s.includes("設定6濃厚")) hints.push("確定6");
@@ -49,7 +58,7 @@ function detectConfirmedSetting(session: PlaySession): string | null {
 
   // トロフィー
   const allTrophies = [
-    ...blocks.map((b) => b.trophy),
+    ...blocks.map((b) => sStr(b.trophy)),
     ...allSets.map((s) => s.trophy ?? ""),
   ].filter(Boolean);
   for (const t of allTrophies) {
@@ -61,8 +70,8 @@ function detectConfirmedSetting(session: PlaySession): string | null {
   }
 
   // エンディングカード
-  for (const entry of session.atEntries) {
-    for (const row of entry.rows) {
+  for (const entry of entries) {
+    for (const row of (Array.isArray(entry.rows) ? entry.rows : [])) {
       if (row.rowType !== "set" || !row.endingCard) continue;
       const ec = row.endingCard;
       if (ec.confirmed4 > 0) hints.push("確定6");
@@ -181,8 +190,8 @@ export function buildSegmentMap(sessions: PlaySession[]): Record<SettingSegment,
     const segs = classifySession(session);
     for (const seg of segs) {
       map[seg].sessions.push(session);
-      map[seg].blocks.push(...session.normalBlocks);
-      map[seg].atEntries.push(...session.atEntries);
+      map[seg].blocks.push(...safeBlocks(session));
+      map[seg].atEntries.push(...safeEntries(session));
     }
   }
 
@@ -190,6 +199,10 @@ export function buildSegmentMap(sessions: PlaySession[]): Record<SettingSegment,
 }
 
 // ── ヘルパー ────────────────────────────────────────────────────────────────
+
+/** JSONB由来のブロックのフィールドを安全に取得 */
+function sArr(v: unknown): string[] { return Array.isArray(v) ? v : []; }
+function sStr(v: unknown): string { return typeof v === "string" ? v : ""; }
 
 function prob(count: number, denom: number): string {
   if (denom <= 0 || count <= 0) return "—";
@@ -221,9 +234,9 @@ export function computeBlock(blockName: AnalysisBlock, segMap: Record<SettingSeg
           values: segs.map((seg) => {
             const d = segMap[seg];
             const g = d.blocks.reduce((s, b) => s + (b.jisshuG ?? 0), 0);
-            const cz = d.blocks.filter((b) => b.event === "レミニセンス" || b.event === "大喰いの利世").length;
-            const epi = d.blocks.filter((b) => b.event === "エピソードボーナス").length;
-            const direct = d.blocks.filter((b) => b.event === "直撃AT").length;
+            const cz = d.blocks.filter((b) => sStr(b.event) === "レミニセンス" || sStr(b.event) === "大喰いの利世").length;
+            const epi = d.blocks.filter((b) => sStr(b.event) === "エピソードボーナス").length;
+            const direct = d.blocks.filter((b) => sStr(b.event) === "直撃AT").length;
             const at = d.blocks.filter((b) => b.atWin).length;
             switch (label) {
               case "通常時G": return g > 0 ? g.toLocaleString() : "—";
@@ -279,11 +292,11 @@ export function computeBlock(blockName: AnalysisBlock, segMap: Record<SettingSeg
       return {
         title: "赫眼",
         rows: [
-          { label: "合計", values: segs.map((seg) => `${segMap[seg].blocks.flatMap((b) => b.kakugan).length}`) },
+          { label: "合計", values: segs.map((seg) => `${segMap[seg].blocks.flatMap((b) => sArr(b.kakugan)).length}`) },
           ...items.map((k) => ({
             label: k,
             values: segs.map((seg) => {
-              const all = segMap[seg].blocks.flatMap((b) => b.kakugan);
+              const all = segMap[seg].blocks.flatMap((b) => sArr(b.kakugan));
               const c = all.filter((v) => v === k).length;
               return `${c} (${pct(c, all.length)})`;
             }),
@@ -297,11 +310,11 @@ export function computeBlock(blockName: AnalysisBlock, segMap: Record<SettingSeg
       return {
         title: "精神世界",
         rows: [
-          { label: "合計", values: segs.map((seg) => `${segMap[seg].blocks.flatMap((b) => b.shinsekai).length}`) },
+          { label: "合計", values: segs.map((seg) => `${segMap[seg].blocks.flatMap((b) => sArr(b.shinsekai)).length}`) },
           ...items.map((k) => ({
             label: k,
             values: segs.map((seg) => {
-              const all = segMap[seg].blocks.flatMap((b) => b.shinsekai);
+              const all = segMap[seg].blocks.flatMap((b) => sArr(b.shinsekai));
               const c = all.filter((v) => v === k).length;
               return `${c} (${pct(c, all.length)})`;
             }),
@@ -319,7 +332,7 @@ export function computeBlock(blockName: AnalysisBlock, segMap: Record<SettingSeg
           return {
             label: name,
             values: segs.map((seg) => {
-              const c = segMap[seg].blocks.filter((b) => b.endingSuggestion === s).length;
+              const c = segMap[seg].blocks.filter((b) => sStr(b.endingSuggestion) === s).length;
               return `${c}`;
             }),
           };
@@ -374,7 +387,7 @@ export function computeBlock(blockName: AnalysisBlock, segMap: Record<SettingSeg
           return {
             label: name,
             values: segs.map((seg) => {
-              const all = segMap[seg].blocks.flatMap((b) => b.invitation);
+              const all = segMap[seg].blocks.flatMap((b) => sArr(b.invitation));
               return `${all.filter((v) => v === inv).length}`;
             }),
           };
@@ -391,7 +404,7 @@ export function computeBlock(blockName: AnalysisBlock, segMap: Record<SettingSeg
             label: "引き戻し率",
             values: segs.map((seg) => {
               const at = segMap[seg].blocks.filter((b) => b.atWin).length;
-              const hiki = segMap[seg].blocks.filter((b) => b.event === "引き戻し").length;
+              const hiki = segMap[seg].blocks.filter((b) => sStr(b.event) === "引き戻し").length;
               return `${hiki}/${at} (${pct(hiki, at)})`;
             }),
           },
@@ -477,7 +490,7 @@ export function computeBlock(blockName: AnalysisBlock, segMap: Record<SettingSeg
           { label: "セッション数", values: segs.map((seg) => `${segMap[seg].sessions.length}`) },
           { label: "総消化G数", values: segs.map((seg) => segMap[seg].blocks.reduce((s, b) => s + (b.jisshuG ?? 0), 0).toLocaleString()) },
           { label: "トロフィー", values: segs.map((seg) => {
-            const t = segMap[seg].blocks.filter((b) => b.trophy).length + getAllSets(segMap[seg].atEntries).filter((s) => s.trophy).length;
+            const t = segMap[seg].blocks.filter((b) => sStr(b.trophy)).length + getAllSets(segMap[seg].atEntries).filter((s) => s.trophy).length;
             return `${t}`;
           })},
         ],

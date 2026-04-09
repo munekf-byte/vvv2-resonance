@@ -10,36 +10,52 @@ async function checkAdmin(supabase: Awaited<ReturnType<typeof createServerSupaba
 }
 
 export async function GET() {
-  const supabase = await createServerSupabaseClient();
-  if (!(await checkAdmin(supabase))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  try {
+    const supabase = await createServerSupabaseClient();
+    if (!(await checkAdmin(supabase))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, email, display_name, avatar_url, is_pro, is_admin, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("[admin/users GET]", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json(data ?? []);
+  } catch (e) {
+    console.error("[admin/users GET] unexpected:", e);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, email, display_name, avatar_url, is_pro, is_admin, created_at")
-    .order("created_at", { ascending: false });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json(data);
 }
 
 export async function PATCH(request: NextRequest) {
-  const supabase = await createServerSupabaseClient();
-  if (!(await checkAdmin(supabase))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  try {
+    const supabase = await createServerSupabaseClient();
+    if (!(await checkAdmin(supabase))) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    const { userId, is_pro } = await request.json();
+    if (!userId || typeof is_pro !== "boolean") {
+      return NextResponse.json({ error: "Invalid params" }, { status: 400 });
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_pro })
+      .eq("id", userId);
+
+    if (error) {
+      console.error("[admin/users PATCH]", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    console.error("[admin/users PATCH] unexpected:", e);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
-
-  const { userId, is_pro } = await request.json();
-  if (!userId || typeof is_pro !== "boolean") {
-    return NextResponse.json({ error: "Invalid params" }, { status: 400 });
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ is_pro })
-    .eq("id", userId);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
 }

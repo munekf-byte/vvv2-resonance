@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function GET() {
+  try {
   const supabase = await createServerSupabaseClient();
 
   // 管理者チェック
@@ -16,7 +17,10 @@ export async function GET() {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[admin/analytics GET]", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   // DB Row → PlaySession 変換
   const sessions = (data ?? []).map((row: Record<string, unknown>) => ({
@@ -42,4 +46,8 @@ export async function GET() {
   }));
 
   return NextResponse.json(sessions);
+  } catch (e) {
+    console.error("[admin/analytics GET] unexpected:", e);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }

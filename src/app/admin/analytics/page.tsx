@@ -41,13 +41,15 @@ export default function AdminAnalyticsPage() {
       try {
         const res = await fetch("/api/admin/analytics");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: PlaySession[] = await res.json();
+        const raw = await res.json();
+        const data: PlaySession[] = Array.isArray(raw) ? raw : [];
         setSessions(data);
 
-        // セグメントマップ構築 → 全ブロック集計
-        const segMap = buildSegmentMap(data);
-        const blocks = ANALYSIS_BLOCKS.map((name) => computeBlock(name, segMap));
-        setMatrixBlocks(blocks);
+        if (data.length > 0) {
+          const segMap = buildSegmentMap(data);
+          const blocks = ANALYSIS_BLOCKS.map((name) => computeBlock(name, segMap));
+          setMatrixBlocks(blocks);
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "データ取得エラー");
       } finally {
