@@ -340,6 +340,18 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess }: P
           </Cat>
         </div>
 
+        {/* ===== ゲーム数ゾーン集計（確定のみ） ===== */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+          <ZoneBlock label="全体 [確定のみ]" data={zoneAllExact} />
+          <ZoneBlock label="リセ頭 [確定のみ]" data={zoneATExact} />
+        </div>
+
+        {/* ===== ゲーム数ゾーン集計（按分込み） ===== */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+          <ZoneBlock label="全体 [按分込]" data={zoneAllProrate} prorated />
+          <ZoneBlock label="リセ頭 [按分込]" data={zoneATProrate} prorated />
+        </div>
+
         {/* ===== 設定示唆 ===== */}
         <Cat color="#e65100" title="設定示唆" mb>
           <THead cols={[{ label: "項目", width: "1fr" }, { label: "内容", width: "1fr" }]} color="#e65100" />
@@ -459,18 +471,6 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess }: P
           </Cat>
         )}
 
-        {/* ===== ゾーン（確定のみ） ===== */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <ZoneBlock label="全体 [確定のみ]" data={zoneAllExact} />
-          <ZoneBlock label="リセ頭 [確定のみ]" data={zoneATExact} />
-        </div>
-
-        {/* ===== ゾーン（按分込み） ===== */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <ZoneBlock label="全体 [按分込]" data={zoneAllProrate} prorated />
-          <ZoneBlock label="リセ頭 [按分込]" data={zoneATProrate} prorated />
-        </div>
-
       </div>
     </div>
   );
@@ -485,31 +485,29 @@ function ZoneBlock({ label, data, prorated }: { label: string; data: { zone: str
   const fmt = (n: number) => prorated ? n.toFixed(1) : String(n);
   const totalLabel = prorated ? total.toFixed(1) : String(total);
   return (
-    <Cat color="#6a1b9a" title={`${label} (${totalLabel})`}>
-      {total === 0 ? (
-        <TRow cols={[{ width: "1fr" }]} i={0} values={["データなし"]} />
-      ) : (
-        <>
-          <div style={{ display: "flex", height: "16px" }}>
-            {filtered.map((d) => (
-              <div key={d.zone} style={{
-                width: `${(d.count / total) * 100}%`, minWidth: "16px",
-                backgroundColor: zoneColor(d.zone), color: "#fff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "6px", fontWeight: 700, lineHeight: 1.5,
-              }}>{d.zone}</div>
-            ))}
-          </div>
-          <THead cols={cols} color="#6a1b9a" />
-          {filtered.map((d, i) => (
-            <TRow key={d.zone} cols={cols} i={i} values={[
-              `${d.zone}G`,
-              `${fmt(d.count)}回`,
-              total > 0 ? `${Math.round((d.count / total) * 100)}%` : "0%",
-            ]} />
+    <Cat color="#6a1b9a" title={`ゲーム数ゾーン集計 ${label} (${totalLabel})`}>
+      {/* カラーバー（出現ゾーンのみ） */}
+      {total > 0 && (
+        <div style={{ display: "flex", height: "16px" }}>
+          {filtered.map((d) => (
+            <div key={d.zone} style={{
+              width: `${(d.count / total) * 100}%`, minWidth: "16px",
+              backgroundColor: zoneColor(d.zone), color: "#fff",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "6px", fontWeight: 700, lineHeight: 1.5,
+            }}>{d.zone}</div>
           ))}
-        </>
+        </div>
       )}
+      <THead cols={cols} color="#6a1b9a" />
+      {/* 全ゾーン固定ひな形 */}
+      {data.map((d, i) => (
+        <TRow key={d.zone} cols={cols} i={i} values={[
+          `${d.zone}G`,
+          d.count > 0 ? `${fmt(d.count)}回` : "—",
+          d.count > 0 && total > 0 ? `${Math.round((d.count / total) * 100)}%` : "—",
+        ]} />
+      ))}
     </Cat>
   );
 }
