@@ -34,29 +34,43 @@ export async function POST(
     return NextResponse.json({ error: "ID mismatch" }, { status: 400 });
   }
 
-  // user_id フィルタなしで upsert（RLS無効前提）
+  // ペイロード構築
+  const payload = {
+    normal_blocks: session.normalBlocks as unknown as Json,
+    at_entries: session.atEntries as unknown as Json,
+    summary: session.summary as unknown as Json,
+    mode_inferences: session.modeInferences as unknown as Json,
+    ended_at: session.endedAt,
+    status: session.status,
+    start_diff: session.startDiff,
+    initial_through_count: session.initialThroughCount,
+    memo: session.memo,
+    uchidashi: session.uchidashi as unknown as Json,
+    shushi: session.shushi as unknown as Json,
+    user_setting_guess: session.userSettingGuess,
+    updated_at: new Date().toISOString(),
+  };
+
+  // DEBUG: ペイロードのキー一覧を出力
+  console.log("[save session] payload keys:", Object.keys(payload));
+  console.log("[save session] target id:", id);
+
   const { error } = await supabase
     .from("play_sessions")
-    .update({
-      normal_blocks: session.normalBlocks as unknown as Json,
-      at_entries: session.atEntries as unknown as Json,
-      summary: session.summary as unknown as Json,
-      mode_inferences: session.modeInferences as unknown as Json,
-      ended_at: session.endedAt,
-      status: session.status,
-      start_diff: session.startDiff,
-      initial_through_count: session.initialThroughCount,
-      memo: session.memo,
-      uchidashi: session.uchidashi as unknown as Json,
-      shushi: session.shushi as unknown as Json,
-      user_setting_guess: session.userSettingGuess,
-      updated_at: new Date().toISOString(),
-    })
+    .update(payload)
     .eq("id", id);
 
   if (error) {
-    console.error("[save session DATA-RESCUE]", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[save session] ERROR message:", error.message);
+    console.error("[save session] ERROR details:", error.details);
+    console.error("[save session] ERROR hint:", error.hint);
+    console.error("[save session] ERROR code:", error.code);
+    return NextResponse.json({
+      error: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+    }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });
