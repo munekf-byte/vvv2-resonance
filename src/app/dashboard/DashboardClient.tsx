@@ -39,7 +39,15 @@ export function DashboardClient() {
   async function loadSessions() {
     setLoading(true);
     const cloud = await dbGetSessionList();
-    setSessions(cloud.length > 0 ? cloud : lsGetSessionList());
+    if (cloud.length > 0) {
+      setSessions(cloud);
+      // DBの一覧でlocalStorageを上書き（クラウド→ローカル同期）
+      try {
+        localStorage.setItem("tgr_sessions", JSON.stringify(cloud));
+      } catch {}
+    } else {
+      setSessions(lsGetSessionList());
+    }
     setLoading(false);
   }
 

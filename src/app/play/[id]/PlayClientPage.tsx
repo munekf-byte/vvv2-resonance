@@ -83,23 +83,22 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("synced");
 
-  // ── 起動: DB優先 → localStorage フォールバック ────────────────────────────
+  // ── 起動: DB優先 → localStorageフォールバック → DB→ローカル同期 ─────────
   useEffect(() => {
-    // まずSSRで取得した initialSession (DB由来) を使う
-    // 次に localStorage をチェックし、より新しいデータがあれば上書き
     const local = lsLoadSession(initialSession.id);
-    if (local && local.normalBlocks.length > initialSession.normalBlocks.length) {
-      // localStorageの方がデータが多い = DB保存が追いついていない
-      loadSession(local);
-    } else if (initialSession.normalBlocks.length > 0 || !local) {
-      // DB(initialSession)にデータがある、またはlocalがない → DB優先
-      loadSession(initialSession);
-      // localStorageにも書き戻し（キャッシュ更新）
-      if (initialSession.normalBlocks.length > 0) {
-        lsSaveSession(initialSession);
-      }
+    const dbBlocks = Array.isArray(initialSession.normalBlocks) ? initialSession.normalBlocks.length : 0;
+    const lsBlocks = local ? (Array.isArray(local.normalBlocks) ? local.normalBlocks.length : 0) : 0;
+
+    if (lsBlocks > dbBlocks) {
+      // localStorageの方がデータが多い = DB保存が追いついていない → local優先
+      loadSession(local!);
     } else {
-      loadSession(local ?? initialSession);
+      // DB優先（新デバイスでもDBからデータ復元）
+      loadSession(initialSession);
+      // localStorageにDB内容を書き戻し（クラウド→ローカル同期）
+      try {
+        localStorage.setItem(`tgr_session_${initialSession.id}`, JSON.stringify(initialSession));
+      } catch {}
     }
     // 未保存データがあればリカバリ
     flushPendingSaves();
