@@ -1,6 +1,7 @@
 // =============================================================================
 // TOKYO GHOUL RESONANCE: セッション永続化
-// localStorage (即時) + Supabase API (非同期)
+// DB (Supabase) を正とし、localStorage はキャッシュ/オフライン用
+// DB保存: debounce + リトライ（最大3回）+ 状態管理
 // =============================================================================
 
 import type { PlaySession, TGATSet } from "@/types";
@@ -8,6 +9,7 @@ import { inferSetting } from "@/components/tg/SummaryTab";
 
 const LIST_KEY = "tgr_sessions";
 const sessionKey = (id: string) => `tgr_session_${id}`;
+const PENDING_KEY = "tgr_pending_saves";
 
 export interface SessionMeta {
   id: string;
@@ -20,6 +22,46 @@ export interface SessionMeta {
   balance: number | null;
   settingHint: string;
   userSettingGuess: string;
+}
+
+// ── DB同期状態 ──────────────────────────────────────────────────────────────
+
+export type SyncStatus = "synced" | "saving" | "pending" | "error";
+
+type SyncListener = (status: SyncStatus) => void;
+const syncListeners = new Set<SyncListener>();
+let currentSyncStatus: SyncStatus = "synced";
+
+export function onSyncStatusChange(listener: SyncListener): () => void {
+  syncListeners.add(listener);
+  listener(currentSyncStatus);
+  return () => syncListeners.delete(listener);
+}
+
+function setSyncStatus(status: SyncStatus) {
+  currentSyncStatus = status;
+  syncListeners.forEach((l) => l(status));
+}
+
+// ── 未保存セッションID管理 ──────────────────────────────────────────────────
+
+function getPendingSaves(): Set<string> {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch { return new Set(); }
+}
+
+function addPendingSave(id: string) {
+  const set = getPendingSaves();
+  set.add(id);
+  localStorage.setItem(PENDING_KEY, JSON.stringify([...set]));
+}
+
+function removePendingSave(id: string) {
+  const set = getPendingSaves();
+  set.delete(id);
+  localStorage.setItem(PENDING_KEY, JSON.stringify([...set]));
 }
 
 // ── localStorage 操作 ──────────────────────────────────────────────────────
@@ -64,8 +106,9 @@ export function lsSaveSession(session: PlaySession): void {
     localStorage.setItem(LIST_KEY, JSON.stringify(list));
   } catch { /* storage full */ }
 
-  // Supabase 非同期保存（失敗しても無視）
-  dbSaveSession(session);
+  // DB保存（debounce + リトライ）
+  addPendingSave(session.id);
+  debouncedDbSave(session);
 }
 
 export function lsLoadSession(id: string): PlaySession | null {
@@ -83,14 +126,78 @@ export function lsDeleteSession(id: string): void {
     const list = lsGetSessionList().filter((s) => s.id !== id);
     localStorage.setItem(LIST_KEY, JSON.stringify(list));
   } catch {}
-
-  // Supabase からも削除
   fetch(`/api/session/${id}`, { method: "DELETE" }).catch(() => {});
+}
+
+// ── DB保存（リトライ付き） ──────────────────────────────────────────────────
+
+const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [1000, 3000, 8000]; // 1秒, 3秒, 8秒
+
+function debouncedDbSave(session: PlaySession) {
+  const existing = debounceTimers.get(session.id);
+  if (existing) clearTimeout(existing);
+
+  const timer = setTimeout(() => {
+    debounceTimers.delete(session.id);
+    dbSaveWithRetry(session, 0);
+  }, 500); // 500ms debounce
+
+  debounceTimers.set(session.id, timer);
+}
+
+async function dbSaveWithRetry(session: PlaySession, attempt: number): Promise<void> {
+  setSyncStatus("saving");
+  try {
+    const res = await fetch(`/api/session/${session.id}/save`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(session),
+    });
+
+    if (res.ok) {
+      removePendingSave(session.id);
+      const remaining = getPendingSaves();
+      setSyncStatus(remaining.size === 0 ? "synced" : "pending");
+      return;
+    }
+
+    // 401 は認証切れ — リトライしても無駄なのでpendingに留める
+    if (res.status === 401) {
+      setSyncStatus("error");
+      return;
+    }
+
+    throw new Error(`HTTP ${res.status}`);
+  } catch {
+    if (attempt < MAX_RETRIES - 1) {
+      setSyncStatus("pending");
+      setTimeout(() => dbSaveWithRetry(session, attempt + 1), RETRY_DELAYS[attempt]);
+    } else {
+      setSyncStatus("error");
+    }
+  }
+}
+
+// ── 未保存データのリカバリ（起動時呼び出し） ────────────────────────────────
+
+export function flushPendingSaves(): void {
+  const pending = getPendingSaves();
+  if (pending.size === 0) return;
+
+  for (const id of pending) {
+    const session = lsLoadSession(id);
+    if (session) {
+      dbSaveWithRetry(session, 0);
+    } else {
+      removePendingSave(id);
+    }
+  }
 }
 
 // ── Supabase 連携 ──────────────────────────────────────────────────────────
 
-/** Supabase にセッション作成し、IDを返す */
 export async function dbCreateSession(machineName: string): Promise<{ id: string; userId: string } | null> {
   try {
     const res = await fetch("/api/session/create", {
@@ -103,7 +210,6 @@ export async function dbCreateSession(machineName: string): Promise<{ id: string
   } catch { return null; }
 }
 
-/** Supabase からセッション一覧を取得 */
 export async function dbGetSessionList(): Promise<SessionMeta[]> {
   try {
     const res = await fetch("/api/sessions");
@@ -112,16 +218,6 @@ export async function dbGetSessionList(): Promise<SessionMeta[]> {
   } catch { return []; }
 }
 
-/** Supabase にセッションを保存（debounce無し・呼び出し側でdebounceすること） */
-function dbSaveSession(session: PlaySession): void {
-  fetch(`/api/session/${session.id}/save`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(session),
-  }).catch(() => {});
-}
-
-/** Supabase からセッション全体を読み込む */
 export async function dbLoadSession(id: string): Promise<PlaySession | null> {
   try {
     const res = await fetch(`/api/session/${id}/load`);
@@ -130,9 +226,7 @@ export async function dbLoadSession(id: string): Promise<PlaySession | null> {
   } catch { return null; }
 }
 
-/** localStorage 用のセッションを作成 + Supabase にも保存 */
 export async function createSessionWithCloud(machineName: string): Promise<PlaySession> {
-  // まず Supabase に作成
   const dbResult = await dbCreateSession(machineName);
 
   const id = dbResult?.id ?? `local-${crypto.randomUUID()}`;

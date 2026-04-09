@@ -15,7 +15,7 @@ import { ATBlockEditDashboard } from "@/components/tg/ATBlockEditDashboard";
 import { SummaryTab } from "@/components/tg/SummaryTab";
 import { UchidashiEditDashboard } from "@/components/tg/UchidashiEditDashboard";
 import { ShushiEditDashboard } from "@/components/tg/ShushiEditDashboard";
-import { lsLoadSession, lsSaveSession } from "@/lib/tg/localStore";
+import { lsLoadSession, lsSaveSession, dbLoadSession, flushPendingSaves, onSyncStatusChange, type SyncStatus } from "@/lib/tg/localStore";
 import { estimateAllModes } from "@/lib/engine/modeEstimation";
 import { captureAndDownload, captureAndShare } from "@/lib/tg/captureImage";
 import { inferSetting } from "@/components/tg/SummaryTab";
@@ -81,16 +81,35 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const [shushiOpen,    setShushiOpen]    = useState(false);
   const [settingGuessOpen, setSettingGuessOpen] = useState(false);
 
-  // ── 起動: localStorage 優先復元 ────────────────────────────────────────────
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("synced");
+
+  // ── 起動: DB優先 → localStorage フォールバック ────────────────────────────
   useEffect(() => {
+    // まずSSRで取得した initialSession (DB由来) を使う
+    // 次に localStorage をチェックし、より新しいデータがあれば上書き
     const local = lsLoadSession(initialSession.id);
-    if (local && local.normalBlocks.length >= initialSession.normalBlocks.length) {
+    if (local && local.normalBlocks.length > initialSession.normalBlocks.length) {
+      // localStorageの方がデータが多い = DB保存が追いついていない
       loadSession(local);
-    } else {
+    } else if (initialSession.normalBlocks.length > 0 || !local) {
+      // DB(initialSession)にデータがある、またはlocalがない → DB優先
       loadSession(initialSession);
+      // localStorageにも書き戻し（キャッシュ更新）
+      if (initialSession.normalBlocks.length > 0) {
+        lsSaveSession(initialSession);
+      }
+    } else {
+      loadSession(local ?? initialSession);
     }
+    // 未保存データがあればリカバリ
+    flushPendingSaves();
     return () => clearSession();
   }, [initialSession.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── 同期状態の監視 ──────────────────────────────────────────────────────
+  useEffect(() => {
+    return onSyncStatusChange(setSyncStatus);
+  }, []);
 
   // ── 変更時: localStorage 即時保存 ──────────────────────────────────────────
   const lastSavedRef = useRef<string>("");
@@ -235,6 +254,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
             <p className="text-sm font-mono font-bold text-white truncate flex-1 min-w-0">
               {session?.machineName ?? "セッション"}
             </p>
+            <SyncIndicator status={syncStatus} />
           </div>
           <div className="flex flex-wrap gap-1 mt-1">
             {totalGames > 0 && (
@@ -555,6 +575,26 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
         </div>
       )}
     </div>
+  );
+}
+
+// ─── クラウド同期インジケーター ──────────────────────────────────────────────
+
+function SyncIndicator({ status }: { status: SyncStatus }) {
+  const config = {
+    synced:  { bg: "#16a34a", text: "保存済", icon: "●" },
+    saving:  { bg: "#2563eb", text: "保存中", icon: "◌" },
+    pending: { bg: "#f59e0b", text: "未同期", icon: "◎" },
+    error:   { bg: "#dc2626", text: "同期エラー", icon: "!" },
+  }[status];
+
+  return (
+    <span
+      className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded flex-shrink-0"
+      style={{ backgroundColor: config.bg, color: "#fff" }}
+    >
+      {config.icon} {config.text}
+    </span>
   );
 }
 
