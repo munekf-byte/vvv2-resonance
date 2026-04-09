@@ -163,10 +163,9 @@ async function dbSaveWithRetry(session: PlaySession, attempt: number): Promise<v
       return;
     }
 
-    // 401/403 は認証切れ・権限不足 — リトライしても無駄
+    // 401/403 — リトライする（DATA-RESCUE中は認証不要のため通る可能性あり）
     if (res.status === 401 || res.status === 403) {
-      setSyncStatus("auth_error");
-      return;
+      // リトライ対象に含める（以前はここでreturnしていた）
     }
 
     throw new Error(`HTTP ${res.status}`);

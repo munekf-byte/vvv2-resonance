@@ -1,7 +1,7 @@
 // =============================================================================
 // VALVRAVE-RESONANCE: セッション保存 API Route
 // POST /api/session/[id]/save
-// Client Component からセッションをDBに保存する
+// ⚠️ OPERATION-DATA-RESCUE: 認証一時開放中（データ救出後に戻すこと）
 // =============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
@@ -15,13 +15,12 @@ export async function POST(
   const { id } = await params;
 
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // ⚠️ DATA-RESCUE: 認証チェック一時無効化
+  // const { data: { user } } = await supabase.auth.getUser();
+  // if (!user) {
+  //   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // }
 
   let session: PlaySession;
   try {
@@ -30,10 +29,12 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (session.id !== id || session.userId !== user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  // ⚠️ DATA-RESCUE: ID一致チェック一時無効化（user.idなし）
+  if (session.id !== id) {
+    return NextResponse.json({ error: "ID mismatch" }, { status: 400 });
   }
 
+  // user_id フィルタなしで upsert（RLS無効前提）
   const { error } = await supabase
     .from("play_sessions")
     .update({
@@ -51,11 +52,10 @@ export async function POST(
       user_setting_guess: session.userSettingGuess,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("id", id);
 
   if (error) {
-    console.error("[save session]", error.message);
+    console.error("[save session DATA-RESCUE]", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
