@@ -226,8 +226,10 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess }: P
   })).filter((g) => g.items.length > 0);
   const arimaByPos = computeArimaPositions(atEntries);
 
-  const zoneAll = computeZoneDistribution(blocks, "all");
-  const zoneAfterAT = computeZoneDistribution(blocks, "afterAT");
+  const zoneAllExact = computeZoneExact(blocks, "all");
+  const zoneAllProrate = computeZoneProrate(blocks, "all");
+  const zoneATExact = computeZoneExact(blocks, "afterAT");
+  const zoneATProrate = computeZoneProrate(blocks, "afterAT");
 
   // 共通列定義
   const COLS3 = [{ label: "項目", width: "1fr" }, { label: "回数", width: "52px" }, { label: "確率", width: "64px" }];
@@ -457,10 +459,16 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess }: P
           </Cat>
         )}
 
-        {/* ===== ゾーン ===== */}
+        {/* ===== ゾーン（確定のみ） ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <ZoneBlock label="ゾーン [全体]" data={zoneAll} />
-          <ZoneBlock label="ゾーン [リセ頭]" data={zoneAfterAT} />
+          <ZoneBlock label="全体 [確定のみ]" data={zoneAllExact} />
+          <ZoneBlock label="リセ頭 [確定のみ]" data={zoneATExact} />
+        </div>
+
+        {/* ===== ゾーン（按分込み） ===== */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+          <ZoneBlock label="全体 [按分込]" data={zoneAllProrate} prorated />
+          <ZoneBlock label="リセ頭 [按分込]" data={zoneATProrate} prorated />
         </div>
 
       </div>
@@ -470,12 +478,14 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess }: P
 
 // ── ゾーンブロック ──────────────────────────────────────────────────────────
 
-function ZoneBlock({ label, data }: { label: string; data: { zone: string; count: number }[] }) {
+function ZoneBlock({ label, data, prorated }: { label: string; data: { zone: string; count: number }[]; prorated?: boolean }) {
   const total = data.reduce((s, d) => s + d.count, 0);
   const filtered = data.filter((d) => d.count > 0);
-  const cols = [{ label: "ゾーン", width: "1fr" }, { label: "回数", width: "44px" }, { label: "割合", width: "48px" }];
+  const cols = [{ label: "ゾーン", width: "1fr" }, { label: "回数", width: "50px" }, { label: "割合", width: "48px" }];
+  const fmt = (n: number) => prorated ? n.toFixed(1) : String(n);
+  const totalLabel = prorated ? total.toFixed(1) : String(total);
   return (
-    <Cat color="#6a1b9a" title={`${label} (${total})`}>
+    <Cat color="#6a1b9a" title={`${label} (${totalLabel})`}>
       {total === 0 ? (
         <TRow cols={[{ width: "1fr" }]} i={0} values={["データなし"]} />
       ) : (
@@ -492,7 +502,11 @@ function ZoneBlock({ label, data }: { label: string; data: { zone: string; count
           </div>
           <THead cols={cols} color="#6a1b9a" />
           {filtered.map((d, i) => (
-            <TRow key={d.zone} cols={cols} i={i} values={[d.zone, `${d.count}回`, pct(d.count, total)]} />
+            <TRow key={d.zone} cols={cols} i={i} values={[
+              `${d.zone}G`,
+              `${fmt(d.count)}回`,
+              total > 0 ? `${Math.round((d.count / total) * 100)}%` : "0%",
+            ]} />
           ))}
         </>
       )}
@@ -508,9 +522,57 @@ function zoneColor(z: string): string {
 
 // ── 集計ヘルパー ────────────────────────────────────────────────────────────
 
-function computeZoneDistribution(blocks: NormalBlock[], mode: "all" | "afterAT") {
-  const filtered = mode === "all" ? blocks : blocks.filter((_, i) => i === 0 || blocks[i - 1].atWin);
-  return [...TG_ZONES].filter((z) => z !== "不明").map((zone) => ({ zone, count: filtered.filter((b) => b.zone === zone).length }));
+/** 確定ゾーン一覧 */
+const EXACT_ZONES = ["50", "100", "150", "200", "250", "300", "400", "500", "600"] as const;
+
+/** 曖昧ゾーン → 按分先の確定ゾーンマッピング */
+const AMBIGUOUS_ZONE_MAP: Record<string, string[]> = {
+  "50or100":    ["50", "100"],
+  "200以内":    ["50", "100", "150", "200"],
+  "300以内":    ["50", "100", "150", "200", "250", "300"],
+  "200以上":    ["200", "250", "300", "400", "500", "600"],
+  "300以上":    ["300", "400", "500", "600"],
+  "300 or 400": ["300", "400"],
+  "400 or 500": ["400", "500"],
+  "500 or 600": ["500", "600"],
+  "600否定":    ["50", "100", "150", "200", "250", "300", "400", "500"],
+};
+
+function filterBlocks(blocks: NormalBlock[], mode: "all" | "afterAT"): NormalBlock[] {
+  return mode === "all" ? blocks : blocks.filter((_, i) => i === 0 || blocks[i - 1].atWin);
+}
+
+/** 確定ゾーンのみカウント（曖昧ゾーンは除外） */
+function computeZoneExact(blocks: NormalBlock[], mode: "all" | "afterAT") {
+  const filtered = filterBlocks(blocks, mode);
+  return EXACT_ZONES.map((zone) => ({
+    zone,
+    count: filtered.filter((b) => b.zone === zone).length,
+  }));
+}
+
+/** 均等按分込み（曖昧ゾーンを該当確定ゾーンに均等配分） */
+function computeZoneProrate(blocks: NormalBlock[], mode: "all" | "afterAT") {
+  const filtered = filterBlocks(blocks, mode);
+  const counts: Record<string, number> = {};
+  for (const z of EXACT_ZONES) counts[z] = 0;
+
+  for (const b of filtered) {
+    const z = b.zone;
+    if (z === "不明" || z === "") continue;
+    if ((EXACT_ZONES as readonly string[]).includes(z)) {
+      counts[z] += 1;
+    } else if (AMBIGUOUS_ZONE_MAP[z]) {
+      const targets = AMBIGUOUS_ZONE_MAP[z];
+      const share = 1 / targets.length;
+      for (const t of targets) counts[t] += share;
+    }
+  }
+
+  return EXACT_ZONES.map((zone) => ({
+    zone,
+    count: Math.round(counts[zone] * 10) / 10, // 小数1位
+  }));
 }
 
 function computeArimaPositions(atEntries: TGATEntry[]) {
