@@ -15,7 +15,7 @@ import { ATBlockEditDashboard } from "@/components/tg/ATBlockEditDashboard";
 import { SummaryTab } from "@/components/tg/SummaryTab";
 import { UchidashiEditDashboard } from "@/components/tg/UchidashiEditDashboard";
 import { ShushiEditDashboard } from "@/components/tg/ShushiEditDashboard";
-import { lsLoadSession, lsSaveSession, dbLoadSession, flushPendingSaves, onSyncStatusChange, type SyncStatus } from "@/lib/tg/localStore";
+import { lsSaveSession, flushPendingSaves, onSyncStatusChange, type SyncStatus } from "@/lib/tg/localStore";
 import { estimateAllModes } from "@/lib/engine/modeEstimation";
 import { captureAndDownload, captureAndShare } from "@/lib/tg/captureImage";
 import { inferSetting } from "@/components/tg/SummaryTab";
@@ -83,23 +83,14 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("synced");
 
-  // ── 起動: DB優先 → localStorageフォールバック → DB→ローカル同期 ─────────
+  // ── 起動: DBが絶対正義 → localStorageに無条件上書き ─────────────────────
   useEffect(() => {
-    const local = lsLoadSession(initialSession.id);
-    const dbBlocks = Array.isArray(initialSession.normalBlocks) ? initialSession.normalBlocks.length : 0;
-    const lsBlocks = local ? (Array.isArray(local.normalBlocks) ? local.normalBlocks.length : 0) : 0;
-
-    if (lsBlocks > dbBlocks) {
-      // localStorageの方がデータが多い = DB保存が追いついていない → local優先
-      loadSession(local!);
-    } else {
-      // DB優先（新デバイスでもDBからデータ復元）
-      loadSession(initialSession);
-      // localStorageにDB内容を書き戻し（クラウド→ローカル同期）
-      try {
-        localStorage.setItem(`tgr_session_${initialSession.id}`, JSON.stringify(initialSession));
-      } catch {}
-    }
+    // initialSession はSSRでDBから取得済み → これを正とする
+    loadSession(initialSession);
+    // localStorageにDB内容を無条件書き戻し
+    try {
+      localStorage.setItem(`tgr_session_${initialSession.id}`, JSON.stringify(initialSession));
+    } catch {}
     // 未保存データがあればリカバリ
     flushPendingSaves();
     return () => clearSession();

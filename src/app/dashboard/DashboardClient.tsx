@@ -39,15 +39,11 @@ export function DashboardClient() {
   async function loadSessions() {
     setLoading(true);
     const cloud = await dbGetSessionList();
-    if (cloud.length > 0) {
-      setSessions(cloud);
-      // DBの一覧でlocalStorageを上書き（クラウド→ローカル同期）
-      try {
-        localStorage.setItem("tgr_sessions", JSON.stringify(cloud));
-      } catch {}
-    } else {
-      setSessions(lsGetSessionList());
-    }
+    // DBが絶対正義: クラウドデータでlocalStorageを無条件上書き
+    setSessions(cloud);
+    try {
+      localStorage.setItem("tgr_sessions", JSON.stringify(cloud));
+    } catch {}
     setLoading(false);
   }
 
