@@ -61,6 +61,15 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
+        {/* 分析ダッシュボードリンク */}
+        <a
+          href="/admin/analytics"
+          className="block w-full mb-6 px-4 py-3 rounded-xl font-mono font-bold text-sm text-center"
+          style={{ backgroundColor: "#92400e", color: "#fef3c7" }}
+        >
+          COMMANDER LAB — クロス集計ダッシュボード →
+        </a>
+
         <h1 className="text-lg font-mono font-bold text-gray-900 mb-4">ユーザー管理</h1>
 
         {loadingUsers ? (
