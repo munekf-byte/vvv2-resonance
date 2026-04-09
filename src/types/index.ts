@@ -196,6 +196,8 @@ export interface PlaySession {
   uchidashi: UchidashiState | null;
   /** 収支入力 */
   shushi: ShushiData | null;
+  /** ユーザー推測設定 */
+  userSettingGuess: string | null;
   createdAt: string;
   updatedAt: string;
 }

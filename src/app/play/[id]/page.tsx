@@ -29,6 +29,7 @@ function makeFallbackSession(id: string, userId: string): PlaySession {
     memo: null,
     uchidashi: null,
     shushi: null,
+    userSettingGuess: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

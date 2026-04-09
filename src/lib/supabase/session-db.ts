@@ -31,6 +31,7 @@ function rowToSession(row: Record<string, unknown>): PlaySession {
     memo: (row.memo as string | null) ?? null,
     uchidashi: castJson<UchidashiState | null>(row.uchidashi ?? null),
     shushi: castJson<ShushiData | null>(row.shushi ?? null),
+    userSettingGuess: (row.user_setting_guess as string | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -88,6 +89,7 @@ export async function saveSessionToDb(session: PlaySession): Promise<boolean> {
       memo: session.memo,
       uchidashi: session.uchidashi as unknown as import("@/types").Json,
       shushi: session.shushi as unknown as import("@/types").Json,
+      user_setting_guess: session.userSettingGuess,
       updated_at: new Date().toISOString(),
     })
     .eq("id", session.id)

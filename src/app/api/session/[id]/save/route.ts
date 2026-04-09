@@ -48,6 +48,7 @@ export async function POST(
       memo: session.memo,
       uchidashi: session.uchidashi as unknown as Json,
       shushi: session.shushi as unknown as Json,
+      user_setting_guess: session.userSettingGuess,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

@@ -153,6 +153,7 @@ export async function createSessionWithCloud(machineName: string): Promise<PlayS
     memo: null,
     uchidashi: null,
     shushi: null,
+    userSettingGuess: null,
     createdAt: now,
     updatedAt: now,
   };

@@ -35,6 +35,7 @@ interface SessionActions {
 
   updateUchidashi: (uchidashi: UchidashiState | null) => void;
   updateShushi: (shushi: ShushiData | null) => void;
+  updateUserSettingGuess: (guess: string | null) => void;
 
   clearSession: () => void;
   clearError: () => void;
@@ -150,6 +151,9 @@ export const useSessionStore = create<SessionState & SessionActions>(
 
     updateShushi: (shushi) =>
       mutateSession(set, get, (s) => ({ ...s, shushi })),
+
+    updateUserSettingGuess: (guess) =>
+      mutateSession(set, get, (s) => ({ ...s, userSettingGuess: guess })),
 
     // ---- ユーティリティ ----
     clearSession: () => set({ session: null, error: null }),

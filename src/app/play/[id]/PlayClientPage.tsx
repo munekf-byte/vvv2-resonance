@@ -69,15 +69,17 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const appendTGATEntry    = useSessionStore((s) => s.appendTGATEntry);
   const appendTGATRow      = useSessionStore((s) => s.appendTGATRow);
   const updateTGATRow      = useSessionStore((s) => s.updateTGATRow);
-  const deleteTGATRow      = useSessionStore((s) => s.deleteTGATRow);
-  const updateUchidashi    = useSessionStore((s) => s.updateUchidashi);
-  const updateShushi       = useSessionStore((s) => s.updateShushi);
+  const deleteTGATRow         = useSessionStore((s) => s.deleteTGATRow);
+  const updateUchidashi       = useSessionStore((s) => s.updateUchidashi);
+  const updateShushi          = useSessionStore((s) => s.updateShushi);
+  const updateUserSettingGuess = useSessionStore((s) => s.updateUserSettingGuess);
 
   const [activeTab,    setActiveTab]    = useState<"normal" | "at" | "summary">("normal");
   const [normalEdit,   setNormalEdit]   = useState<NormalEditingState>(NORMAL_CLOSED);
   const [atEdit,       setATEdit]       = useState<ATEditingState>(AT_CLOSED);
   const [uchidashiOpen, setUchidashiOpen] = useState(false);
   const [shushiOpen,    setShushiOpen]    = useState(false);
+  const [settingGuessOpen, setSettingGuessOpen] = useState(false);
 
   // ── 起動: localStorage 優先復元 ────────────────────────────────────────────
   useEffect(() => {
@@ -105,8 +107,9 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
   const blocks     = session?.normalBlocks ?? [];
   const atEntries  = session?.atEntries   ?? [];
-  const uchidashi  = session?.uchidashi   ?? null;
-  const shushi     = session?.shushi      ?? null;
+  const uchidashi        = session?.uchidashi        ?? null;
+  const shushi           = session?.shushi           ?? null;
+  const userSettingGuess = session?.userSettingGuess ?? null;
 
   // ヘッダー用サマリー
   const totalGames = blocks.reduce((s, b) => s + (b.jisshuG ?? 0), 0);
@@ -211,7 +214,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const normalListRef = useRef<HTMLDivElement>(null);
   const atListRef = useRef<HTMLDivElement>(null);
 
-  const anyEditOpen = normalEdit.open || atEdit.open || uchidashiOpen || shushiOpen;
+  const anyEditOpen = normalEdit.open || atEdit.open || uchidashiOpen || shushiOpen || settingGuessOpen;
 
   return (
     <div className="flex flex-col overflow-hidden" style={{ height: "100dvh" }}>
@@ -405,6 +408,13 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
             収支入力
           </button>
           <button
+            onClick={() => setSettingGuessOpen(true)}
+            className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
+            style={{ backgroundColor: "#92400e", color: "#fff" }}
+          >
+            推測設定
+          </button>
+          <button
             onClick={handleNormalOpenNew}
             className="flex items-center gap-1 bg-v2-red text-white font-mono font-bold text-[15px] px-6 py-4 rounded-full shadow-lg active:scale-95 transition-transform"
           >
@@ -458,6 +468,60 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           onSave={(data) => { updateShushi(data); setShushiOpen(false); }}
           onClose={() => setShushiOpen(false)}
         />
+      )}
+
+      {/* ===== 推測設定入力ポップアップ ===== */}
+      {settingGuessOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4"
+          onClick={(e) => e.target === e.currentTarget && setSettingGuessOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="px-5 py-4" style={{ backgroundColor: "#92400e" }}>
+              <p className="text-white font-mono font-bold text-sm">推測設定入力</p>
+              <p className="text-amber-200 text-[10px] font-mono mt-0.5">
+                当日の島状況や経験から推測した設定を記録
+              </p>
+            </div>
+            <div className="px-5 py-4">
+              <div className="grid grid-cols-1 gap-2">
+                {[
+                  { value: "推定低設定", color: "#6b7280" },
+                  { value: "推定4", color: "#2563eb" },
+                  { value: "推定456", color: "#7c3aed" },
+                  { value: "推定56", color: "#ea580c" },
+                  { value: "推定6", color: "#dc2626" },
+                ].map(({ value, color }) => (
+                  <button
+                    key={value}
+                    onClick={() => { updateUserSettingGuess(value); setSettingGuessOpen(false); }}
+                    className="py-3 rounded-lg font-mono font-bold text-sm active:scale-95 transition-transform"
+                    style={{
+                      backgroundColor: userSettingGuess === value ? color : "#f9fafb",
+                      color: userSettingGuess === value ? "#ffffff" : "#374151",
+                      border: `2px solid ${color}`,
+                      boxShadow: userSettingGuess === value ? `0 0 0 2px ${color}` : "none",
+                    }}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex border-t border-gray-200">
+              <button
+                onClick={() => { updateUserSettingGuess(null); setSettingGuessOpen(false); }}
+                className="flex-1 py-3.5 text-sm font-mono text-gray-500 hover:bg-gray-50 border-r border-gray-200"
+              >
+                クリア
+              </button>
+              <button
+                onClick={() => setSettingGuessOpen(false)}
+                className="flex-1 py-3.5 text-sm font-mono font-bold text-gray-700 hover:bg-gray-50"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* ===== 空白周期アラート ===== */}
