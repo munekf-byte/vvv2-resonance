@@ -25,6 +25,7 @@ interface Props {
   blocks: NormalBlock[];
   atEntries: TGATEntry[];
   sessionId: string;
+  userSettingGuess?: string | null;
 }
 
 // ── ユーティリティ ──────────────────────────────────────────────────────────
@@ -141,7 +142,7 @@ function SqIcon({ top, bottom, bg }: { top: string; bottom: string; bg: string }
 
 // ── メインコンポーネント ─────────────────────────────────────────────────
 
-export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
+export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
 
   const lsKey = `tgr_totalG_${sessionId}`;
@@ -340,8 +341,9 @@ export function SummaryTab({ blocks, atEntries, sessionId }: Props) {
         {/* ===== 設定示唆 ===== */}
         <Cat color="#e65100" title="設定示唆" mb>
           <THead cols={[{ label: "項目", width: "1fr" }, { label: "内容", width: "1fr" }]} color="#e65100" />
-          <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={0} values={[<b key="l">推定設定</b>, <b key="v">{settingHints || "情報不足"}</b>]} />
-          <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={1} values={[<b key="l">トロフィー</b>, `${trophyCount}回`]} />
+          <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={0} values={[<b key="l">確定設定情報</b>, <b key="v">{settingHints || "情報不足"}</b>]} />
+          <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={1} values={[<b key="l">推測設定</b>, <b key="v">{userSettingGuess || "未入力"}</b>]} />
+          <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={2} values={[<b key="l">トロフィー</b>, `${trophyCount}回`]} />
         </Cat>
 
         {/* ===== CZ失敗 / 終了画面示唆 ===== */}

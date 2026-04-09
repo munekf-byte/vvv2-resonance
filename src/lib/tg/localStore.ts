@@ -19,6 +19,7 @@ export interface SessionMeta {
   totalGames: number;
   balance: number | null;
   settingHint: string;
+  userSettingGuess: string;
 }
 
 // ── localStorage 操作 ──────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ export function lsSaveSession(session: PlaySession): void {
       totalGames,
       balance,
       settingHint,
+      userSettingGuess: session.userSettingGuess ?? "",
     };
     const idx = list.findIndex((s) => s.id === session.id);
     if (idx >= 0) list[idx] = meta;

@@ -261,7 +261,13 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
             {headerSetting && (
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded truncate max-w-[140px]"
                 style={{ backgroundColor: "#fef3c7", color: "#92400e" }}>
-                設定 {headerSetting}
+                確定 {headerSetting}
+              </span>
+            )}
+            {userSettingGuess && (
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded truncate"
+                style={{ backgroundColor: "#fce7f3", color: "#9d174d" }}>
+                推測 {userSettingGuess}
               </span>
             )}
           </div>
@@ -386,6 +392,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
             blocks={blocks}
             atEntries={atEntries}
             sessionId={initialSession.id}
+            userSettingGuess={userSettingGuess}
           />
         )}
       </main>

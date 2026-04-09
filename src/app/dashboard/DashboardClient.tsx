@@ -133,7 +133,14 @@ export function DashboardClient() {
                         backgroundColor: s.settingHint ? "#fef3c7" : "#f3f4f6",
                         color: s.settingHint ? "#92400e" : "#9ca3af",
                       }}>
-                      設定 {s.settingHint || "—"}
+                      確定 {s.settingHint || "—"}
+                    </span>
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded truncate col-span-2"
+                      style={{
+                        backgroundColor: s.userSettingGuess ? "#fce7f3" : "#f3f4f6",
+                        color: s.userSettingGuess ? "#9d174d" : "#9ca3af",
+                      }}>
+                      推測 {s.userSettingGuess || "—"}
                     </span>
                   </div>
                 </button>

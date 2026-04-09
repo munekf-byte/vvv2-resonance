@@ -9,7 +9,7 @@ export async function GET() {
 
   const { data, error } = await supabase
     .from("play_sessions")
-    .select("id, machine_name, created_at, updated_at, status, normal_blocks, at_entries, shushi")
+    .select("id, machine_name, created_at, updated_at, status, normal_blocks, at_entries, shushi, user_setting_guess")
     .eq("user_id", user.id)
     .eq("is_deleted", false)
     .order("updated_at", { ascending: false }) as unknown as { data: Record<string, unknown>[] | null; error: { message: string } | null };
@@ -44,6 +44,7 @@ export async function GET() {
       totalGames,
       balance,
       settingHint,
+      userSettingGuess: (row.user_setting_guess as string) ?? "",
     };
   });
 
