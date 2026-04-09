@@ -186,12 +186,20 @@ export function buildSegmentMap(sessions: PlaySession[]): Record<SettingSegment,
     map[seg] = { sessions: [], blocks: [], atEntries: [] };
   }
 
-  for (const session of sessions) {
-    const segs = classifySession(session);
-    for (const seg of segs) {
-      map[seg].sessions.push(session);
-      map[seg].blocks.push(...safeBlocks(session));
-      map[seg].atEntries.push(...safeEntries(session));
+  for (const session of (sessions || [])) {
+    try {
+      const segs = classifySession(session);
+      for (const seg of segs) {
+        map[seg].sessions.push(session);
+        map[seg].blocks.push(...safeBlocks(session));
+        map[seg].atEntries.push(...safeEntries(session));
+      }
+    } catch (e) {
+      // 個別セッションのエラーは無視して続行
+      console.warn("[buildSegmentMap] セッション処理エラー:", session?.id, e);
+      map["全体"].sessions.push(session);
+      map["全体"].blocks.push(...safeBlocks(session));
+      map["全体"].atEntries.push(...safeEntries(session));
     }
   }
 

@@ -26,7 +26,7 @@ export interface SessionMeta {
 
 // ── DB同期状態 ──────────────────────────────────────────────────────────────
 
-export type SyncStatus = "synced" | "saving" | "pending" | "error";
+export type SyncStatus = "synced" | "saving" | "pending" | "error" | "auth_error";
 
 type SyncListener = (status: SyncStatus) => void;
 const syncListeners = new Set<SyncListener>();
@@ -163,9 +163,9 @@ async function dbSaveWithRetry(session: PlaySession, attempt: number): Promise<v
       return;
     }
 
-    // 401 は認証切れ — リトライしても無駄なのでpendingに留める
-    if (res.status === 401) {
-      setSyncStatus("error");
+    // 401/403 は認証切れ・権限不足 — リトライしても無駄
+    if (res.status === 401 || res.status === 403) {
+      setSyncStatus("auth_error");
       return;
     }
 

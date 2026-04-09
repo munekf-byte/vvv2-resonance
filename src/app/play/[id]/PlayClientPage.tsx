@@ -581,17 +581,20 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 // ─── クラウド同期インジケーター ──────────────────────────────────────────────
 
 function SyncIndicator({ status }: { status: SyncStatus }) {
-  const config = {
-    synced:  { bg: "#16a34a", text: "保存済", icon: "●" },
-    saving:  { bg: "#2563eb", text: "保存中", icon: "◌" },
-    pending: { bg: "#f59e0b", text: "未同期", icon: "◎" },
-    error:   { bg: "#dc2626", text: "同期エラー", icon: "!" },
-  }[status];
+  const configs: Record<SyncStatus, { bg: string; text: string; icon: string }> = {
+    synced:     { bg: "#16a34a", text: "保存済", icon: "●" },
+    saving:     { bg: "#2563eb", text: "保存中", icon: "◌" },
+    pending:    { bg: "#f59e0b", text: "未同期", icon: "◎" },
+    error:      { bg: "#dc2626", text: "同期エラー", icon: "!" },
+    auth_error: { bg: "#dc2626", text: "要再ログイン", icon: "!" },
+  };
+  const config = configs[status];
 
   return (
     <span
       className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded flex-shrink-0"
       style={{ backgroundColor: config.bg, color: "#fff" }}
+      title={status === "auth_error" ? "認証が切れています。再ログインしてください。" : undefined}
     >
       {config.icon} {config.text}
     </span>

@@ -12,20 +12,37 @@ async function checkAdmin(supabase: Awaited<ReturnType<typeof createServerSupaba
 export async function GET() {
   try {
     const supabase = await createServerSupabaseClient();
-    if (!(await checkAdmin(supabase))) {
+    const adminUser = await checkAdmin(supabase);
+    if (!adminUser) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // profiles テーブルから取得を試みる
     const { data, error } = await supabase
       .from("profiles")
       .select("id, email, display_name, avatar_url, is_pro, is_admin, created_at")
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("[admin/users GET]", error.message);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error("[admin/users GET] profiles query failed:", error.message);
+      // RLSエラーの場合、自分のプロフィールだけでも返す
+      const { data: selfProfile } = await supabase
+        .from("profiles")
+        .select("id, email, display_name, avatar_url, is_pro, is_admin, created_at")
+        .eq("id", adminUser.id)
+        .single();
+      return NextResponse.json(selfProfile ? [
+        { ...selfProfile, email: selfProfile.email || adminUser.email || "メール不明" }
+      ] : []);
     }
-    return NextResponse.json(data ?? []);
+
+    // emailが空のプロフィールを補完
+    const result = (data ?? []).map((p: Record<string, unknown>) => ({
+      ...p,
+      email: p.email || "メール不明",
+    }));
+
+    return NextResponse.json(result);
   } catch (e) {
     console.error("[admin/users GET] unexpected:", e);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
