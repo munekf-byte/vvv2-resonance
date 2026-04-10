@@ -39,6 +39,7 @@ export async function POST(
 
   // ペイロード構築（PGRST204回避: 動的カラム追加）
   const payload: Record<string, unknown> = {
+    user_id: user.id,  // RLS WITH CHECK 用に必須
     normal_blocks: session.normalBlocks ?? [],
     at_entries: session.atEntries ?? [],
     memo: session.memo,
@@ -62,7 +63,7 @@ export async function POST(
     .eq("user_id", user.id);
 
   if (error) {
-    console.error("[save session] ERROR:", error.message, error.code);
+    console.error("[save session] ERROR:", error.message, "| code:", error.code, "| details:", error.details, "| hint:", error.hint, "| user:", user.id, "| session:", id);
 
     // PGRST204: スキーマキャッシュにカラムがない → 問題カラムを除外して再試行
     if (error.code === "PGRST204" && error.message) {
