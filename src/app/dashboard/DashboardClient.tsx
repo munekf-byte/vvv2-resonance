@@ -38,14 +38,21 @@ export function DashboardClient() {
 
   async function loadSessions() {
     setLoading(true);
-    console.log("[Dashboard] loading sessions from cloud...");
     const cloud = await dbGetSessionList();
-    console.log("[Dashboard] cloud returned", cloud.length, "sessions");
-    // DBが絶対正義: クラウドデータでlocalStorageを無条件上書き
-    setSessions(cloud);
-    try {
-      localStorage.setItem("tgr_sessions", JSON.stringify(cloud));
-    } catch {}
+    if (cloud.length > 0) {
+      // DBにデータがある → 正として採用し、localStorageを更新
+      setSessions(cloud);
+      try { localStorage.setItem("tgr_sessions", JSON.stringify(cloud)); } catch {}
+    } else {
+      // DBが空（エラーか本当に空か） → localStorageフォールバック
+      const local = lsGetSessionList();
+      if (local.length > 0) {
+        console.warn("[Dashboard] cloud empty, using localStorage fallback:", local.length);
+        setSessions(local);
+      } else {
+        setSessions([]);
+      }
+    }
     setLoading(false);
   }
 
