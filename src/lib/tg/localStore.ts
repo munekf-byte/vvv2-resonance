@@ -163,9 +163,11 @@ async function dbSaveWithRetry(session: PlaySession, attempt: number): Promise<v
       return;
     }
 
-    // 401/403 — リトライする（DATA-RESCUE中は認証不要のため通る可能性あり）
+    // 401/403 は認証切れ・権限不足
     if (res.status === 401 || res.status === 403) {
-      // リトライ対象に含める（以前はここでreturnしていた）
+      console.error("[dbSaveWithRetry] auth error:", res.status);
+      setSyncStatus("auth_error");
+      return;
     }
 
     throw new Error(`HTTP ${res.status}`);
@@ -212,9 +214,17 @@ export async function dbCreateSession(machineName: string): Promise<{ id: string
 export async function dbGetSessionList(): Promise<SessionMeta[]> {
   try {
     const res = await fetch("/api/sessions");
-    if (!res.ok) return [];
-    return await res.json();
-  } catch { return []; }
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(`[dbGetSessionList] HTTP ${res.status}:`, body);
+      return [];
+    }
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch (e) {
+    console.error("[dbGetSessionList] fetch error:", e);
+    return [];
+  }
 }
 
 export async function dbLoadSession(id: string): Promise<PlaySession | null> {

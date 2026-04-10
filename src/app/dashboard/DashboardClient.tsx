@@ -38,7 +38,9 @@ export function DashboardClient() {
 
   async function loadSessions() {
     setLoading(true);
+    console.log("[Dashboard] loading sessions from cloud...");
     const cloud = await dbGetSessionList();
+    console.log("[Dashboard] cloud returned", cloud.length, "sessions");
     // DBが絶対正義: クラウドデータでlocalStorageを無条件上書き
     setSessions(cloud);
     try {
