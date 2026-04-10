@@ -51,7 +51,13 @@ function computeATSummary(entry: TGATEntry) {
   const endingSuggestion = sets.find((s) => s.endingSuggestion)?.endingSuggestion ?? "";
   const trophy = sets.find((s) => s.trophy)?.trophy ?? "";
 
-  return { setCount, bitesTotal, directTotal, total: bitesTotal + directTotal + ccgTotal, endingSuggestion, trophy };
+  // ジャッジメント結果サマリ
+  const arimaResults = arimas.map((a) => a.result).filter(Boolean);
+  const arimaLabel = arimaResults.length > 0
+    ? `有馬${arimaResults.map((r) => r === "成功" ? "○" : "×").join("")}`
+    : "";
+
+  return { setCount, bitesTotal, directTotal, total: bitesTotal + directTotal + ccgTotal, endingSuggestion, trophy, arimaLabel };
 }
 
 // ─── グリッド ─────────────────────────────────────────────────────────────────
@@ -152,7 +158,9 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
 
                   {/* ゾーン */}
                   <Cell color={getZoneCellColor(block.zone)} borderR>
-                    <span className="text-[11px] font-bold">{block.zone || "—"}</span>
+                    <span className={`font-bold ${block.zone && block.zone.length > 3 ? "text-[8px]" : "text-[11px]"}`}>
+                      {block.zone || "—"}
+                    </span>
                   </Cell>
 
                   {/* 推定モード */}
@@ -247,6 +255,16 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                           <ATSummaryCoinCell label="直乗せ" coins={s.directTotal} />
                           {/* 合計獲得（概算） */}
                           <ATSummaryCoinCell label="合計獲得(概算)" coins={grandTotal} color="#14532d" />
+                          {/* 終了画面/トロフィー */}
+                          {/* ジャッジメント結果 */}
+                          {s.arimaLabel && (
+                            <div className="flex items-center justify-center px-1 border-l border-gray-300">
+                              <span className="text-[7px] font-mono font-bold leading-tight text-center"
+                                style={{ color: s.arimaLabel.includes("○") ? "#16a34a" : "#dc2626" }}>
+                                {s.arimaLabel}
+                              </span>
+                            </div>
+                          )}
                           {/* 終了画面/トロフィー */}
                           {(suggHint || trophyHint) ? (
                             <div className="flex items-center justify-center px-1 border-l border-gray-300">

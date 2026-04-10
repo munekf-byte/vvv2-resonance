@@ -322,7 +322,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
       </header>
 
       {/* ===== メインコンテンツ ===== */}
-      <main className="flex-1 overflow-y-auto min-h-0 max-w-2xl w-full mx-auto pb-24">
+      <main className="flex-1 overflow-y-auto min-h-0 max-w-2xl w-full mx-auto pb-40">
 
         {/* 通常時タブ */}
         {activeTab === "normal" && (

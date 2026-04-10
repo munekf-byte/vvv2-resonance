@@ -234,8 +234,6 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
   const sessionForZone = { normalBlocks: blocks, uchidashi: uchidashi ?? null };
   const zoneAllExact     = sessionZoneExact(sessionForZone, "all");
   const zoneAllProrate   = sessionZoneProrate(sessionForZone, "all");
-  const zoneAsaichiExact = sessionZoneExact(sessionForZone, "asaichi");
-  const zoneAsaichiPro   = sessionZoneProrate(sessionForZone, "asaichi");
   const zoneATExact      = sessionZoneExact(sessionForZone, "afterAT");
   const zoneATProrate    = sessionZoneProrate(sessionForZone, "afterAT");
 
@@ -349,16 +347,14 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
         </div>
 
         {/* ===== ゲーム数ゾーン集計（確定のみ） ===== */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <ZoneBlock label="全体[確定]" data={zoneAllExact} />
-          <ZoneBlock label="朝一[確定]" data={zoneAsaichiExact} />
           <ZoneBlock label="AT後[確定]" data={zoneATExact} />
         </div>
 
         {/* ===== ゲーム数ゾーン集計（按分込み） ===== */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <ZoneBlock label="全体[按分]" data={zoneAllProrate} prorated />
-          <ZoneBlock label="朝一[按分]" data={zoneAsaichiPro} prorated />
           <ZoneBlock label="AT後[按分]" data={zoneATProrate} prorated />
         </div>
 

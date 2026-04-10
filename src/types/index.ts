@@ -123,6 +123,8 @@ export interface TGArimaJudgment {
   result: string;          // 成功 / 失敗
   role: string;            // 小役ナシ / リプレイ / レア役
   ccgCoins: number | null; // 500 / 1000 / 2000
+  /** 有利切断 */
+  favorableCut?: string;   // - / 切断[ED] / 切断[推定]
 }
 
 export type TGATRow = TGATSet | TGArimaJudgment;

@@ -161,7 +161,12 @@ export const TG_BITES_COINS = [
 ] as const;
 
 export const TG_DIRECT_ADD_TRIGGERS = [
-  "弱🍒", "🍉", "チャ目", "強🍒", "確定🍒",
+  "弱🍒", "🍉", "チャ目", "強🍒", "確定🍒", "後乗せ",
+] as const;
+
+/** 直乗せ1番目のみの追加選択肢 */
+export const TG_DIRECT_ADD_TRIGGERS_FIRST = [
+  "エピボ中", "開始エピ中", "弱🍒", "🍉", "チャ目", "強🍒", "確定🍒", "後乗せ",
 ] as const;
 
 export const TG_DIRECT_ADD_COINS = [10, 20, 30, 50, 100, 200, 300, 500] as const;
@@ -171,6 +176,8 @@ export const TG_ARIMA_RESULTS = ["成功", "失敗"] as const;
 export const TG_ARIMA_ROLES = ["小役ナシ", "リプレイ", "レア役"] as const;
 
 export const TG_CCG_COINS = [500, 1000, 2000] as const;
+
+export const TG_FAVORABLE_CUT = ["-", "切断[ED]", "切断[推定]"] as const;
 
 /** 対決成績の最大枠数 */
 export const TG_MAX_BATTLE_RESULTS = 10;

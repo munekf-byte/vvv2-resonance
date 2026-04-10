@@ -213,7 +213,13 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
             <FormCell label="イベント">
               <ColoredSelectIcon
                 value={form.event}
-                onChange={(v) => setField("event", v)}
+                onChange={(v) => {
+                  setField("event", v);
+                  // AT自動ON: エピボ/直撃AT/引き戻し/ロングフリーズ
+                  if (["エピソードボーナス", "直撃AT", "引き戻し", "ロングフリーズ"].includes(v)) {
+                    setField("atWin", true);
+                  }
+                }}
                 options={["", ...TG_EVENTS]}
                 colorFn={getEventCellColor}
                 labelFn={(v) => v ? abbrevEvent(v) : "なし"}

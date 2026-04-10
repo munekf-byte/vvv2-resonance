@@ -12,7 +12,7 @@ import type { TGATRow, TGATSet, TGArimaJudgment, TGDirectAdd, TGBattle, TGEnding
 import {
   TG_AT_TYPES, TG_AT_CHARACTERS, TG_BATTLE_TRIGGERS,
   TG_BITES_TYPES, TG_BITES_COINS,
-  TG_DIRECT_ADD_TRIGGERS, TG_DIRECT_ADD_COINS,
+  TG_DIRECT_ADD_TRIGGERS, TG_DIRECT_ADD_TRIGGERS_FIRST, TG_DIRECT_ADD_COINS,
   TG_ARIMA_RESULTS, TG_ARIMA_ROLES, TG_CCG_COINS,
   TG_MAX_BATTLE_RESULTS, TG_MAX_DIRECT_ADDS,
   TG_ENDING_SUGGESTIONS, TG_TROPHIES,
@@ -80,7 +80,7 @@ function emptySet(defaultAtType?: string): Omit<TGATSet, "id"> {
 }
 
 function emptyArima(): Omit<TGArimaJudgment, "id"> {
-  return { rowType: "arima", result: "", role: "", ccgCoins: null };
+  return { rowType: "arima", result: "", role: "", ccgCoins: null, favorableCut: "-" };
 }
 
 function getBitesDesc(bt: string): string {
@@ -318,6 +318,35 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           </p>
         </Section>
 
+        {/* 不利益 (ad-7b) */}
+        <Section title="不利益">
+          <div className="grid grid-cols-3 gap-2">
+            {["-", "不利益⭕️", "不利益❌"].map((opt) => {
+              const sel = form.disadvantage === opt;
+              const col = opt === "不利益⭕️"
+                ? { bg: "#e8f5e9", color: "#2e7d32", border: "#2e7d32" }
+                : opt === "不利益❌"
+                ? { bg: "#ffebee", color: "#c62828", border: "#c62828" }
+                : { bg: "#f3f4f6", color: "#6b7280", border: "#d1d5db" };
+              return (
+                <button
+                  key={opt}
+                  onClick={() => setField("disadvantage", opt)}
+                  className="py-3 rounded font-mono font-bold text-[11px] active:scale-95 transition-transform"
+                  style={{
+                    backgroundColor: sel ? col.bg : "#f9fafb",
+                    color: sel ? col.color : "#9ca3af",
+                    border: `2px solid ${sel ? col.border : "#e5e7eb"}`,
+                    boxShadow: sel ? "0 0 0 2px #1f2937" : "none",
+                  }}
+                >
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+
         {/* BITES種別 (ad-9) */}
         <Section title="BITES種別">
           <div className="grid grid-cols-3 gap-2">
@@ -540,7 +569,7 @@ function DirectAddSlot({
       <SlotPickerButton
         value={trigger}
         onChange={onTriggerChange}
-        options={[...TG_DIRECT_ADD_TRIGGERS]}
+        options={index === 0 ? [...TG_DIRECT_ADD_TRIGGERS_FIRST] : [...TG_DIRECT_ADD_TRIGGERS]}
         bgActive="#1565c0"
         colorActive="#ffffff"
         bgInactive="#dbeafe"
@@ -627,6 +656,21 @@ function ArimaForm({ initial, onSave, onTempSave }: {
                     : { backgroundColor: "#f3f4f6", color: "#374151", border: "2px solid #e5e7eb" }
                 }
               >{c.toLocaleString()}枚</button>
+            ))}
+          </div>
+        </Section>
+
+        <Section title="有利切断">
+          <div className="grid grid-cols-3 gap-2">
+            {["-", "切断[ED]", "切断[推定]"].map((opt) => (
+              <button key={opt} onClick={() => setField("favorableCut", opt)}
+                className="py-4 rounded text-[11px] font-mono font-bold transition-all active:scale-95 text-center"
+                style={
+                  (form.favorableCut ?? "-") === opt
+                    ? { backgroundColor: "#1e3a5f", color: "#fff", border: "2px solid #1e3a5f", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #e5e7eb" }
+                }
+              >{opt}</button>
             ))}
           </div>
         </Section>

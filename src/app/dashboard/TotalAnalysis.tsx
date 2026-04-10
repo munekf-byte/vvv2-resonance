@@ -216,8 +216,6 @@ export function TotalAnalysis() {
 
   const zoneAllExact     = multiSessionZoneExact(sessions, "all");
   const zoneAllProrate   = multiSessionZoneProrate(sessions, "all");
-  const zoneAsaichiExact = multiSessionZoneExact(sessions, "asaichi");
-  const zoneAsaichiPro   = multiSessionZoneProrate(sessions, "asaichi");
   const zoneATExact      = multiSessionZoneExact(sessions, "afterAT");
   const zoneATProrate    = multiSessionZoneProrate(sessions, "afterAT");
 
@@ -304,14 +302,12 @@ export function TotalAnalysis() {
         </div>
 
         {/* ゲーム数ゾーン集計 */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <ZoneBlock label="全体[確定]" data={zoneAllExact} />
-          <ZoneBlock label="朝一[確定]" data={zoneAsaichiExact} />
           <ZoneBlock label="AT後[確定]" data={zoneATExact} />
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <ZoneBlock label="全体[按分]" data={zoneAllProrate} prorated />
-          <ZoneBlock label="朝一[按分]" data={zoneAsaichiPro} prorated />
           <ZoneBlock label="AT後[按分]" data={zoneATProrate} prorated />
         </div>
 
