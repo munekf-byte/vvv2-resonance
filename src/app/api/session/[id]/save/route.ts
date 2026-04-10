@@ -1,7 +1,7 @@
 // =============================================================================
 // VALVRAVE-RESONANCE: セッション保存 API Route
 // POST /api/session/[id]/save
-// 認証必須 + user_id厳格検証
+// 認証必須 + user_id厳格検証 + AUDIT完全ログ
 // =============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
@@ -16,9 +16,10 @@ export async function POST(
 
   const supabase = await createServerSupabaseClient();
 
-  // 認証チェック（必須）
+  // 認証チェック
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) {
+    console.error("[AUDIT] auth failed:", authError?.message ?? "no user");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -29,17 +30,27 @@ export async function POST(
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  // ID厳格検証: URLのid、ペイロードのid、ログインユーザーのidが全て一致すること
+  // AUDIT: 全IDを出力
+  console.log("[AUDIT] 1. auth user.id:", user.id);
+  console.log("[AUDIT] 2. payload session.userId:", session.userId);
+  console.log("[AUDIT] 3. URL param id:", id);
+  console.log("[AUDIT] 4. payload session.id:", session.id);
+
+  // ID検証
   if (session.id !== id) {
+    console.error("[AUDIT] REJECTED: session.id !== URL id");
     return NextResponse.json({ error: "ID mismatch" }, { status: 400 });
   }
+
+  // user_id検証 — session.userIdが異なる場合はauth.uidで上書きして続行
+  // （DATA-RESCUE期間中に作られたセッションの userId が不一致の可能性があるため）
   if (session.userId !== user.id) {
-    return NextResponse.json({ error: "Forbidden: user_id mismatch" }, { status: 403 });
+    console.warn("[AUDIT] WARNING: session.userId mismatch. session:", session.userId, "auth:", user.id, "— overriding with auth user.id");
   }
 
-  // ペイロード構築（PGRST204回避: 動的カラム追加）
+  // ペイロード構築 — user_id は必ず auth.uid() を使用（ペイロードのuserIdは信用しない）
   const payload: Record<string, unknown> = {
-    user_id: user.id,  // RLS WITH CHECK 用に必須
+    user_id: user.id,
     normal_blocks: session.normalBlocks ?? [],
     at_entries: session.atEntries ?? [],
     memo: session.memo,
@@ -55,7 +66,9 @@ export async function POST(
   if (session.initialThroughCount !== undefined) payload.initial_through_count = session.initialThroughCount;
   if (session.status !== undefined) payload.status = session.status;
 
-  // user_idでフィルタ（RLS + API二重防護）
+  console.log("[AUDIT] 5. payload keys:", Object.keys(payload));
+
+  // DB更新 — user_id でフィルタ
   const { error } = await supabase
     .from("play_sessions")
     .update(payload)
@@ -63,25 +76,31 @@ export async function POST(
     .eq("user_id", user.id);
 
   if (error) {
-    console.error("[save session] ERROR:", error.message, "| code:", error.code, "| details:", error.details, "| hint:", error.hint, "| user:", user.id, "| session:", id);
+    console.error("[AUDIT] DB ERROR:", error.message, "| code:", error.code, "| details:", error.details, "| hint:", error.hint);
 
-    // PGRST204: スキーマキャッシュにカラムがない → 問題カラムを除外して再試行
+    // PGRST204: スキーマキャッシュ問題 → 問題カラム除外して再試行
     if (error.code === "PGRST204" && error.message) {
       const match = error.message.match(/the '(\w+)' column/);
       if (match) {
         const badCol = match[1];
+        console.log("[AUDIT] Removing column:", badCol, "and retrying");
         delete payload[badCol];
         const { error: retryErr } = await supabase
           .from("play_sessions")
           .update(payload)
           .eq("id", id)
           .eq("user_id", user.id);
-        if (!retryErr) return NextResponse.json({ ok: true, dropped: badCol });
+        if (!retryErr) {
+          console.log("[AUDIT] Retry succeeded without:", badCol);
+          return NextResponse.json({ ok: true, dropped: badCol });
+        }
+        console.error("[AUDIT] Retry failed:", retryErr.message);
       }
     }
 
     return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
   }
 
+  console.log("[AUDIT] SUCCESS: saved session", id);
   return NextResponse.json({ ok: true });
 }
