@@ -569,7 +569,7 @@ function DirectAddSlot({
       <SlotPickerButton
         value={trigger}
         onChange={onTriggerChange}
-        options={index === 0 ? [...TG_DIRECT_ADD_TRIGGERS_FIRST] : [...TG_DIRECT_ADD_TRIGGERS]}
+        options={index === 0 ? [...TG_DIRECT_ADD_TRIGGERS_FIRST] : index === 1 ? ["開始エピ中", ...TG_DIRECT_ADD_TRIGGERS] : [...TG_DIRECT_ADD_TRIGGERS]}
         bgActive="#1565c0"
         colorActive="#ffffff"
         bgInactive="#dbeafe"

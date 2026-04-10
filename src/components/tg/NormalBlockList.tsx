@@ -52,12 +52,13 @@ function computeATSummary(entry: TGATEntry) {
   const trophy = sets.find((s) => s.trophy)?.trophy ?? "";
 
   // ジャッジメント結果サマリ
-  const arimaResults = arimas.map((a) => a.result).filter(Boolean);
+  const arimaResults = arimas.map((a) => ({ result: a.result, cut: (a as { favorableCut?: string }).favorableCut })).filter((a) => a.result);
   const arimaLabel = arimaResults.length > 0
-    ? `有馬${arimaResults.map((r) => r === "成功" ? "○" : "×").join("")}`
+    ? arimaResults.map((r) => r.result === "成功" ? "○" : "×").join("")
     : "";
+  const arimaCuts = arimaResults.filter((r) => r.cut && r.cut !== "-").map((r) => r.cut!);
 
-  return { setCount, bitesTotal, directTotal, total: bitesTotal + directTotal + ccgTotal, endingSuggestion, trophy, arimaLabel };
+  return { setCount, bitesTotal, directTotal, total: bitesTotal + directTotal + ccgTotal, endingSuggestion, trophy, arimaLabel, arimaCuts };
 }
 
 // ─── グリッド ─────────────────────────────────────────────────────────────────
@@ -158,9 +159,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
 
                   {/* ゾーン */}
                   <Cell color={getZoneCellColor(block.zone)} borderR>
-                    <span className={`font-bold ${block.zone && block.zone.length > 3 ? "text-[8px]" : "text-[11px]"}`}>
-                      {block.zone || "—"}
-                    </span>
+                    <ZoneLabel zone={block.zone} />
                   </Cell>
 
                   {/* 推定モード */}
@@ -239,40 +238,53 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                         style={{ border: "1.5px solid #14532d" }}
                       >
                         {/* 固定グリッド: AT番号 | Set | BITES | 直乗せ | 合計獲得 | 示唆 */}
-                        <div style={{ display: "grid", gridTemplateColumns: "36px 38px 1fr 1fr 1fr auto" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "34px 34px 1fr 1fr 1fr auto" }}>
                           {/* AT番号 */}
                           <div className="flex items-center justify-center" style={{ backgroundColor: "#14532d" }}>
                             <span className="text-white font-mono font-black text-[10px]">{atLabel}</span>
                           </div>
                           {/* セット数 */}
                           <div className="flex items-center justify-center border-r border-gray-300">
-                            <span className="text-[14px] font-mono font-black text-gray-900 leading-none">{s.setCount}</span>
-                            <span className="text-[7px] font-mono font-bold text-gray-500 ml-0.5">set</span>
+                            <span className="text-[13px] font-mono font-black text-gray-900 leading-none">{s.setCount}</span>
+                            <span className="text-[6px] font-mono font-bold text-gray-500 ml-0.5">set</span>
                           </div>
                           {/* BITES */}
-                          <ATSummaryCoinCell label="BITES" coins={s.bitesTotal} />
+                          <ATSummaryCoinCell label="BT" coins={s.bitesTotal} />
                           {/* 直乗せ */}
-                          <ATSummaryCoinCell label="直乗せ" coins={s.directTotal} />
-                          {/* 合計獲得（概算） */}
-                          <ATSummaryCoinCell label="合計獲得(概算)" coins={grandTotal} color="#14532d" />
-                          {/* 終了画面/トロフィー */}
-                          {/* ジャッジメント結果 */}
-                          {s.arimaLabel && (
-                            <div className="flex items-center justify-center px-1 border-l border-gray-300">
-                              <span className="text-[7px] font-mono font-bold leading-tight text-center"
-                                style={{ color: s.arimaLabel.includes("○") ? "#16a34a" : "#dc2626" }}>
-                                {s.arimaLabel}
+                          <ATSummaryCoinCell label="直乗" coins={s.directTotal} />
+                          {/* 合計獲得（概算） — 枚で改行しない */}
+                          <div className="flex items-center px-0.5 border-r border-gray-300">
+                            <span className="flex flex-col shrink-0 mr-0.5">
+                              <span className="text-[5px] font-mono text-gray-500 font-bold leading-tight">合計獲得</span>
+                              <span className="text-[5px] font-mono text-gray-500 font-bold leading-tight">(概算)</span>
+                            </span>
+                            <span className="text-[11px] font-mono font-black leading-none" style={{ color: "#14532d" }}>
+                              {grandTotal.toLocaleString()}枚
+                            </span>
+                          </div>
+                          {/* 右端: ジャッジメント + 有利切断 + 示唆 */}
+                          <div className="flex items-center gap-0.5 px-0.5">
+                            {s.arimaLabel && s.arimaLabel.split("").map((ch, i) => (
+                              <span key={i} className="text-[7px] font-mono font-black px-1 py-0.5 rounded leading-none"
+                                style={ch === "○"
+                                  ? { backgroundColor: "#fde047", color: "#dc2626" }
+                                  : { backgroundColor: "#4b5563", color: "#ffffff" }
+                                }>
+                                {ch}
                               </span>
-                            </div>
-                          )}
-                          {/* 終了画面/トロフィー */}
-                          {(suggHint || trophyHint) ? (
-                            <div className="flex items-center justify-center px-1 border-l border-gray-300">
-                              <span className="text-[7px] font-mono text-gray-700 leading-tight text-center font-bold">
+                            ))}
+                            {s.arimaCuts.map((cut, i) => (
+                              <span key={`cut-${i}`} className="text-[6px] font-mono font-bold px-1 py-0.5 rounded leading-none"
+                                style={{ backgroundColor: "#7c3aed", color: "#ffffff" }}>
+                                {cut}
+                              </span>
+                            ))}
+                            {(suggHint || trophyHint) && (
+                              <span className="text-[6px] font-mono text-gray-600 font-bold leading-tight">
                                 {suggHint || trophyHint}
                               </span>
-                            </div>
-                          ) : <div />}
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -502,16 +514,46 @@ function MultiColorField({ label, values, color }: { label: string; values: stri
   );
 }
 
-/** ATサマリー枚数セル: ラベル+枚数密着 */
-function ATSummaryCoinCell({ label, coins, color }: { label: string; coins: number; color?: string }) {
+/** ゾーン表示ラベル: 複合ゾーンを見やすく改行表示 */
+function ZoneLabel({ zone }: { zone: string }) {
+  if (!zone || zone === "不明") return <span className="text-[11px] font-bold">{zone || "—"}</span>;
+
+  // 純粋な数値（50, 100, 200...）→ そのまま大きく表示
+  if (/^\d+$/.test(zone)) return <span className="text-[11px] font-bold">{zone}</span>;
+
+  // "50or100", "300 or 400" → 数値部分を大きく、orを極小
+  const orMatch = zone.match(/^(\d+)\s*or\s*(\d+)$/i);
+  if (orMatch) {
+    return (
+      <span className="flex flex-col items-center leading-[1.1]">
+        <span className="text-[10px] font-bold">{orMatch[1]}<span className="text-[5px] font-normal">or</span></span>
+        <span className="text-[10px] font-bold">{orMatch[2]}</span>
+      </span>
+    );
+  }
+
+  // "200以内", "300以内", "600否定" → 数値を大きく、修飾語を小さく改行
+  const suffixMatch = zone.match(/^(\d+)(以内|以上|否定)$/);
+  if (suffixMatch) {
+    return (
+      <span className="flex flex-col items-center leading-[1.1]">
+        <span className="text-[11px] font-bold">{suffixMatch[1]}</span>
+        <span className="text-[6px] font-bold opacity-70">{suffixMatch[2]}</span>
+      </span>
+    );
+  }
+
+  // その他 → 小さめで表示
+  return <span className="text-[8px] font-bold">{zone}</span>;
+}
+
+/** ATサマリー枚数セル: ラベル+枚数密着・コンパクト */
+function ATSummaryCoinCell({ label, coins }: { label: string; coins: number }) {
   return (
-    <div className="flex items-center justify-center px-1 border-r border-gray-300">
-      <span className="text-[6px] font-mono text-gray-600 font-bold leading-tight shrink-0 mr-0.5">{label}</span>
-      <span
-        className="text-[11px] font-mono font-black leading-none"
-        style={{ color: color ?? "#1f2937" }}
-      >
-        {coins.toLocaleString()}<span className="text-[7px]">枚</span>
+    <div className="flex items-center justify-center px-0.5 border-r border-gray-300">
+      <span className="text-[5px] font-mono text-gray-600 font-bold leading-tight shrink-0 mr-0.5">{label}</span>
+      <span className="text-[10px] font-mono font-black leading-none text-gray-900">
+        {coins.toLocaleString()}<span className="text-[6px]">枚</span>
       </span>
     </div>
   );
