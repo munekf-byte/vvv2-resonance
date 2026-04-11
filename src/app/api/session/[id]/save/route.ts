@@ -80,10 +80,11 @@ export async function POST(
     const insertPayload = {
       id,
       ...payload,
-      machine_name: (session as Record<string, unknown>).machineName ?? "東京喰種 RESONANCE",
-      started_at: (session as Record<string, unknown>).startedAt ?? new Date().toISOString(),
-    };
-    const { error: insertErr } = await supabase.from("play_sessions").insert(insertPayload);
+      machine_name: session.machineName ?? "東京喰種 RESONANCE",
+      started_at: session.startedAt ?? new Date().toISOString(),
+      status: session.status ?? "ACTIVE",
+    } as Record<string, unknown>;
+    const { error: insertErr } = await supabase.from("play_sessions").insert(insertPayload as never);
     if (insertErr) {
       console.error("[save] INSERT fallback failed:", insertErr.message);
       return NextResponse.json({ error: insertErr.message, code: insertErr.code }, { status: 500 });
