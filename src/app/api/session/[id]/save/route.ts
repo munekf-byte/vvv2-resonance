@@ -50,7 +50,8 @@ export async function POST(
   if (session.initialThroughCount !== undefined) payload.initial_through_count = session.initialThroughCount;
   if (session.status !== undefined) payload.status = session.status;
 
-  const { error } = await supabase
+  // まずUPDATEを試行
+  const { error, count } = await supabase
     .from("play_sessions")
     .update(payload)
     .eq("id", id)
@@ -59,6 +60,7 @@ export async function POST(
   if (error) {
     console.error("[save]", error.code, error.message, "user:", user.id, "session:", id);
 
+    // PGRST204: スキーマキャッシュ問題 → 問題カラム除外して再試行
     if (error.code === "PGRST204" && error.message) {
       const match = error.message.match(/the '(\w+)' column/);
       if (match) {
@@ -70,6 +72,23 @@ export async function POST(
     }
 
     return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
+  }
+
+  // UPDATE対象が0行 = DBにそのIDの行が存在しない → INSERTにフォールバック
+  if (count === 0) {
+    console.log("[save] no rows updated, attempting INSERT for:", id);
+    const insertPayload = {
+      id,
+      ...payload,
+      machine_name: (session as Record<string, unknown>).machineName ?? "東京喰種 RESONANCE",
+      started_at: (session as Record<string, unknown>).startedAt ?? new Date().toISOString(),
+    };
+    const { error: insertErr } = await supabase.from("play_sessions").insert(insertPayload);
+    if (insertErr) {
+      console.error("[save] INSERT fallback failed:", insertErr.message);
+      return NextResponse.json({ error: insertErr.message, code: insertErr.code }, { status: 500 });
+    }
+    return NextResponse.json({ ok: true, inserted: true });
   }
 
   return NextResponse.json({ ok: true });

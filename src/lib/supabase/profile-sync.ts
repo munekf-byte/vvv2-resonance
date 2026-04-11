@@ -30,20 +30,16 @@ export async function syncProfile(
   const avatarUrl =
     (user.user_metadata?.avatar_url as string | undefined) ?? null;
 
+  // display_name がDBに存在しない場合にも対応（最小限のカラムで試行）
+  const payload: Record<string, unknown> = {
+    id: user.id,
+    email,
+    avatar_url: avatarUrl,
+  };
+
   const { data, error } = await supabase
     .from("profiles")
-    .upsert(
-      {
-        id: user.id,
-        email,
-        display_name: displayName,
-        avatar_url: avatarUrl,
-      },
-      {
-        onConflict: "id",
-        ignoreDuplicates: false,
-      }
-    )
+    .upsert(payload, { onConflict: "id", ignoreDuplicates: false })
     .select()
     .single();
 

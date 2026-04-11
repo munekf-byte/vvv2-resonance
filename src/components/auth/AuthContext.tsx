@@ -47,13 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error || !data) {
-        // プロフィールが存在しない → クライアント側で作成
-        console.warn("[AuthContext] profile not found, creating...");
+        // プロフィールが存在しない → クライアント側で最小限のカラムで作成
+        console.warn("[AuthContext] profile not found, creating with minimal columns...");
         const email = user.email ?? "";
-        const displayName =
-          (user.user_metadata?.full_name as string) ??
-          (user.user_metadata?.name as string) ??
-          email.split("@")[0];
         const avatarUrl = (user.user_metadata?.avatar_url as string) ?? null;
 
         const { data: created, error: createErr } = await supabase
@@ -61,7 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .upsert({
             id: user.id,
             email,
-            display_name: displayName,
             avatar_url: avatarUrl,
           }, { onConflict: "id" })
           .select()
@@ -69,9 +64,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (createErr) {
           console.error("[AuthContext] profile create error:", createErr.message);
-          setState({ user, profile: null, loading: false });
+          // それでもダメなら id と email だけで試す
+          const { data: minimal, error: minErr } = await supabase
+            .from("profiles")
+            .upsert({ id: user.id, email }, { onConflict: "id" })
+            .select()
+            .single();
+          if (minErr) {
+            console.error("[AuthContext] minimal create also failed:", minErr.message);
+          }
+          setState({ user, profile: (minimal as ProfileRow | null) ?? null, loading: false });
         } else {
-          console.log("[AuthContext] profile created:", created);
           setState({ user, profile: created as ProfileRow | null, loading: false });
         }
         return;
