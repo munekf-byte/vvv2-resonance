@@ -49,6 +49,10 @@ export default function AdminPage() {
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortAsc, setSortAsc] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  // 未保存の変更を追跡
+  const [pendingRanks, setPendingRanks] = useState<Map<string, string | null>>(new Map());
+  const [saving, setSaving] = useState(false);
+  const [saveResult, setSaveResult] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !profile?.is_admin) router.replace("/dashboard");
@@ -72,13 +76,41 @@ export default function AdminPage() {
     setUsers((prev) => prev.map((u) => u.id === userId ? { ...u, is_pro: !currentPro } : u));
   }
 
-  async function updateRank(sessionId: string, rank: string | null) {
-    await fetch("/api/admin/sessions", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId, adminRank: rank }),
+  // ランク変更（ローカルのみ、保存ボタンで反映）
+  function setLocalRank(sessionId: string, rank: string | null) {
+    setPendingRanks((prev) => {
+      const next = new Map(prev);
+      next.set(sessionId, rank);
+      return next;
     });
+    // UIにも即座に反映
     setSessions((prev) => prev.map((s) => s.id === sessionId ? { ...s, adminRank: rank } : s));
+  }
+
+  // 一括保存
+  async function saveAllChanges() {
+    if (pendingRanks.size === 0) return;
+    setSaving(true);
+    setSaveResult(null);
+    let success = 0;
+    let failed = 0;
+    for (const [sessionId, rank] of pendingRanks) {
+      try {
+        const res = await fetch("/api/admin/sessions", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId, adminRank: rank }),
+        });
+        if (res.ok) success++;
+        else failed++;
+      } catch {
+        failed++;
+      }
+    }
+    setPendingRanks(new Map());
+    setSaving(false);
+    setSaveResult(failed === 0 ? `${success}件 保存完了` : `${success}件 成功 / ${failed}件 失敗`);
+    setTimeout(() => setSaveResult(null), 3000);
   }
 
   async function deleteSession(sessionId: string) {
@@ -88,6 +120,7 @@ export default function AdminPage() {
       body: JSON.stringify({ sessionId }),
     });
     setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    pendingRanks.delete(sessionId);
     setDeleteConfirm(null);
   }
 
@@ -170,6 +203,34 @@ export default function AdminPage() {
           </div>
         ) : (
           <div>
+            {/* 保存バー */}
+            <div className="sticky top-[90px] z-30 bg-white border border-gray-200 rounded-lg shadow-md px-4 py-2 mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {pendingRanks.size > 0 && (
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-700">
+                    {pendingRanks.size}件の未保存変更
+                  </span>
+                )}
+                {saveResult && (
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-green-100 text-green-700">
+                    {saveResult}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={saveAllChanges}
+                disabled={pendingRanks.size === 0 || saving}
+                className="text-[12px] font-mono font-bold px-5 py-2 rounded-lg transition-all active:scale-95"
+                style={{
+                  backgroundColor: pendingRanks.size > 0 ? "#b91c1c" : "#d1d5db",
+                  color: pendingRanks.size > 0 ? "#ffffff" : "#9ca3af",
+                  cursor: pendingRanks.size > 0 ? "pointer" : "not-allowed",
+                }}
+              >
+                {saving ? "保存中..." : "変更を保存"}
+              </button>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-[11px] font-mono">
                 <thead>
@@ -197,70 +258,66 @@ export default function AdminPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedSessions.map((s, i) => (
-                    <tr key={s.id}
-                      className="border-b border-gray-200 hover:bg-blue-50 transition-colors"
-                      style={{ backgroundColor: s.isDeleted ? "#fef2f2" : i % 2 === 0 ? "#ffffff" : "#f9fafb" }}>
-                      <td className="px-2 py-2">
-                        <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded select-all"
-                          title={s.id}>{shortId(s.id)}</span>
-                      </td>
-                      <td className="px-2 py-2 whitespace-nowrap text-gray-600">
-                        {new Date(s.createdAt).toLocaleDateString("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                      </td>
-                      <td className="px-2 py-2">
-                        <div className="flex items-center gap-1">
-                          {s.userAvatar && <img src={s.userAvatar} alt="" className="w-4 h-4 rounded-full" />}
-                          <span className="text-gray-700 truncate max-w-[100px]">{s.userEmail}</span>
-                        </div>
-                      </td>
-                      <td className="px-2 py-2 text-gray-900 font-bold truncate max-w-[150px]">{s.machineName}</td>
-                      <td className="px-2 py-2 text-gray-600 text-right">{s.blockCount}</td>
-                      <td className="px-2 py-2 text-gray-600 text-right">{s.totalGames > 0 ? s.totalGames.toLocaleString() : "—"}</td>
-                      <td className="px-2 py-2">
-                        {s.atCount > 0 && (
-                          <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ backgroundColor: "#dcfce7", color: "#14532d" }}>
-                            ×{s.atCount}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-2 py-1.5">
-                        <div className="flex gap-0.5">
-                          {RANK_OPTIONS.map((opt) => (
-                            <button key={opt.label} onClick={() => updateRank(s.id, opt.value)}
-                              className="text-[8px] font-mono font-black w-5 h-5 rounded flex items-center justify-center transition-transform active:scale-90"
-                              style={{
-                                backgroundColor: s.adminRank === opt.value ? opt.bg : "#f3f4f6",
-                                color: s.adminRank === opt.value ? opt.color : "#d1d5db",
-                                border: s.adminRank === opt.value ? `2px solid ${opt.color}` : "1px solid #e5e7eb",
-                              }}>
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-2 py-2">
-                        {s.isDeleted ? (
-                          <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-red-100 text-red-600">削除済</span>
-                        ) : (
-                          <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-green-100 text-green-700">有効</span>
-                        )}
-                      </td>
-                      <td className="px-2 py-2 text-center">
-                        {deleteConfirm === s.id ? (
-                          <div className="flex gap-1 justify-center">
-                            <button onClick={() => setDeleteConfirm(null)}
-                              className="text-[9px] font-mono px-2 py-1 rounded bg-gray-200 text-gray-600">戻る</button>
-                            <button onClick={() => deleteSession(s.id)}
-                              className="text-[9px] font-mono font-bold px-2 py-1 rounded bg-red-600 text-white">完全削除</button>
+                  {sortedSessions.map((s, i) => {
+                    const hasPending = pendingRanks.has(s.id);
+                    return (
+                      <tr key={s.id}
+                        className="border-b border-gray-200 hover:bg-blue-50 transition-colors"
+                        style={{
+                          backgroundColor: hasPending ? "#fffbeb" : s.isDeleted ? "#fef2f2" : i % 2 === 0 ? "#ffffff" : "#f9fafb",
+                        }}>
+                        <td className="px-2 py-2">
+                          <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded select-all"
+                            title={s.id}>{shortId(s.id)}</span>
+                        </td>
+                        <td className="px-2 py-2 whitespace-nowrap text-gray-600">
+                          {new Date(s.createdAt).toLocaleDateString("ja-JP", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="flex items-center gap-1">
+                            {s.userAvatar && <img src={s.userAvatar} alt="" className="w-4 h-4 rounded-full" />}
+                            <span className="text-gray-700 truncate max-w-[100px]">{s.userEmail}</span>
                           </div>
-                        ) : (
+                        </td>
+                        <td className="px-2 py-2 text-gray-900 font-bold truncate max-w-[150px]">{s.machineName}</td>
+                        <td className="px-2 py-2 text-gray-600 text-right">{s.blockCount}</td>
+                        <td className="px-2 py-2 text-gray-600 text-right">{s.totalGames > 0 ? s.totalGames.toLocaleString() : "—"}</td>
+                        <td className="px-2 py-2">
+                          {s.atCount > 0 && (
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded" style={{ backgroundColor: "#dcfce7", color: "#14532d" }}>
+                              ×{s.atCount}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <div className="flex gap-0.5">
+                            {RANK_OPTIONS.map((opt) => (
+                              <button key={opt.label} onClick={() => setLocalRank(s.id, opt.value)}
+                                className="text-[8px] font-mono font-black w-5 h-5 rounded flex items-center justify-center transition-transform active:scale-90"
+                                style={{
+                                  backgroundColor: s.adminRank === opt.value ? opt.bg : "#f3f4f6",
+                                  color: s.adminRank === opt.value ? opt.color : "#d1d5db",
+                                  border: s.adminRank === opt.value ? `2px solid ${opt.color}` : "1px solid #e5e7eb",
+                                }}>
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-2 py-2">
+                          {s.isDeleted ? (
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-red-100 text-red-600">削除済</span>
+                          ) : (
+                            <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-green-100 text-green-700">有効</span>
+                          )}
+                        </td>
+                        <td className="px-2 py-2 text-center">
                           <button onClick={() => setDeleteConfirm(s.id)}
                             className="text-[9px] font-mono text-red-400 hover:text-red-600 transition-colors">🗑</button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -268,7 +325,7 @@ export default function AdminPage() {
         )}
       </main>
 
-      {/* 削除確認オーバーレイ */}
+      {/* 削除確認ダイアログ */}
       {deleteConfirm && (() => {
         const s = sessions.find((x) => x.id === deleteConfirm);
         return s ? (
