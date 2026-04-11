@@ -71,7 +71,7 @@ const COL_BORDER_R = "border-r border-gray-400";
 const ROW_BORDER   = "border-b-2 border-gray-500";
 
 export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit, onDelete }: Props) {
-  const [expandedId,    setExpandedId]    = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null); // 削除確認中の blockId
 
   if (blocks.length === 0) {
@@ -91,7 +91,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
     if (!deleteConfirm) return;
     onDelete(deleteConfirm);
     setDeleteConfirm(null);
-    setExpandedId(null);
+    setExpandedIds((prev) => { const next = new Set(prev); next.delete(deleteConfirm!); return next; });
   }
 
   return (
@@ -117,7 +117,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
         {/* ===== データ行 ===== */}
         <div>
           {blocks.map((block, index) => {
-            const isExpanded = expandedId === block.id;
+            const isExpanded = expandedIds.has(block.id);
             const atLabel    = atLabels.get(block.id);
 
             const suggColor = getSuggestionOrTrophyColor(block.endingSuggestion, block.trophy);
@@ -208,7 +208,11 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
 
                   {/* アコーディオントグル */}
                   <button
-                    onClick={() => hasExtras && setExpandedId(isExpanded ? null : block.id)}
+                    onClick={() => hasExtras && setExpandedIds((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(block.id)) next.delete(block.id); else next.add(block.id);
+                      return next;
+                    })}
                     className="flex items-center justify-center min-h-[34px] text-[10px] font-bold transition-colors"
                     style={
                       hasExtras
@@ -238,7 +242,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                         style={{ border: "1.5px solid #14532d" }}
                       >
                         {/* 固定グリッド: AT番号 | Set | BITES | 直乗せ | 合計獲得 | 示唆 */}
-                        <div style={{ display: "grid", gridTemplateColumns: "34px 34px 1fr 1fr 1fr auto" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "34px 32px 1fr 1fr 1fr 1fr" }}>
                           {/* AT番号 */}
                           <div className="flex items-center justify-center" style={{ backgroundColor: "#14532d" }}>
                             <span className="text-white font-mono font-black text-[10px]">{atLabel}</span>
@@ -249,9 +253,9 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                             <span className="text-[6px] font-mono font-bold text-gray-500 ml-0.5">set</span>
                           </div>
                           {/* BITES */}
-                          <ATSummaryCoinCell label="BT" coins={s.bitesTotal} />
+                          <ATSummaryCoinCell label="BITES" coins={s.bitesTotal} />
                           {/* 直乗せ */}
-                          <ATSummaryCoinCell label="直乗" coins={s.directTotal} />
+                          <ATSummaryCoinCell label="直のせ" coins={s.directTotal} />
                           {/* 合計獲得（概算） — 枚で改行しない */}
                           <div className="flex items-center px-0.5 border-r border-gray-300">
                             <span className="flex flex-col shrink-0 mr-0.5">

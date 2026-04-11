@@ -138,7 +138,7 @@ export function abbrevEvent(e: string): string {
 
 // ─── AT初当り ────────────────────────────────────────────────────────────────
 
-export const AT_WIN_COLOR:  CellColor = { backgroundColor: "#38761d", color: WHT };
+export const AT_WIN_COLOR:  CellColor = { backgroundColor: "#14532d", color: WHT };
 export const AT_NONE_COLOR: CellColor = EMPTY_CELL;
 
 // ─── 終了画面示唆 ────────────────────────────────────────────────────────────
