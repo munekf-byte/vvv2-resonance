@@ -22,7 +22,10 @@ export async function POST(request: NextRequest) {
     at_entries: [],
   });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[session/create] ERROR:", error.message, error.code, error.details);
+    return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
+  }
 
   return NextResponse.json({ id, userId: user.id });
 }

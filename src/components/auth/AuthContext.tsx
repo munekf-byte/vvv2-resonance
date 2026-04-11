@@ -45,10 +45,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select("*")
         .eq("id", user.id)
         .single();
-      if (error) {
-        console.error("[AuthContext] profile fetch error:", error.message, error.details);
+
+      if (error || !data) {
+        // プロフィールが存在しない → クライアント側で作成
+        console.warn("[AuthContext] profile not found, creating...");
+        const email = user.email ?? "";
+        const displayName =
+          (user.user_metadata?.full_name as string) ??
+          (user.user_metadata?.name as string) ??
+          email.split("@")[0];
+        const avatarUrl = (user.user_metadata?.avatar_url as string) ?? null;
+
+        const { data: created, error: createErr } = await supabase
+          .from("profiles")
+          .upsert({
+            id: user.id,
+            email,
+            display_name: displayName,
+            avatar_url: avatarUrl,
+          }, { onConflict: "id" })
+          .select()
+          .single();
+
+        if (createErr) {
+          console.error("[AuthContext] profile create error:", createErr.message);
+          setState({ user, profile: null, loading: false });
+        } else {
+          console.log("[AuthContext] profile created:", created);
+          setState({ user, profile: created as ProfileRow | null, loading: false });
+        }
+        return;
       }
-      console.log("[AuthContext] profile loaded:", data);
+
       setState({ user, profile: data as ProfileRow | null, loading: false });
     }
 
