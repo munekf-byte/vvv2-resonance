@@ -5,6 +5,7 @@
 // =============================================================================
 
 import { useAuth } from "@/components/auth/AuthContext";
+import { LINK_X, LINK_DISCORD } from "@/lib/config/links";
 
 export default function ProPage() {
   const { profile } = useAuth();
@@ -82,7 +83,7 @@ export default function ProPage() {
               </div>
               <div className="bg-white px-5 py-5 text-center">
                 <a
-                  href="https://discord.gg/xxxxxx"
+                  href="{LINK_DISCORD}"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block px-8 py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform"
@@ -173,7 +174,7 @@ export default function ProPage() {
                 </div>
 
                 <a
-                  href="https://twitter.com/munekf_byte"
+                  href="{LINK_X}"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block mt-4 px-8 py-3 rounded-lg font-mono font-bold text-sm active:scale-95 transition-transform"

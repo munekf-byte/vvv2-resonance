@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
 import { DashboardClient } from "./DashboardClient";
 import { TotalAnalysis } from "./TotalAnalysis";
+import { LINK_DISCORD } from "@/lib/config/links";
 import { createClient } from "@/lib/supabase/client";
 
 export function DashboardShell() {
@@ -90,7 +91,7 @@ export function DashboardShell() {
       {/* Pro Discord リンク */}
       {isPro && (
         <div className="px-4 pb-4">
-          <a href="https://discord.gg/YOUR_INVITE_LINK" target="_blank" rel="noopener noreferrer"
+          <a href={LINK_DISCORD} target="_blank" rel="noopener noreferrer"
             className="block bg-indigo-600 hover:bg-indigo-700 text-white text-center font-mono font-bold text-sm rounded-lg px-4 py-3 transition-colors">
             Discord コミュニティに参加
           </a>
