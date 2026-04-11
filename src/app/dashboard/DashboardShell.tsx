@@ -33,6 +33,10 @@ export function DashboardShell() {
           <span className="text-[8px] font-mono text-orange-500">Pro:{String(isPro)} Admin:{String(isAdmin)}</span>
         </div>
         <div className="flex items-center gap-2">
+          <a href="/pro" className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded active:scale-95 transition-transform"
+            style={{ backgroundColor: isPro ? "#f59e0b" : "#7c3aed", color: "#fff" }}>
+            👑 {isPro ? "VIP" : "Pro"}
+          </a>
           {isAdmin && (
             <a href="/admin" className="text-[10px] font-mono text-gray-500 hover:text-gray-800">管理</a>
           )}
@@ -74,11 +78,11 @@ export function DashboardShell() {
             <p className="font-mono text-purple-600 text-sm">
               トータル数値分析は Pro版 で利用できます。
             </p>
-            <div className="bg-white rounded-lg border border-purple-200 px-4 py-3 mt-2">
-              <p className="font-mono text-gray-700 text-sm font-bold">Pro版へアップグレード</p>
-              <p className="font-mono text-gray-500 text-xs mt-1">PayPay決済で有効化</p>
-              <p className="font-mono text-gray-400 text-[10px] mt-0.5">管理者へお問い合わせください</p>
-            </div>
+            <a href="/pro"
+              className="inline-block mt-2 px-6 py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform"
+              style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" }}>
+              👑 Proプランの詳細を見る
+            </a>
           </div>
         )}
       </div>

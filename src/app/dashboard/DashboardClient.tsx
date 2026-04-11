@@ -211,11 +211,11 @@ export function DashboardClient() {
                   style={{ backgroundColor: "rgba(255,255,255,0.3)" }}>
                   OK
                 </button>
-                <button onClick={() => { setShowLimitDialog(false); /* TODO: Pro詳細ページ */ }}
-                  className="flex-1 py-3 rounded-lg text-white font-mono text-sm font-bold transition-colors"
+                <a href="/pro" onClick={() => setShowLimitDialog(false)}
+                  className="flex-1 py-3 rounded-lg text-white font-mono text-sm font-bold text-center transition-colors"
                   style={{ backgroundColor: "#7c3aed" }}>
                   プロプランの詳細
-                </button>
+                </a>
               </div>
             </div>
           </div>
