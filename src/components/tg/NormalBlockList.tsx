@@ -140,8 +140,9 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                 {/* ── メイン行 ── */}
                 <div className={`grid ${COLS}`}>
 
-                  {/* 編集ボタン: 鉛筆マークのみ */}
+                  {/* 編集ボタン: 鉛筆マークのみ（画像出力時は非表示） */}
                   <button
+                    data-capture-hide="true"
                     onClick={() => onEdit(block, index)}
                     className={`flex items-center justify-center min-h-[34px] transition-colors active:bg-blue-100 ${COL_BORDER_R}`}
                     style={{ backgroundColor: "#eef2f7" }}
@@ -239,18 +240,18 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                       <div className="shrink-0" style={{ width: "44px" }} />
                       <div
                         className="flex-1 rounded-bl overflow-hidden"
-                        style={{ border: "1.5px solid #14532d" }}
+                        style={{ border: "1.5px solid #14532d", minHeight: "36px" }}
                       >
                         {/* 固定グリッド: AT番号 | Set | BITES | 直乗せ | 合計獲得 | 示唆 */}
                         <div style={{ display: "grid", gridTemplateColumns: "34px 32px 1fr 1fr 1fr 1fr" }}>
                           {/* AT番号 */}
                           <div className="flex items-center justify-center" style={{ backgroundColor: "#14532d" }}>
-                            <span className="text-white font-mono font-black text-[10px]">{atLabel}</span>
+                            <span className="text-white font-mono font-black text-[12px]">{atLabel}</span>
                           </div>
                           {/* セット数 */}
                           <div className="flex items-center justify-center border-r border-gray-300">
-                            <span className="text-[13px] font-mono font-black text-gray-900 leading-none">{s.setCount}</span>
-                            <span className="text-[6px] font-mono font-bold text-gray-500 ml-0.5">set</span>
+                            <span className="text-[16px] font-mono font-black text-gray-900 leading-none">{s.setCount}</span>
+                            <span className="text-[7px] font-mono font-bold text-gray-500 ml-0.5">set</span>
                           </div>
                           {/* BITES */}
                           <ATSummaryCoinCell label="BITES" coins={s.bitesTotal} />
@@ -259,17 +260,17 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                           {/* 合計獲得（概算） — 枚で改行しない */}
                           <div className="flex items-center px-0.5 border-r border-gray-300">
                             <span className="flex flex-col shrink-0 mr-0.5">
-                              <span className="text-[5px] font-mono text-gray-500 font-bold leading-tight">合計獲得</span>
-                              <span className="text-[5px] font-mono text-gray-500 font-bold leading-tight">(概算)</span>
+                              <span className="text-[6px] font-mono text-gray-500 font-bold leading-tight">合計獲得</span>
+                              <span className="text-[6px] font-mono text-gray-500 font-bold leading-tight">(概算)</span>
                             </span>
-                            <span className="text-[11px] font-mono font-black leading-none" style={{ color: "#14532d" }}>
+                            <span className="text-[13px] font-mono font-black leading-none" style={{ color: "#14532d" }}>
                               {grandTotal.toLocaleString()}枚
                             </span>
                           </div>
                           {/* 右端: ジャッジメント + 有利切断 + 示唆 */}
-                          <div className="flex items-center gap-0.5 px-0.5">
+                          <div className="flex items-center flex-wrap gap-0.5 px-0.5">
                             {s.arimaLabel && s.arimaLabel.split("").map((ch, i) => (
-                              <span key={i} className="text-[7px] font-mono font-black px-1 py-0.5 rounded leading-none"
+                              <span key={i} className="text-[9px] font-mono font-black px-1 py-0.5 rounded leading-none"
                                 style={ch === "○"
                                   ? { backgroundColor: "#fde047", color: "#dc2626" }
                                   : { backgroundColor: "#4b5563", color: "#ffffff" }
@@ -278,13 +279,13 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                               </span>
                             ))}
                             {s.arimaCuts.map((cut, i) => (
-                              <span key={`cut-${i}`} className="text-[6px] font-mono font-bold px-1 py-0.5 rounded leading-none"
+                              <span key={`cut-${i}`} className="text-[7px] font-mono font-bold px-1 py-0.5 rounded leading-none"
                                 style={{ backgroundColor: "#7c3aed", color: "#ffffff" }}>
                                 {cut}
                               </span>
                             ))}
                             {(suggHint || trophyHint) && (
-                              <span className="text-[6px] font-mono text-gray-600 font-bold leading-tight">
+                              <span className="text-[7px] font-mono text-gray-600 font-bold leading-tight">
                                 {suggHint || trophyHint}
                               </span>
                             )}
@@ -555,9 +556,9 @@ function ZoneLabel({ zone }: { zone: string }) {
 function ATSummaryCoinCell({ label, coins }: { label: string; coins: number }) {
   return (
     <div className="flex items-center justify-center px-0.5 border-r border-gray-300">
-      <span className="text-[5px] font-mono text-gray-600 font-bold leading-tight shrink-0 mr-0.5">{label}</span>
-      <span className="text-[10px] font-mono font-black leading-none text-gray-900">
-        {coins.toLocaleString()}<span className="text-[6px]">枚</span>
+      <span className="text-[6px] font-mono text-gray-600 font-bold leading-tight shrink-0 mr-0.5">{label}</span>
+      <span className="text-[12px] font-mono font-black leading-none text-gray-900">
+        {coins.toLocaleString()}<span className="text-[7px]">枚</span>
       </span>
     </div>
   );
