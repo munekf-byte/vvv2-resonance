@@ -101,8 +101,9 @@ export default function AdminPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId, adminRank: rank }),
         });
-        if (res.ok) success++;
-        else failed++;
+        const body = await res.json();
+        if (res.ok) { success++; console.log("[saveRank] OK:", sessionId, body); }
+        else { failed++; console.error("[saveRank] FAIL:", sessionId, res.status, body); }
       } catch {
         failed++;
       }

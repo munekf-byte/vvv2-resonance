@@ -62,13 +62,18 @@ export async function PATCH(request: NextRequest) {
     const { sessionId, adminRank } = await request.json();
     if (!sessionId) return NextResponse.json({ error: "sessionId required" }, { status: 400 });
 
-    const { error } = await supabase
+    const user = (await supabase.auth.getUser()).data.user;
+    console.log("[admin/sessions PATCH] user:", user?.id, "sessionId:", sessionId, "rank:", adminRank);
+
+    const { error, count } = await supabase
       .from("play_sessions")
       .update({ admin_rank: adminRank } as never)
       .eq("id", sessionId);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
+    console.log("[admin/sessions PATCH] result: error=", error?.message, error?.code, "count=", count);
+
+    if (error) return NextResponse.json({ error: error.message, code: error.code, details: error.details }, { status: 500 });
+    return NextResponse.json({ ok: true, count });
   } catch (e) {
     console.error("[admin/sessions PATCH]", e);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
