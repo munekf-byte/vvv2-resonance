@@ -76,11 +76,7 @@ export function DashboardClient() {
     if (creating) return;
     setCreating(true);
     const session = await createSessionWithCloud(name);
-    setShowModal(false);
-    setSessionName("");
-    setHallName("");
-    setMachineNumber("");
-    setCreating(false);
+    // creatingはfalseにしない — 遷移完了までグルグル表示を維持
     router.push(`/play/${session.id}`);
   }
 

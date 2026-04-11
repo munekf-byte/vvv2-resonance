@@ -15,7 +15,7 @@ import {
   TG_DIRECT_ADD_TRIGGERS, TG_DIRECT_ADD_TRIGGERS_FIRST, TG_DIRECT_ADD_COINS,
   TG_ARIMA_RESULTS, TG_ARIMA_ROLES, TG_CCG_COINS,
   TG_MAX_BATTLE_RESULTS, TG_MAX_DIRECT_ADDS,
-  TG_ENDING_SUGGESTIONS, TG_TROPHIES,
+  TG_ENDING_SUGGESTIONS, TG_TROPHIES, TG_KAKUGAN,
   TG_ENDING_CARD_LABELS, TG_COPPER_CARD_TYPES, TG_CONFIRMED_CARD_TYPES,
 } from "@/lib/engine/constants";
 import {
@@ -401,6 +401,45 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
               className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-[12px] font-mono text-center focus:outline-none focus:border-gray-500"
             />
             <span className="text-[10px] font-mono text-gray-500 shrink-0">枚</span>
+          </div>
+        </Section>
+
+        {/* 赫眼状態（最大5回） */}
+        <Section title="赫眼状態（最大5回）">
+          <div className="grid grid-cols-5 gap-1.5">
+            {Array.from({ length: 5 }, (_, i) => {
+              const value = (form.kakugan ?? [])[i] ?? "";
+              const hasValue = value !== "";
+              return (
+                <div key={i} className="flex flex-col rounded border-2 overflow-hidden"
+                  style={hasValue ? { borderColor: "#991b1b" } : { borderColor: "#e5e7eb" }}>
+                  <div className="text-center text-[8px] font-mono py-0.5 leading-none"
+                    style={{ backgroundColor: "#f3f4f6", color: "#9ca3af" }}>{i + 1}</div>
+                  <div className="relative flex-1 overflow-hidden" style={{ minHeight: "50px" }}>
+                    <div className="absolute inset-0 flex items-center justify-center px-0.5 pointer-events-none"
+                      style={hasValue
+                        ? { backgroundColor: "#b91c1c", color: "#ffffff" }
+                        : { backgroundColor: "#f9fafb", color: "#d1d5db" }}>
+                      <span className="text-[9px] font-mono font-bold text-center leading-tight break-all line-clamp-3">
+                        {hasValue ? value : "—"}
+                      </span>
+                    </div>
+                    <select className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      value={value}
+                      onChange={(e) => {
+                        const next = [...(form.kakugan ?? [])];
+                        while (next.length <= i) next.push("");
+                        next[i] = e.target.value;
+                        while (next.length > 0 && next[next.length - 1] === "") next.pop();
+                        setField("kakugan", next);
+                      }}>
+                      <option value="">—</option>
+                      {[...TG_KAKUGAN].map((k) => <option key={k} value={k}>{k}</option>)}
+                    </select>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Section>
 
