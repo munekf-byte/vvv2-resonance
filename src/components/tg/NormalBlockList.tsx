@@ -242,23 +242,23 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                         className="flex-1 rounded-bl overflow-hidden"
                         style={{ border: "1.5px solid #14532d", minHeight: "36px" }}
                       >
-                        {/* 固定グリッド: AT番号 | Set | BITES | 直乗せ | 合計獲得 | 示唆 */}
-                        <div style={{ display: "grid", gridTemplateColumns: "34px 32px 1fr 1fr 1fr 1fr" }}>
+                        {/* 固定グリッド — align-items:stretch で全セルが縦いっぱいに */}
+                        <div style={{ display: "grid", gridTemplateColumns: "36px 36px 1fr 1fr 1fr 1fr", alignItems: "stretch" }}>
                           {/* AT番号 */}
                           <div className="flex items-center justify-center" style={{ backgroundColor: "#14532d" }}>
-                            <span className="text-white font-mono font-black text-[12px]">{atLabel}</span>
+                            <span className="text-white font-mono font-black text-[14px]">{atLabel}</span>
                           </div>
                           {/* セット数 */}
                           <div className="flex items-center justify-center border-r border-gray-300">
-                            <span className="text-[16px] font-mono font-black text-gray-900 leading-none">{s.setCount}</span>
+                            <span className="text-[18px] font-mono font-black text-gray-900 leading-none">{s.setCount}</span>
                             <span className="text-[7px] font-mono font-bold text-gray-500 ml-0.5">set</span>
                           </div>
                           {/* BITES */}
                           <ATSummaryCoinCell label="BITES" coins={s.bitesTotal} />
                           {/* 直乗せ */}
                           <ATSummaryCoinCell label="直のせ" coins={s.directTotal} />
-                          {/* 合計獲得（概算） — 枚で改行しない */}
-                          <div className="flex items-center px-0.5 border-r border-gray-300">
+                          {/* 合計獲得（概算） */}
+                          <div className="flex items-center justify-center px-0.5 border-r border-gray-300">
                             <span className="flex flex-col shrink-0 mr-0.5">
                               <span className="text-[6px] font-mono text-gray-500 font-bold leading-tight">合計獲得</span>
                               <span className="text-[6px] font-mono text-gray-500 font-bold leading-tight">(概算)</span>
@@ -268,7 +268,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                             </span>
                           </div>
                           {/* 右端: ジャッジメント + 有利切断 + 示唆 */}
-                          <div className="flex items-center flex-wrap gap-0.5 px-0.5">
+                          <div className="flex items-center justify-center flex-wrap gap-0.5 px-0.5">
                             {s.arimaLabel && s.arimaLabel.split("").map((ch, i) => (
                               <span key={i} className="text-[9px] font-mono font-black px-1 py-0.5 rounded leading-none"
                                 style={ch === "○"
