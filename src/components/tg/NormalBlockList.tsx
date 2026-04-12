@@ -236,54 +236,65 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                   const grandTotal = s.total + baseCoins;
                   const suggHint = s.endingSuggestion ? getSuggestionListLines(s.endingSuggestion)?.hint : null;
                   const trophyHint = s.trophy ? getSuggestionListLines(s.trophy)?.hint : null;
-                  // 下段用: AT行の履歴ブロック生成
-                  const historyBlocks: { bg: string; color: string; text: string }[] = [];
+                  // 下段用: AT履歴ブロック生成 (size: 1=標準26px, 1.5=ワイド39px)
+                  const W1 = 26; const W15 = 39; const BH = 16;
+                  const hBlocks: { bg: string; color: string; text: string; w: number; border?: string }[] = [];
                   for (const row of entry.rows) {
                     if (row.rowType === "set") {
                       const set = row as TGATSet;
-                      const charColor = getATCharColor(set.character);
+                      const cc = getATCharColor(set.character);
                       const bites = set.bitesCoins === "ED" || set.bitesCoins === "" ? 0 : Number(set.bitesCoins) || 0;
-                      const direct = (set.directAdds ?? []).reduce((s, d) => s + (d.coins ?? 0), 0);
+                      const direct = (set.directAdds ?? []).reduce((sm, d) => sm + (d.coins ?? 0), 0);
                       const disadv = (set as { disadvantage?: string }).disadvantage;
 
-                      if (set.bitesType === "百足覚醒") {
-                        historyBlocks.push({ bg: "#b2dfdb", color: "#00695c", text: "百足" });
-                      } else if (set.bitesType === "隻眼の梟") {
-                        historyBlocks.push({ bg: "#1a1a1a", color: "#ffffff", text: "梟" });
-                      } else if (disadv === "不利益❌") {
-                        historyBlocks.push({ bg: charColor.backgroundColor, color: charColor.color, text: "不✕" });
+                      // 2️⃣ 不利益/百足/梟 → 1.5倍幅
+                      if (disadv === "不利益❌") {
+                        hBlocks.push({ bg: cc.backgroundColor, color: cc.color, text: "不✕", w: W15 });
                       } else if (disadv === "不利益⭕️") {
-                        historyBlocks.push({ bg: charColor.backgroundColor, color: charColor.color, text: "不○" });
+                        hBlocks.push({ bg: cc.backgroundColor, color: cc.color, text: "不○", w: W15 });
+                      } else if (set.bitesType === "百足覚醒") {
+                        hBlocks.push({ bg: "#b2dfdb", color: "#00695c", text: "百", w: W15 });
+                      } else if (set.bitesType === "隻眼の梟") {
+                        hBlocks.push({ bg: "#1a1a1a", color: "#fff", text: "梟", w: W15 });
                       } else {
+                        // 1️⃣ 通常SET → 標準幅
                         const total = bites + direct;
-                        historyBlocks.push({ bg: charColor.backgroundColor, color: charColor.color, text: total > 0 ? String(total) : "—" });
+                        hBlocks.push({ bg: cc.backgroundColor, color: cc.color, text: total > 0 ? String(total) : "—", w: W1 });
                       }
-
+                      // 3️⃣ ED → 標準幅の単独ブロック
                       if (set.bitesCoins === "ED") {
-                        historyBlocks.push({ bg: "#00695c", color: "#ffffff", text: "ED" });
+                        hBlocks.push({ bg: "#00695c", color: "#fff", text: "ED", w: W1 });
                       }
                     } else {
                       const arima = row as TGArimaJudgment;
+                      const cut = (arima as { favorableCut?: string }).favorableCut;
+                      // 5️⃣ 切断 → 標準幅、赤枠赤文字、有馬の直前に配置
+                      if (cut && cut !== "-") {
+                        hBlocks.push({ bg: "#fff", color: "#dc2626", text: "切断", w: W1, border: "2px solid #dc2626" });
+                      }
+                      // 4️⃣ 有馬 → 1.5倍幅
                       if (arima.result === "成功") {
-                        historyBlocks.push({ bg: "#fdd835", color: "#000", text: `○${arima.ccgCoins ?? ""}` });
+                        hBlocks.push({ bg: "#fdd835", color: "#000", text: `有馬○${arima.ccgCoins ?? ""}`, w: W15 });
                       } else if (arima.result === "失敗") {
-                        historyBlocks.push({ bg: "#fdd835", color: "#000", text: "×" });
+                        hBlocks.push({ bg: "#fdd835", color: "#000", text: "有馬×", w: W15 });
                       }
                     }
                   }
 
                   return (
                     <div className="flex">
-                      <div className="shrink-0" style={{ width: "44px" }} />
+                      {/* 左余白 — 編集列と同幅(52px)をAT番号緑で埋める */}
+                      <div className="shrink-0 flex flex-col" style={{ width: "52px" }}>
+                        <div className="flex items-center justify-center flex-1" style={{ backgroundColor: "#14532d" }}>
+                          <span className="text-white font-mono font-black text-[13px]">{atLabel}</span>
+                        </div>
+                      </div>
                       <div
-                        className="flex-1 rounded-bl overflow-hidden"
-                        style={{ border: "1.5px solid #14532d", height: "40px" }}
+                        className="flex-1 overflow-hidden"
+                        style={{ border: "1.5px solid #14532d", borderLeft: "none", height: "40px" }}
                       >
                         {/* 上段 20px: サマリー情報 */}
-                        <div style={{ display: "grid", gridTemplateColumns: "36px 36px 1fr 1fr 1fr 1fr", alignItems: "stretch", height: "20px" }}>
-                          <div className="flex items-center justify-center" style={{ backgroundColor: "#14532d" }}>
-                            <span className="text-white font-mono font-black text-[11px]">{atLabel}</span>
-                          </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "34px 1fr 1fr 1fr 1fr", alignItems: "stretch", height: "20px" }}>
                           <div className="flex items-center justify-center border-r border-gray-300">
                             <span className="text-[14px] font-mono font-black text-gray-900 leading-none">{s.setCount}</span>
                             <span className="text-[6px] font-mono font-bold text-gray-500 ml-0.5">set</span>
@@ -297,29 +308,25 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                             </span>
                           </div>
                           <div className="flex items-center justify-center flex-wrap gap-0.5 px-0.5">
-                            {s.arimaLabel && s.arimaLabel.split("").map((ch, ci) => (
-                              <span key={ci} className="text-[7px] font-mono font-black px-0.5 rounded leading-none"
-                                style={ch === "○" ? { backgroundColor: "#fde047", color: "#dc2626" } : { backgroundColor: "#4b5563", color: "#fff" }}>
-                                {ch}
-                              </span>
-                            ))}
                             {(suggHint || trophyHint) && (
-                              <span className="text-[6px] font-mono text-gray-600 font-bold">{suggHint || trophyHint}</span>
+                              <span className="text-[7px] font-mono text-gray-600 font-bold">{suggHint || trophyHint}</span>
                             )}
                           </div>
                         </div>
                         {/* 下段 20px: AT履歴ブロック */}
-                        <div className="flex items-stretch border-t border-gray-300" style={{ height: "20px", backgroundColor: "#f9fafb" }}>
-                          <div className="flex items-center justify-center shrink-0" style={{ width: "36px", backgroundColor: "#14532d" }}>
-                            <span className="text-[6px] font-mono text-green-300">履歴</span>
-                          </div>
-                          <div className="flex items-center gap-px px-1 overflow-hidden flex-1">
-                            {historyBlocks.map((hb, hi) => (
+                        <div className="flex items-center border-t border-gray-300 overflow-hidden" style={{ height: "20px", backgroundColor: "#f9fafb" }}>
+                          <div className="flex items-center gap-px px-0.5 flex-1 overflow-hidden">
+                            {hBlocks.map((hb, hi) => (
                               <div key={hi} className="flex items-center justify-center rounded-sm shrink-0"
-                                style={{ backgroundColor: hb.bg, color: hb.color, width: "28px", height: "16px" }}>
-                                <span className="text-[7px] font-mono font-black leading-none truncate">{hb.text}</span>
+                                style={{ backgroundColor: hb.bg, color: hb.color, width: `${hb.w}px`, height: `${BH}px`, border: hb.border ?? "none" }}>
+                                <span className="text-[8px] font-mono font-black leading-none truncate px-0.5">{hb.text}</span>
                               </div>
                             ))}
+                            {hBlocks.length > 0 && (() => {
+                              const totalW = hBlocks.reduce((s, b) => s + b.w + 1, 0);
+                              // 親幅は動的だが、ざっくり300pxを超えたら「続きあり」表示
+                              return totalW > 280 ? <span className="text-[6px] font-mono text-gray-400 shrink-0 ml-0.5">…</span> : null;
+                            })()}
                           </div>
                         </div>
                       </div>
