@@ -163,7 +163,10 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
   }
 
   const sum2 = blocks.reduce((s, b) => s + (b.jisshuG ?? 0), 0);
-  const sum1 = totalGInput ? parseInt(totalGInput) || sum2 : sum2;
+  const rawInput = totalGInput ? parseInt(totalGInput) || 0 : 0;
+  const uchidashiG = uchidashi?.totalGames ?? 0;
+  // 実稼働G数 = 液晶総消化G数 − 打ち出しトータルG数（入力がなければ周期合算にフォールバック）
+  const sum1 = rawInput > 0 ? rawInput - uchidashiG : sum2;
 
   const czCount = blocks.filter((b) => b.event === "レミニセンス" || b.event === "大喰いの利世").length;
 
@@ -267,7 +270,7 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
     <div className="pb-24">
       <div className="sticky top-0 z-20 bg-gray-100 border-b border-gray-300 px-3 py-2 flex items-center justify-between">
         <p className="text-[10px] font-mono font-bold text-red-600 leading-tight">
-          ※ 総消化ゲーム数はご自身で入力してください
+          ※ 液晶画面の総消化ゲーム数を下記に入力してください
         </p>
         <div className="flex gap-1.5 flex-shrink-0 ml-2">
           <button
@@ -283,6 +286,39 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
         </div>
       </div>
 
+      {/* ===== 液晶総消化G数 入力欄（テーブル外・トップ） ===== */}
+      <div style={{ padding: "8px 6px 0", backgroundColor: "#ffffff" }}>
+        <div style={{
+          border: "2px solid #ca8a04", borderRadius: "6px", backgroundColor: "#fffbeb",
+          padding: "8px 10px", display: "flex", alignItems: "center", gap: "8px",
+        }}>
+          <div style={{ flexShrink: 0 }}>
+            <span style={{ fontSize: "9px", fontWeight: 700, color: "#92400e", fontFamily: "monospace", display: "block", lineHeight: 1.4 }}>
+              液晶画面の
+            </span>
+            <span style={{ fontSize: "9px", fontWeight: 700, color: "#92400e", fontFamily: "monospace", display: "block", lineHeight: 1.4 }}>
+              総消化ゲーム数
+            </span>
+          </div>
+          <input type="number" value={totalGInput} onChange={(e) => handleTotalGChange(e.target.value)}
+            placeholder="液晶の数値を入力"
+            style={{
+              flex: 1, backgroundColor: "#ffffff", border: "2px solid #ca8a04", borderRadius: "4px",
+              fontSize: "16px", fontFamily: "monospace", fontWeight: 700, textAlign: "right",
+              padding: "6px 8px", outline: "none",
+            }} />
+          <span style={{ fontSize: "11px", fontWeight: 700, color: "#92400e", fontFamily: "monospace", flexShrink: 0 }}>G</span>
+        </div>
+        {uchidashiG > 0 && (
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 2px 0", fontSize: "8px", fontFamily: "monospace", color: "#6b7280" }}>
+            <span>打ち出し時: {uchidashiG.toLocaleString()}G</span>
+            <span style={{ fontWeight: 700, color: rawInput > 0 ? "#14532d" : "#9ca3af" }}>
+              実稼働: {rawInput > 0 ? `${(rawInput - uchidashiG).toLocaleString()}G` : "—"}
+            </span>
+          </div>
+        )}
+      </div>
+
       <div ref={captureRef} style={{ padding: "8px 6px", backgroundColor: "#ffffff", fontFamily: "monospace" }}>
 
         {/* ===== Row 1: 通常時 | CZ内容 ===== */}
@@ -291,18 +327,7 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           {/* 通常時 */}
           <Cat color="#1565c0" title="通常時">
             <THead cols={COLS3} color="#1565c0" />
-            {/* 総消化G数 — 特殊入力行 */}
-            <div style={{
-              display: "grid", gridTemplateColumns: "1fr 52px 64px",
-              borderBottom: "1px solid #e5e7eb", backgroundColor: "#fffbeb",
-            }}>
-              <div style={{ display: "flex", alignItems: "center", padding: "3px 4px", fontSize: "8px", fontWeight: 700, color: "#4b5563", borderRight: "1px solid #e5e7eb" }}>総消化G数</div>
-              <div style={{ gridColumn: "2 / 4", display: "flex", alignItems: "center", padding: "2px 4px" }}>
-                <input type="number" value={totalGInput} onChange={(e) => handleTotalGChange(e.target.value)}
-                  placeholder={String(sum2)}
-                  style={{ width: "100%", backgroundColor: "#fefce8", border: "1px solid #ca8a04", borderRadius: "2px", fontSize: "9px", fontFamily: "monospace", fontWeight: 700, textAlign: "right", padding: "1px 4px", outline: "none" }} />
-              </div>
-            </div>
+            <TRow cols={COLS3} i={0} values={[<b key="l">実稼働G数</b>, `${sum1.toLocaleString()}G`, "—"]} />
             <TRow cols={COLS3} i={1} values={[<b key="l">通常時G</b>, `${sum2.toLocaleString()}G`, "—"]} />
             <TRow cols={COLS3} i={2} values={[<b key="l">CZ</b>, `${czCount}回`, prob(czCount, sum2)]} grade={gradeByProb(czCount, sum2, [...CZ_PROB])} />
             <TRow cols={COLS3} i={3} values={[<b key="l">エピボ</b>, `${epiCount}回`, prob(epiCount, sum2)]} grade={gradeByProb(epiCount, sum2, [...EPI_PROB])} />
