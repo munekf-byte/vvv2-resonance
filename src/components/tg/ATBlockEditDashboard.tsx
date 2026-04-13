@@ -374,7 +374,11 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
             {TG_BITES_COINS.map((c) => (
               <button key={c}
                 onClick={() => {
-                  setField("bitesCoins", String(c));
+                  if (form.bitesCoins === String(c) && !bitesFreeInput) {
+                    setField("bitesCoins", "");
+                  } else {
+                    setField("bitesCoins", String(c));
+                  }
                   setBitesFreeInput("");
                 }}
                 className="py-3 rounded text-[11px] font-mono font-bold border-2 transition-colors"

@@ -199,6 +199,7 @@ export const TG_ZENCHO_ZONES = [
 export const TG_ZENCHO_TYPES = [
   "前兆",
   "東京上空",
+  "前兆なし",
 ] as const;
 
 // =============================================================================

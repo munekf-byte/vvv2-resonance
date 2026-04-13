@@ -13,6 +13,7 @@ import {
   TG_ENDING_SUGGESTIONS, TG_TROPHIES,
   TG_AT_CHARACTERS, TG_BITES_TYPES,
   TG_ZONES, TG_INVITATIONS,
+  TG_ENDING_CARD_LABELS, TG_COPPER_CARD_TYPES, TG_CONFIRMED_CARD_TYPES,
 } from "@/lib/engine/constants";
 import {
   gradeByProb, gradeByRate, SETTING_COLORS,
@@ -181,7 +182,10 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
   const directATCount = blocks.filter((b) => b.event === "直撃AT").length;
   const atWinCount = blocks.filter((b) => b.atWin).length;
 
-  const allKakugan = blocks.flatMap((b) => b.kakugan);
+  const allKakugan = [
+    ...blocks.flatMap((b) => b.kakugan),
+    ...getAllSets(atEntries).flatMap((s) => s.kakugan ?? []),
+  ];
   const kakuganTotal = allKakugan.length;
   const kakuganBD = [...TG_KAKUGAN].map((k) => ({ label: k, count: allKakugan.filter((v) => v === k).length }));
 
@@ -230,6 +234,15 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
       .flatMap((s) => s.directAdds.filter((d) => d.trigger || d.coins != null).map((d) => ({ trigger: d.trigger, coins: d.coins }))),
   })).filter((g) => g.items.length > 0);
   const arimaByPos = computeArimaPositions(atEntries);
+
+  // エンディングカード全AT集計
+  const allEndingCards = getAllSets(atEntries).map((s) => s.endingCard).filter(Boolean) as import("@/types").TGEndingCard[];
+  const ecSum = (key: keyof import("@/types").TGEndingCard) => allEndingCards.reduce((s, ec) => s + (ec[key] ?? 0), 0);
+  const ecTotal =
+    ecSum("whiteWeak") + ecSum("whiteStrong") + ecSum("blueWeak") + ecSum("blueStrong") +
+    ecSum("redWeak") + ecSum("redStrong") + ecSum("copper1") + ecSum("copper2") +
+    ecSum("copper3") + ecSum("copper4") + ecSum("confirmed1") + ecSum("confirmed2") +
+    ecSum("confirmed3") + ecSum("confirmed4");
 
   const sessionForZone = { normalBlocks: blocks, uchidashi: uchidashi ?? null };
   const zoneAllExact     = sessionZoneExact(sessionForZone, "all");
@@ -460,6 +473,22 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
                 );
               })}
             </div>
+          </Cat>
+        )}
+
+        {/* ===== エンディングカード集計 ===== */}
+        {ecTotal > 0 && (
+          <Cat color="#6d4c41" title={`エンディングカード (${ecTotal}枚)`} mb>
+            <THead cols={[{ label: "カード", width: "1fr" }, { label: "回数", width: "44px" }, { label: "割合", width: "48px" }]} color="#6d4c41" />
+            {([
+              ...TG_ENDING_CARD_LABELS.map((c) => ({ key: c.key as keyof import("@/types").TGEndingCard, label: c.label })),
+              ...TG_COPPER_CARD_TYPES.map((c) => ({ key: c.key as keyof import("@/types").TGEndingCard, label: c.label })),
+              ...TG_CONFIRMED_CARD_TYPES.map((c) => ({ key: c.key as keyof import("@/types").TGEndingCard, label: c.label })),
+            ]).map((item, i) => {
+              const count = ecSum(item.key);
+              if (count === 0) return null;
+              return <TRow key={item.key} cols={[{ width: "1fr" }, { width: "44px" }, { width: "48px" }]} i={i} values={[item.label, `${count}回`, pct(count, ecTotal)]} />;
+            })}
           </Cat>
         )}
 

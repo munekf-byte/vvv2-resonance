@@ -56,7 +56,7 @@ function computeSummary(entry: TGATEntry) {
   const endingSuggestion = sets.find((s) => s.endingSuggestion)?.endingSuggestion ?? "";
   const trophy = sets.find((s) => s.trophy)?.trophy ?? "";
 
-  return { setCount, bitesTotal, directTotal, total: bitesTotal + directTotal + ccgTotal, endingSuggestion, trophy };
+  return { setCount, bitesTotal, directTotal, ccgTotal, total: bitesTotal + directTotal + ccgTotal, endingSuggestion, trophy };
 }
 
 function directTotalCoins(s: TGATSet): number {
@@ -201,7 +201,7 @@ function ATBlock({
         className="border-b-2 border-green-900"
         style={{ backgroundColor: "#14532d" }}
       >
-        <div style={{ display: "grid", gridTemplateColumns: "40px 42px 1fr 1fr 1fr auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: summary.ccgTotal > 0 ? "40px 42px 1fr 1fr 1fr 1fr auto" : "40px 42px 1fr 1fr 1fr auto" }}>
           {/* AT番号 */}
           <div className="flex items-center justify-center border-r border-green-900 py-0.5">
             <span className="text-white font-mono font-black text-sm">{atKey}</span>
@@ -215,6 +215,8 @@ function ATBlock({
           <ATHeaderCoinCell label="BITES" coins={summary.bitesTotal} />
           {/* 直乗せ */}
           <ATHeaderCoinCell label="直乗せ" coins={summary.directTotal} />
+          {/* CCG死神（成功時のみ表示） */}
+          {summary.ccgTotal > 0 && <ATHeaderCoinCell label="CCG" coins={summary.ccgTotal} />}
           {/* 合計獲得（概算） */}
           <ATHeaderCoinCell label="合計獲得(概算)" coins={summary.total + baseCoins} highlight />
           {/* 終了画面/トロフィー（hint表示） */}

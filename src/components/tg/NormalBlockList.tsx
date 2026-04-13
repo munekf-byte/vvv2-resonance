@@ -31,6 +31,7 @@ interface Props {
   modeProbs?: ModeProbs[];
   onEdit: (block: NormalBlock, index: number) => void;
   onDelete: (blockId: string) => void;
+  onYameCancel?: (blockId: string) => void;
 }
 
 // ─── ATサマリー計算 ──────────────────────────────────────────────────────────
@@ -59,7 +60,7 @@ function computeATSummary(entry: TGATEntry) {
     : "";
   const arimaCuts = arimaResults.filter((r) => r.cut && r.cut !== "-").map((r) => r.cut!);
 
-  return { setCount, bitesTotal, directTotal, total: bitesTotal + directTotal + ccgTotal, endingSuggestion, trophy, arimaLabel, arimaCuts };
+  return { setCount, bitesTotal, directTotal, ccgTotal, total: bitesTotal + directTotal + ccgTotal, endingSuggestion, trophy, arimaLabel, arimaCuts };
 }
 
 // ─── グリッド ─────────────────────────────────────────────────────────────────
@@ -71,7 +72,7 @@ const HDR_TEXT     = "#f9fafb";
 const COL_BORDER_R = "border-r border-gray-400";
 const ROW_BORDER   = "border-b-2 border-gray-500";
 
-export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit, onDelete }: Props) {
+export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit, onDelete, onYameCancel }: Props) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null); // 削除確認中の blockId
 
@@ -256,8 +257,8 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                         hBlocks.push({ bg: cc.backgroundColor, color: cc.color, text: `百${total}`, auto: true });
                       } else if (set.bitesType === "隻眼の梟") {
                         hBlocks.push({ bg: cc.backgroundColor, color: cc.color, text: `梟${total}`, auto: true });
-                      } else {
-                        hBlocks.push({ bg: cc.backgroundColor, color: cc.color, text: total > 0 ? String(total) : "—" });
+                      } else if (total > 0) {
+                        hBlocks.push({ bg: cc.backgroundColor, color: cc.color, text: String(total) });
                       }
                       if (set.bitesCoins === "ED") {
                         hBlocks.push({ bg: "#00695c", color: "#fff", text: "ED" });
@@ -294,13 +295,14 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                         style={{ border: "1.5px solid #14532d", borderLeft: "none", height: "40px" }}
                       >
                         {/* 上段 20px: サマリー情報 */}
-                        <div style={{ display: "grid", gridTemplateColumns: "34px 1fr 1fr 1fr 1fr", alignItems: "stretch", height: "20px" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: s.ccgTotal > 0 ? "34px 1fr 1fr 1fr 1fr 1fr" : "34px 1fr 1fr 1fr 1fr", alignItems: "stretch", height: "20px" }}>
                           <div className="flex items-center justify-center border-r border-gray-300">
                             <span className="text-[14px] font-mono font-black text-gray-900 leading-none">{s.setCount}</span>
                             <span className="text-[6px] font-mono font-bold text-gray-500 ml-0.5">set</span>
                           </div>
                           <ATSummaryCoinCell label="BITES" coins={s.bitesTotal} />
                           <ATSummaryCoinCell label="直のせ" coins={s.directTotal} />
+                          {s.ccgTotal > 0 && <ATSummaryCoinCell label="CCG" coins={s.ccgTotal} />}
                           <div className="flex items-center justify-center px-0.5 border-r border-gray-300">
                             <span className="text-[5px] font-mono text-gray-500 font-bold shrink-0 mr-0.5">獲得</span>
                             <span className="text-[11px] font-mono font-black leading-none" style={{ color: "#14532d" }}>
@@ -432,6 +434,15 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                     <span className="text-[10px] font-mono font-bold text-white tracking-wider">
                       ヤメ{block.jisshuG != null ? ` · ${block.jisshuG}G` : ""}
                     </span>
+                    {onYameCancel && (
+                      <button
+                        onClick={() => onYameCancel(block.id)}
+                        className="text-[9px] font-mono font-bold px-2 py-0.5 rounded active:scale-95 transition-transform ml-2"
+                        style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#93c5fd" }}
+                      >
+                        取消
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

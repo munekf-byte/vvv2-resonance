@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthContext";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { Footer } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "TOKYO GHOUL RESONANCE | 実戦分析",
@@ -33,6 +34,7 @@ export default function RootLayout({
         <AuthProvider>
           <AuthGuard>
             {children}
+            <Footer />
           </AuthGuard>
         </AuthProvider>
       </body>

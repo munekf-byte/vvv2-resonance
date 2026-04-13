@@ -2,9 +2,17 @@
 import { useAuth } from "./AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
+
+const PUBLIC_PATHS = ["/terms", "/privacy"];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const pathname = usePathname();
+
+  if (PUBLIC_PATHS.includes(pathname)) {
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (

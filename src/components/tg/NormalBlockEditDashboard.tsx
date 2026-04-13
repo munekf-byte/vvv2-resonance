@@ -612,8 +612,9 @@ function MultiSlotPicker({
 // ─── ZenchoSlot (nd-9) ────────────────────────────────────────────────────────
 
 const ZENCHO_TYPE_COLORS: Record<string, { bg: string; color: string }> = {
-  "東京上空": { bg: "#c62828", color: "#ffffff" },
   "前兆":     { bg: "#1565c0", color: "#ffffff" },
+  "東京上空": { bg: "#c62828", color: "#ffffff" },
+  "前兆なし": { bg: "#78909c", color: "#ffffff" },
 };
 
 function ZenchoSlot({ zone, value, onChange }: {

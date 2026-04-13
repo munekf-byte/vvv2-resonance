@@ -366,6 +366,10 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
                 modeProbs={modeProbs}
                 onEdit={handleNormalEdit}
                 onDelete={(blockId) => deleteNormalBlock(blockId)}
+                onYameCancel={(blockId) => {
+                  const block = blocks.find((b) => b.id === blockId);
+                  if (block) updateNormalBlock(blockId, { ...block, yame: false });
+                }}
               />
             </div>
           </>
