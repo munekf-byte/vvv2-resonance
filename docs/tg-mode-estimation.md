@@ -39,10 +39,13 @@
 | 150G | B以上 期待 | 本前兆濃厚 | B以上 濃厚 |
 | 200G | PRE 濃厚 | (Default) | B以上 期待度UP |
 | 250G | C以上 濃厚 | 本前兆濃厚 | C以上 濃厚 |
-| 300G | (Default) | (Default) | CH 濃厚 |
+| 300G | **CH 濃厚** | (Default) | CH 濃厚 |
 | 400G | C 濃厚 | (Default) | (Default) |
-| 500G | (Default) | (Default) | CH 濃厚 |
+| 500G | **CH 濃厚** | (Default) | CH 濃厚 |
 | 600G | - | 本前兆濃厚 | 本前兆濃厚 |
+
+> **v4.36更新**: 300G/500G + 前兆なし → CH濃厚に修正（旧Defaultは誤り）
+> アイキャッチは複数記録対応（string → string[]）
 
 ---
 

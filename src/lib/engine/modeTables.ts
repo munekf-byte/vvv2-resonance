@@ -49,48 +49,57 @@ export function modesBelow(floor: ModeKey): ModeKey[] {
  */
 export const ZENCHO_MATRIX: Record<string, Record<string, ZenchoAction>> = {
   "50": {
-    "前兆":     { type: "confirm", mode: "HEAVEN" },
-    "東京上空": { type: "confirmAbove", floor: "CH" },
+    "前兆":     { type: "confirm", mode: "HEAVEN" },           // 天国濃厚
+    "東京上空": { type: "confirmAbove", floor: "CH" },          // チャンス以上濃厚
+    "前兆なし": { type: "default" },
     "":         { type: "default" },
   },
   "100": {
     "前兆":     { type: "default" },
-    "東京上空": { type: "confirm", mode: "PRE" },
+    "東京上空": { type: "confirm", mode: "PRE" },               // 天国準備濃厚
+    "前兆なし": { type: "confirm", mode: "PRE" },               // 天国準備濃厚
     "":         { type: "confirm", mode: "PRE" },
   },
   "150": {
-    "前兆":     { type: "default" }, // 本前兆濃厚 = CZ当選示唆
-    "東京上空": { type: "confirmAbove", floor: "B" },
+    "前兆":     { type: "default" },                            // 本前兆（当選）濃厚
+    "東京上空": { type: "confirmAbove", floor: "B" },           // 通常B以上濃厚
+    "前兆なし": { type: "boost", modes: ["B", "C", "CH", "PRE", "HEAVEN"], factor: 1.5 }, // 通常B以上
     "":         { type: "boost", modes: ["B", "C", "CH", "PRE", "HEAVEN"], factor: 1.5 },
   },
   "200": {
     "前兆":     { type: "default" },
-    "東京上空": { type: "boost", modes: ["B", "C", "CH", "PRE", "HEAVEN"], factor: 1.3 },
+    "東京上空": { type: "boost", modes: ["B", "C", "CH", "PRE", "HEAVEN"], factor: 1.3 }, // B以上期待度UP
+    "前兆なし": { type: "confirm", mode: "PRE" },               // 天国準備濃厚
     "":         { type: "confirm", mode: "PRE" },
   },
   "250": {
-    "前兆":     { type: "default" },
-    "東京上空": { type: "confirmAbove", floor: "C" },
+    "前兆":     { type: "default" },                            // 本前兆（当選）濃厚
+    "東京上空": { type: "confirmAbove", floor: "C" },           // 通常C以上濃厚
+    "前兆なし": { type: "confirmAbove", floor: "C" },           // 通常C以上濃厚
     "":         { type: "confirmAbove", floor: "C" },
   },
   "300": {
     "前兆":     { type: "default" },
-    "東京上空": { type: "confirm", mode: "CH" },
-    "":         { type: "default" },
+    "東京上空": { type: "confirm", mode: "CH" },                // チャンス濃厚
+    "前兆なし": { type: "confirm", mode: "CH" },                // チャンス濃厚
+    "":         { type: "confirm", mode: "CH" },                // ★修正: default → CH濃厚
   },
   "400": {
     "前兆":     { type: "default" },
     "東京上空": { type: "default" },
+    "前兆なし": { type: "confirm", mode: "C" },                 // 通常C濃厚
     "":         { type: "confirm", mode: "C" },
   },
   "500": {
     "前兆":     { type: "default" },
-    "東京上空": { type: "confirm", mode: "CH" },
-    "":         { type: "default" },
+    "東京上空": { type: "confirm", mode: "CH" },                // チャンス濃厚
+    "前兆なし": { type: "confirm", mode: "CH" },                // ★修正: default → CH濃厚
+    "":         { type: "confirm", mode: "CH" },                // ★修正: default → CH濃厚
   },
   "600": {
-    "前兆":     { type: "default" }, // 本前兆濃厚
-    "東京上空": { type: "default" }, // 本前兆濃厚
+    "前兆":     { type: "default" },                            // 本前兆濃厚
+    "東京上空": { type: "default" },                            // 本前兆濃厚
+    "前兆なし": { type: "default" },
     "":         { type: "default" },
   },
 };

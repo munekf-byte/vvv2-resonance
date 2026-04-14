@@ -50,8 +50,9 @@ export function estimateAllModes(blocks: TGNormalBlock[]): ModeProbs[] {
     // 2. 招待状ハード制約
     probs = applyInvitationConstraints(probs, block.invitation, block.jisshuG);
 
-    // 3. アイキャッチ補正（ソフト/ハード）
-    probs = applyEyecatch(probs, block.eyecatch);
+    // 3. アイキャッチ補正（ソフト/ハード） — 配列 or 旧string両対応
+    const eyecatchArr = Array.isArray(block.eyecatch) ? block.eyecatch : (block.eyecatch ? [block.eyecatch] : []);
+    probs = applyEyecatch(probs, eyecatchArr);
 
     // 4. 前兆ハード判定（最強の証拠、最後に適用）
     probs = applyZenchoConstraints(probs, block.zencho);
@@ -166,25 +167,27 @@ function applyInvitationConstraints(
 // アイキャッチ補正
 // -----------------------------------------------------------------------------
 
-function applyEyecatch(probs: ModeProbs, eyecatch: string): ModeProbs {
-  if (!eyecatch) return probs;
+function applyEyecatch(probs: ModeProbs, eyecatchArr: string[]): ModeProbs {
+  if (!eyecatchArr || eyecatchArr.length === 0) return probs;
 
-  const effect = EYECATCH_TABLE[eyecatch];
-  if (!effect || effect.type === "none") return probs;
+  let result = { ...probs };
 
-  const result = { ...probs };
+  for (const eyecatch of eyecatchArr) {
+    if (!eyecatch) continue;
+    const effect = EYECATCH_TABLE[eyecatch];
+    if (!effect || effect.type === "none") continue;
 
-  if (effect.type === "hardConfirm" && effect.confirmMode) {
-    // ハード確定: 指定モード以外を0に
-    for (const mode of ALL_MODES) {
+    if (effect.type === "hardConfirm" && effect.confirmMode) {
+      for (const mode of ALL_MODES) {
       result[mode] = mode === effect.confirmMode ? 1.0 : 0;
     }
     return result;
   }
 
-  if (effect.type === "boost" && effect.boostModes && effect.boostFactor) {
-    for (const mode of effect.boostModes) {
-      result[mode] *= effect.boostFactor;
+    if (effect.type === "boost" && effect.boostModes && effect.boostFactor) {
+      for (const mode of effect.boostModes) {
+        result[mode] *= effect.boostFactor;
+      }
     }
   }
 

@@ -44,8 +44,8 @@ export interface TGNormalBlock {
   invitation: string[];
   /** 前兆履歴 — 複数記録可 (TG_ZENCHO values) */
   zencho: string[];
-  /** アイキャッチ (TG_EYECATCH | "") */
-  eyecatch: string;
+  /** アイキャッチ — 複数記録可 (TG_EYECATCH values) */
+  eyecatch: string[];
   /** CZ内容カウンター { 押/斜🔔, リプ, 弱レア, 強レア } */
   czCounter?: TGCZCounter;
   /** フリーメモ */
