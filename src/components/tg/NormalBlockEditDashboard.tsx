@@ -37,6 +37,7 @@ function invShortLabel(full: string): string {
 interface Props {
   block: NormalBlock | null;
   blockIndex: number;
+  medalStamp?: number | null;
   onSave: (block: NormalBlock) => void;
   onTempSave: (block: NormalBlock) => void;
   onClose: () => void;
@@ -70,7 +71,7 @@ const MAX_SLOTS = 5;
 
 // ─── メインコンポーネント ──────────────────────────────────────────────────────
 
-export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave, onClose, onYame }: Props) {
+export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave, onTempSave, onClose, onYame }: Props) {
   const isNew = block === null;
   const [form, setForm] = useState<FormState>(() =>
     block ? { ...block, memo: block.memo ?? "" } : emptyForm()
@@ -158,6 +159,17 @@ export function NormalBlockEditDashboard({ block, blockIndex, onSave, onTempSave
           </p>
         </div>
       </div>
+
+      {/* ===== 差枚数スタンプ ===== */}
+      {medalStamp != null && (
+        <div className="flex-shrink-0 flex items-center justify-center py-1.5"
+          style={{ backgroundColor: medalStamp >= 0 ? "#14532d" : "#7f1d1d" }}>
+          <span className="text-[10px] font-mono font-bold text-white/60 mr-1.5">差枚数</span>
+          <span className="text-[15px] font-mono font-black text-white tracking-wide">
+            {medalStamp >= 0 ? "+" : ""}{medalStamp.toLocaleString()}枚
+          </span>
+        </div>
+      )}
 
       {/* ===== スクロール可能フォーム ===== */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-32">

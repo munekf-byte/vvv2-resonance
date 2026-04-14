@@ -29,6 +29,7 @@ interface Props {
   atLabels: Map<string, string>;
   atEntries?: TGATEntry[];
   modeProbs?: ModeProbs[];
+  medalStamps?: number[];
   onEdit: (block: NormalBlock, index: number) => void;
   onDelete: (blockId: string) => void;
   onYameCancel?: (blockId: string) => void;
@@ -72,7 +73,7 @@ const HDR_TEXT     = "#f9fafb";
 const COL_BORDER_R = "border-r border-gray-400";
 const ROW_BORDER   = "border-b-2 border-gray-500";
 
-export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit, onDelete, onYameCancel }: Props) {
+export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalStamps, onEdit, onDelete, onYameCancel }: Props) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null); // 削除確認中の blockId
 
@@ -142,15 +143,26 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                 {/* ── メイン行 ── */}
                 <div className={`grid ${COLS}`}>
 
-                  {/* 編集ボタン: 鉛筆マークのみ（画像出力時は非表示） */}
+                  {/* 編集ボタン + 差枚数スタンプ */}
                   <button
                     data-capture-hide="true"
                     onClick={() => onEdit(block, index)}
-                    className={`flex items-center justify-center min-h-[34px] transition-colors active:bg-blue-100 ${COL_BORDER_R}`}
+                    className={`flex flex-col items-center justify-center min-h-[34px] transition-colors active:bg-blue-100 ${COL_BORDER_R}`}
                     style={{ backgroundColor: "#eef2f7" }}
                     title="タップして編集"
                   >
                     <span className="text-xl text-gray-500">✎</span>
+                    {medalStamps?.[index] != null && (
+                      <span
+                        className="text-[7px] font-mono font-black leading-none px-1 py-px rounded-sm mt-0.5"
+                        style={{
+                          backgroundColor: medalStamps[index] >= 0 ? "#16a34a" : "#dc2626",
+                          color: "#ffffff",
+                        }}
+                      >
+                        {medalStamps[index] >= 0 ? "+" : ""}{medalStamps[index].toLocaleString()}
+                      </span>
+                    )}
                   </button>
 
                   {/* 実G数 */}

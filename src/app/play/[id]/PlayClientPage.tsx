@@ -19,6 +19,7 @@ import { lsLoadSession, lsSaveSession, flushPendingSaves, onSyncStatusChange, ty
 import { estimateAllModes } from "@/lib/engine/modeEstimation";
 import { captureAndDownload, captureAndShare } from "@/lib/tg/captureImage";
 import { inferSetting } from "@/components/tg/SummaryTab";
+import { computeMedalStamps } from "@/lib/tg/medalCalc";
 
 interface PlayClientPageProps {
   initialSession: PlaySession;
@@ -142,6 +143,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const atKeyList  = computeAtKeyList(blocks);
   const atCount    = blocks.filter((b) => b.atWin).length;
   const modeProbs  = useMemo(() => estimateAllModes(blocks), [blocks]);
+  const medalStamps = useMemo(() => computeMedalStamps(blocks, atLabels, atEntries, uchidashi), [blocks, atLabels, atEntries, uchidashi]);
 
   // ── 通常時ハンドラ ──────────────────────────────────────────────────────────
   function handleNormalEdit(block: NormalBlock, index: number) {
@@ -364,6 +366,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
                 atLabels={atLabels}
                 atEntries={atEntries}
                 modeProbs={modeProbs}
+                medalStamps={medalStamps}
                 onEdit={handleNormalEdit}
                 onDelete={(blockId) => deleteNormalBlock(blockId)}
                 onYameCancel={(blockId) => {
@@ -457,6 +460,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
         <NormalBlockEditDashboard
           block={normalEdit.block}
           blockIndex={normalEdit.index}
+          medalStamp={medalStamps[normalEdit.index - 1] ?? null}
           onSave={handleNormalSave}
           onTempSave={handleNormalTempSave}
           onClose={() => setNormalEdit(NORMAL_CLOSED)}
