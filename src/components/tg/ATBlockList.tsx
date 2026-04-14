@@ -75,16 +75,16 @@ function buildSetNumbers(rows: TGATRow[]): Map<string, number> {
 // ─── メインコンポーネント ─────────────────────────────────────────────────────
 
 export function ATBlockList({ atKeyList, atEntries, atEventMap, blocks, onAddRow, onEditRow, onDeleteRow }: Props) {
-  // ATキー → エピソードボーナス経由か判定
-  function isEpisodeBonus(atKey: string): boolean {
-    if (!atEventMap || !blocks) return false;
+  // ATキー → 対応する通常時イベントを取得
+  function getATEvent(atKey: string): string {
+    if (!atEventMap || !blocks) return "";
     for (const [blockId, label] of atEventMap) {
       if (label === atKey) {
         const block = blocks.find((b) => b.id === blockId);
-        return block?.event === "エピソードボーナス";
+        return block?.event ?? "";
       }
     }
-    return false;
+    return "";
   }
   const [expandedRows,  setExpandedRows]  = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<{ atKey: string; rowId: string } | null>(null);
@@ -115,8 +115,8 @@ export function ATBlockList({ atKeyList, atEntries, atEventMap, blocks, onAddRow
           const entry      = atEntries.find((e) => e.atKey === atKey) ?? { atKey, rows: [] };
           const summary    = computeSummary(entry);
           const setNumbers = buildSetNumbers(entry.rows);
-          const isEpi      = isEpisodeBonus(atKey);
-          const baseCoins  = isEpi ? 250 : 150;
+          const event      = getATEvent(atKey);
+          const baseCoins  = event === "ロングフリーズ" ? 2000 : event === "エピソードボーナス" ? 250 : 150;
 
           return (
             <ATBlock
@@ -218,7 +218,7 @@ function ATBlock({
           {/* CCG死神（成功時のみ表示） */}
           {summary.ccgTotal > 0 && <ATHeaderCoinCell label="CCG" coins={summary.ccgTotal} />}
           {/* 合計獲得（概算） */}
-          <ATHeaderCoinCell label="合計獲得(概算)" coins={summary.total + baseCoins} highlight />
+          <ATHeaderCoinCell label="合計獲得(概算)" coins={summary.total + baseCoins + summary.setCount * 40} highlight />
           {/* 終了画面/トロフィー（hint表示） */}
           {(summary.endingSuggestion || summary.trophy) ? (
             <div className="flex items-center justify-center px-1.5 border-l border-green-900" style={{ backgroundColor: "#1a3d1f" }}>

@@ -232,9 +232,8 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                   const entry = atEntries.find((e) => e.atKey === atLabel);
                   if (!entry || entry.rows.length === 0) return null;
                   const s = computeATSummary(entry);
-                  const isEpisode = block.event === "エピソードボーナス";
-                  const baseCoins = isEpisode ? 250 : 150;
-                  const grandTotal = s.total + baseCoins;
+                  const baseCoins = block.event === "ロングフリーズ" ? 2000 : block.event === "エピソードボーナス" ? 250 : 150;
+                  const grandTotal = s.total + baseCoins + s.setCount * 40;
                   const suggHint = s.endingSuggestion ? getSuggestionListLines(s.endingSuggestion)?.hint : null;
                   const trophyHint = s.trophy ? getSuggestionListLines(s.trophy)?.hint : null;
                   // 下段用: AT履歴ブロック生成
