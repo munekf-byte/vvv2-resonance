@@ -120,7 +120,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
         </div>
 
         {/* ===== データ行 ===== */}
-        <div className="space-y-1.5 px-1 pt-1">
+        <div className="space-y-1.5 px-1.5 py-1.5" style={{ backgroundColor: "#e8e2d8" }}>
           {blocks.map((block, index) => {
             const isExpanded = expandedIds.has(block.id);
             const atLabel    = atLabels.get(block.id);
@@ -140,7 +140,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
               !!hasCZ;
 
             return (
-              <div key={block.id} className="bg-white rounded-lg border border-gray-300 overflow-hidden shadow-sm">
+              <div key={block.id} className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)" }}>
 
                 {/* ── メイン行 ── */}
                 <div className={`grid ${COLS}`}>
