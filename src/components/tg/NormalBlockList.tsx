@@ -140,7 +140,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
               !!hasCZ;
 
             return (
-              <div key={block.id} className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)" }}>
+              <div key={block.id} className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", border: "1px solid #000000" }}>
 
                 {/* ── メイン行 ── */}
                 <div className={`grid ${COLS}`}>
@@ -305,7 +305,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
                       </div>
                       <div
                         className="flex-1 overflow-hidden"
-                        style={{ border: "1.5px solid #14532d", borderLeft: "none", height: "40px" }}
+                        style={{ border: "1.5px solid #14532d", borderLeft: "none" }}
                       >
                         {/* 上段 20px: サマリー情報 */}
                         <div style={{ display: "grid", gridTemplateColumns: s.ccgTotal > 0 ? "34px 1fr 1fr 1fr 1fr 1fr" : "34px 1fr 1fr 1fr 1fr", alignItems: "stretch", height: "20px" }}>
@@ -328,9 +328,9 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
                             )}
                           </div>
                         </div>
-                        {/* 下段 20px: AT履歴ブロック */}
-                        <div className="flex items-center border-t border-gray-300 overflow-hidden" style={{ height: "20px", backgroundColor: "#f9fafb" }}>
-                          <div className="flex items-center gap-px px-0.5 flex-1 overflow-hidden">
+                        {/* 下段: AT履歴ブロック（改行対応） */}
+                        <div className="border-t border-gray-300" style={{ minHeight: "20px", backgroundColor: "#f9fafb" }}>
+                          <div className="flex flex-wrap items-center gap-px px-0.5 py-0.5">
                             {hBlocks.map((hb, hi) => (
                               <div key={hi} className="flex items-center justify-center rounded-sm shrink-0"
                                 style={{
