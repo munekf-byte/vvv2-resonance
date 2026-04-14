@@ -64,8 +64,8 @@ function Cat({ color, title, children, mb }: {
 }) {
   return (
     <div style={{ border: `2px solid ${color}`, borderRadius: "3px", overflow: "hidden", marginBottom: mb ? "4px" : 0 }}>
-      <div style={{ backgroundColor: color, padding: "2px 6px" }}>
-        <span style={{ fontSize: "9px", fontWeight: 700, color: "#fff", lineHeight: 1.6 }}>{title}</span>
+      <div style={{ backgroundColor: color, padding: "4px 6px", display: "flex", alignItems: "center" }}>
+        <span style={{ fontSize: "11px", fontWeight: 900, color: "#fff", lineHeight: 1.4, letterSpacing: "0.5px" }}>{title}</span>
       </div>
       {children}
     </div>
@@ -98,14 +98,15 @@ function THead({ cols, color }: { cols: { label: string; width: string }[]; colo
 }
 
 /** テーブルデータ行 */
-function TRow({ cols, values, i, grade }: {
+function TRow({ cols, values, i, grade, bg }: {
   cols: { width: string }[];
   values: React.ReactNode[];
   i: number;
   grade?: SettingGrade;
+  bg?: string;
 }) {
   const sc = grade ? SETTING_COLORS[grade] : null;
-  const baseBg = i % 2 === 0 ? "#ffffff" : "#f7f7f7";
+  const baseBg = bg ? bg : (i % 2 === 0 ? "#ffffff" : "#f7f7f7");
   return (
     <div style={{
       display: "grid",
@@ -321,10 +322,8 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
 
       <div ref={captureRef} style={{ padding: "8px 6px", backgroundColor: "#ffffff", fontFamily: "monospace" }}>
 
-        {/* ===== Row 1: 通常時 | CZ内容 ===== */}
+        {/* ===== 1. 通常時 | CZ内容 ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-
-          {/* 通常時 */}
           <Cat color="#1565c0" title="通常時">
             <THead cols={COLS3} color="#1565c0" />
             <TRow cols={COLS3} i={0} values={[<b key="l">実稼働G数</b>, `${sum1.toLocaleString()}G`, "—"]} />
@@ -334,10 +333,7 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
             <TRow cols={COLS3} i={4} values={[<b key="l">AT直撃</b>, `${directATCount}回`, prob(directATCount, sum2)]} grade={gradeByProb(directATCount, sum2, [...DIRECT_AT_PROB])} />
             <TRow cols={COLS3} i={5} values={[<b key="l">AT初当たり</b>, `${atWinCount}回`, prob(atWinCount, sum2)]} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])} />
           </Cat>
-
-          {/* CZ内容 */}
           <Cat color="#7b1fa2" title="CZ内容">
-            {/* サマリ行 */}
             <div style={{
               display: "grid", gridTemplateColumns: "1fr 52px 64px",
               borderBottom: "2px solid #7b1fa2", backgroundColor: "#f3e8ff", padding: "3px 4px",
@@ -356,8 +352,7 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
               { label: "強レア", total: czTotalStrongRare, hit: czHitStrongRare },
             ] as const).map((r, i) => (
               <TRow key={r.label} cols={COLS_CZ} i={i} values={[
-                r.label,
-                `${r.total}回`,
+                r.label, `${r.total}回`,
                 r.hit > 0 ? <span key="h" style={{ color: "#b91c1c" }}>★{r.hit}</span> : "—",
                 r.total > 0 ? pct(r.hit, r.total) : "—",
               ]} />
@@ -365,7 +360,25 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           </Cat>
         </div>
 
-        {/* ===== 赫眼 / 精神世界 ===== */}
+        {/* ===== 2. AT初当たり | 設定示唆（並列半幅） ===== */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+          <Cat color="#2e7d32" title="AT">
+            <THead cols={COLS3} color="#2e7d32" />
+            <TRow cols={COLS3} i={0} values={[<b key="l">AT初当たり</b>, `${atWinCount}回`, prob(atWinCount, sum2)]} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])} />
+            <TRow cols={COLS3} i={1} values={[<b key="l">引き戻し率</b>, `${hikimodoCount}回`, atWinCount > 0 ? pct(hikimodoCount, atWinCount) : "—"]}
+              grade={gradeByRate(hikimodoCount, atWinCount, HIKIMODOHI_RATE[0], HIKIMODOHI_RATE[5])} />
+            <TRow cols={COLS3} i={2} values={[<b key="l">裏AT突入率</b>, `${uraATEntryCount}回`, atWinCount > 0 ? pct(uraATEntryCount, atWinCount) : "—"]}
+              grade={gradeByRate(uraATEntryCount, atWinCount, URA_AT_RATE[0], URA_AT_RATE[5])} />
+          </Cat>
+          <Cat color="#e65100" title="設定示唆">
+            <THead cols={[{ label: "項目", width: "1fr" }, { label: "内容", width: "1fr" }]} color="#e65100" />
+            <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={0} values={[<b key="l">確定設定</b>, <b key="v">{settingHints || "情報不足"}</b>]} />
+            <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={1} values={[<b key="l">推測設定</b>, <b key="v">{userSettingGuess || "未入力"}</b>]} />
+            <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={2} values={[<b key="l">トロフィー</b>, `${trophyCount}回`]} />
+          </Cat>
+        </div>
+
+        {/* ===== 3. 赫眼 / 精神世界 ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <Cat color="#b71c1c" title="赫眼">
             <THead cols={COLS3_PCT} color="#b71c1c" />
@@ -384,33 +397,13 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           </Cat>
         </div>
 
-        {/* ===== ゲーム数ゾーン集計（確定のみ） ===== */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <ZoneBlock label="全体[確定]" data={zoneAllExact} />
-          <ZoneBlock label="AT後[確定]" data={zoneATExact} />
-        </div>
-
-        {/* ===== ゲーム数ゾーン集計（按分込み） ===== */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <ZoneBlock label="全体[按分]" data={zoneAllProrate} prorated />
-          <ZoneBlock label="AT後[按分]" data={zoneATProrate} prorated />
-        </div>
-
-        {/* ===== 設定示唆 ===== */}
-        <Cat color="#e65100" title="設定示唆" mb>
-          <THead cols={[{ label: "項目", width: "1fr" }, { label: "内容", width: "1fr" }]} color="#e65100" />
-          <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={0} values={[<b key="l">確定設定情報</b>, <b key="v">{settingHints || "情報不足"}</b>]} />
-          <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={1} values={[<b key="l">推測設定</b>, <b key="v">{userSettingGuess || "未入力"}</b>]} />
-          <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={2} values={[<b key="l">トロフィー</b>, `${trophyCount}回`]} />
-        </Cat>
-
-        {/* ===== CZ失敗 / 終了画面示唆 ===== */}
+        {/* ===== 4. CZ失敗 / 終了画面（ゾーン集計の直上） ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <Cat color="#bf360c" title="[cz失敗] 終了画面">
             <THead cols={[{ label: "キャラ名", width: "1fr" }, { label: "回数", width: "44px" }]} color="#bf360c" />
             {TG_ENDING_SUGGESTIONS.filter((s) => s.startsWith("[cz失敗]")).map((s, i) => {
               const c = czFailSuggestions.filter((v) => v === s).length;
-              return <TRow key={s} cols={[{ width: "1fr" }, { width: "44px" }]} i={i} values={[extractName(s), `${c}回`]} />;
+              return <TRow key={s} cols={[{ width: "1fr" }, { width: "44px" }]} i={i} bg={suggBg(s)} values={[extractName(s), `${c}回`]} />;
             })}
           </Cat>
           <Cat color="#4e342e" title="[終了画面] 示唆">
@@ -418,30 +411,30 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
             {endScreenItems.map((s, i) => {
               const c = allEndScreenFromAT.filter((v) => v === s).length;
               const t = allEndScreenFromAT.length;
-              return <TRow key={s} cols={COLS_SUGG} i={i} values={[extractName(s), `${c}回`, pct(c, t)]} />;
+              return <TRow key={s} cols={COLS_SUGG} i={i} bg={suggBg(s)} values={[extractName(s), `${c}回`, pct(c, t)]} />;
             })}
           </Cat>
         </div>
 
-        {/* ===== AT ===== */}
-        <Cat color="#2e7d32" title="AT" mb>
-          <THead cols={COLS3} color="#2e7d32" />
-          <TRow cols={COLS3} i={0} values={[<b key="l">AT初当たり</b>, `${atWinCount}回`, prob(atWinCount, sum2)]} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])} />
-          <TRow cols={COLS3} i={1} values={[<b key="l">引き戻し率</b>, `${hikimodoCount}回`, atWinCount > 0 ? pct(hikimodoCount, atWinCount) : "—"]}
-            grade={gradeByRate(hikimodoCount, atWinCount, HIKIMODOHI_RATE[0], HIKIMODOHI_RATE[5])} />
-          <TRow cols={COLS3} i={2} values={[<b key="l">裏AT突入率</b>, `${uraATEntryCount}回`, atWinCount > 0 ? pct(uraATEntryCount, atWinCount) : "—"]}
-            grade={gradeByRate(uraATEntryCount, atWinCount, URA_AT_RATE[0], URA_AT_RATE[5])} />
-        </Cat>
+        {/* ===== 5. ゲーム数ゾーン集計（確定） ===== */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+          <ZoneBlock label="全体[確定]" data={zoneAllExact} headerColor="#1565c0" />
+          <ZoneBlock label="AT後[確定]" data={zoneATExact} headerColor="#e65100" />
+        </div>
 
-        {/* ===== キャラ対決 / BITES ===== */}
+        {/* ===== 6. ゲーム数ゾーン集計（按分） ===== */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+          <ZoneBlock label="全体[按分]" data={zoneAllProrate} prorated headerColor="#1565c0" />
+          <ZoneBlock label="AT後[按分]" data={zoneATProrate} prorated headerColor="#e65100" />
+        </div>
+
+        {/* ===== 7. キャラ対決 / BITES ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <Cat color="#1b5e20" title="キャラ対決成績">
             <THead cols={COLS_CHAR} color="#1b5e20" />
             {charStats.map(({ char, wins, total }, i) => (
               <TRow key={char} cols={COLS_CHAR} i={i} values={[
-                char,
-                total > 0 ? `${wins}/${total}` : "—",
-                total > 0 ? pct(wins, total) : "—",
+                char, total > 0 ? `${wins}/${total}` : "—", total > 0 ? pct(wins, total) : "—",
               ]} />
             ))}
           </Cat>
@@ -453,7 +446,7 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           </Cat>
         </div>
 
-        {/* ===== 有馬 ===== */}
+        {/* ===== 8. 有馬 ===== */}
         {arimaByPos.some((a) => a.total > 0) && (
           <Cat color="#f59e0b" title="有馬set（1,3,5セット目）" mb>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2px", padding: "4px" }}>
@@ -467,14 +460,14 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           </Cat>
         )}
 
-        {/* ===== BITES獲得履歴 ===== */}
+        {/* ===== 9. BITES獲得履歴（改行対応） ===== */}
         {bitesHistoryByAT.length > 0 && (
           <Cat color="#14532d" title="BITES獲得履歴" mb>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "2px", padding: "4px" }}>
               {bitesHistoryByAT.map((group, gi) => {
                 const bgColor = gi % 2 === 0 ? "#e8f5e9" : "#fff8e1";
                 return (
-                  <div key={group.atKey} style={{ display: "flex", alignItems: "center", gap: "1px", backgroundColor: bgColor, borderRadius: "3px", padding: "2px 3px" }}>
+                  <div key={group.atKey} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1px", backgroundColor: bgColor, borderRadius: "3px", padding: "2px 3px" }}>
                     <span style={{ fontSize: "7px", fontWeight: 700, color: "#374151", marginRight: "2px", lineHeight: 1.5 }}>{group.atKey}</span>
                     {group.items.map((h, i) => <SqIcon key={i} top={h.table} bottom={h.coins} bg="#14532d" />)}
                   </div>
@@ -484,14 +477,14 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           </Cat>
         )}
 
-        {/* ===== 直乗せ履歴 ===== */}
+        {/* ===== 10. 直乗せ履歴（改行対応） ===== */}
         {directHistoryByAT.length > 0 && (
           <Cat color="#1565c0" title="直乗せ履歴" mb>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "2px", padding: "4px" }}>
               {directHistoryByAT.map((group, gi) => {
                 const bgColor = gi % 2 === 0 ? "#e3f2fd" : "#fce4ec";
                 return (
-                  <div key={group.atKey} style={{ display: "flex", alignItems: "center", gap: "1px", backgroundColor: bgColor, borderRadius: "3px", padding: "2px 3px" }}>
+                  <div key={group.atKey} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1px", backgroundColor: bgColor, borderRadius: "3px", padding: "2px 3px" }}>
                     <span style={{ fontSize: "7px", fontWeight: 700, color: "#374151", marginRight: "2px", lineHeight: 1.5 }}>{group.atKey}</span>
                     {group.items.map((d, i) => <SqIcon key={i} top={d.trigger} bottom={d.coins != null ? String(d.coins) : "—"} bg="#1565c0" />)}
                   </div>
@@ -501,23 +494,23 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           </Cat>
         )}
 
-        {/* ===== エンディングカード集計 ===== */}
+        {/* ===== 11. エンディングカード集計（色分け） ===== */}
         {ecTotal > 0 && (
           <Cat color="#6d4c41" title={`エンディングカード (${ecTotal}枚)`} mb>
             <THead cols={[{ label: "カード", width: "1fr" }, { label: "回数", width: "44px" }, { label: "割合", width: "48px" }]} color="#6d4c41" />
             {([
-              ...TG_ENDING_CARD_LABELS.map((c) => ({ key: c.key as keyof import("@/types").TGEndingCard, label: c.label })),
-              ...TG_COPPER_CARD_TYPES.map((c) => ({ key: c.key as keyof import("@/types").TGEndingCard, label: c.label })),
-              ...TG_CONFIRMED_CARD_TYPES.map((c) => ({ key: c.key as keyof import("@/types").TGEndingCard, label: c.label })),
+              ...TG_ENDING_CARD_LABELS.map((c) => ({ key: c.key as keyof import("@/types").TGEndingCard, label: c.label, bg: c.color + "30" })),
+              ...TG_COPPER_CARD_TYPES.map((c) => ({ key: c.key as keyof import("@/types").TGEndingCard, label: c.label, bg: c.color + "30" })),
+              ...TG_CONFIRMED_CARD_TYPES.map((c) => ({ key: c.key as keyof import("@/types").TGEndingCard, label: c.label, bg: ecConfirmedBg(c.key) })),
             ]).map((item, i) => {
               const count = ecSum(item.key);
               if (count === 0) return null;
-              return <TRow key={item.key} cols={[{ width: "1fr" }, { width: "44px" }, { width: "48px" }]} i={i} values={[item.label, `${count}回`, pct(count, ecTotal)]} />;
+              return <TRow key={item.key} cols={[{ width: "1fr" }, { width: "44px" }, { width: "48px" }]} i={i} bg={item.bg} values={[item.label, `${count}回`, pct(count, ecTotal)]} />;
             })}
           </Cat>
         )}
 
-        {/* ===== 招待状（設定示唆） ===== */}
+        {/* ===== 12. 招待状（設定示唆・色分け） ===== */}
         {invSettingItems.length > 0 && (
           <Cat color="#4a148c" title="招待状（設定示唆）" mb>
             <THead cols={COLS_INV} color="#4a148c" />
@@ -526,7 +519,7 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
               const name = sep !== -1 ? inv.slice(0, sep) : inv;
               const hint = sep !== -1 ? inv.slice(sep + 3) : "";
               const c = allInvitations.filter((v) => v === inv).length;
-              return <TRow key={inv} cols={COLS_INV} i={i} values={[name, `${c}回`, hint]} />;
+              return <TRow key={inv} cols={COLS_INV} i={i} bg={invBg(inv)} values={[name, `${c}回`, hint]} />;
             })}
           </Cat>
         )}
@@ -538,14 +531,15 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
 
 // ── ゾーンブロック ──────────────────────────────────────────────────────────
 
-function ZoneBlock({ label, data, prorated }: { label: string; data: { zone: string; count: number }[]; prorated?: boolean }) {
+function ZoneBlock({ label, data, prorated, headerColor }: { label: string; data: { zone: string; count: number }[]; prorated?: boolean; headerColor?: string }) {
   const total = data.reduce((s, d) => s + d.count, 0);
   const filtered = data.filter((d) => d.count > 0);
   const cols = [{ label: "ゾーン", width: "1fr" }, { label: "回数", width: "50px" }, { label: "割合", width: "48px" }];
   const fmt = (n: number) => prorated ? n.toFixed(1) : String(n);
   const totalLabel = prorated ? total.toFixed(1) : String(total);
+  const c = headerColor ?? "#6a1b9a";
   return (
-    <Cat color="#6a1b9a" title={`ゲーム数ゾーン集計 ${label} (${totalLabel})`}>
+    <Cat color={c} title={`ゾーン ${label} (${totalLabel})`}>
       {/* カラーバー（出現ゾーンのみ） */}
       {total > 0 && (
         <div style={{ display: "flex", height: "16px" }}>
@@ -559,7 +553,7 @@ function ZoneBlock({ label, data, prorated }: { label: string; data: { zone: str
           ))}
         </div>
       )}
-      <THead cols={cols} color="#6a1b9a" />
+      <THead cols={cols} color={c} />
       {/* 全ゾーン固定ひな形 */}
       {data.map((d, i) => (
         <TRow key={d.zone} cols={cols} i={i} values={[
@@ -581,6 +575,46 @@ function zoneColor(z: string): string {
 // ── 集計ヘルパー ────────────────────────────────────────────────────────────
 
 // ゾーン集計ロジックは src/lib/tg/analytics.ts に集約
+
+// ── 色分けヘルパー（設定期待度） ─────────────────────────────────────────────
+
+function suggBg(s: string): string | undefined {
+  if (s.includes("設定6濃厚")) return "#fde68a";
+  if (s.includes("設定5以上")) return "#fcd34d";
+  if (s.includes("設定4以上")) return "#fed7aa";
+  if (s.includes("設定3以上")) return "#fecaca";
+  if (s.includes("設定2以上")) return "#ffe4e6";
+  if (s.includes("設定1否定")) return "#fff1f2";
+  if (s.includes("偶数")) return "#dbeafe";
+  if (s.includes("高設定示唆［強］") || s.includes("高設定示唆[強]")) return "#fef3c7";
+  if (s.includes("高設定示唆［弱］") || s.includes("高設定示唆[弱]")) return "#fffbeb";
+  if (s.includes("天国濃厚")) return "#fed7aa";
+  if (s.includes("天国準備")) return "#ffedd5";
+  if (s.includes("チャンス以上")) return "#fef3c7";
+  if (s.includes("通常C以上")) return "#fffbeb";
+  if (s.includes("通常B以上濃厚")) return "#fefce8";
+  if (s.includes("通常B以上示唆")) return "#f9fafb";
+  if (s.includes("奇数")) return "#fce7f3";
+  return undefined;
+}
+
+function invBg(inv: string): string | undefined {
+  if (inv.includes("設定6")) return "#fde68a";
+  if (inv.includes("設定4以上")) return "#fed7aa";
+  if (inv.includes("設定4否定")) return "#fef3c7";
+  if (inv.includes("設定3否定")) return "#fffbeb";
+  if (inv.includes("設定2否定")) return "#fefce8";
+  if (inv.includes("設定1否定")) return "#fff1f2";
+  if (inv.includes("偶")) return "#dbeafe";
+  return undefined;
+}
+
+function ecConfirmedBg(key: string): string {
+  if (key === "confirmed4") return "#e9d5ff"; // 虹6濃厚
+  if (key === "confirmed3") return "#fde68a"; // 金5以上
+  if (key === "confirmed2") return "#fed7aa"; // 金4以上
+  return "#e5e7eb"; // 銀3以上
+}
 
 function computeArimaPositions(atEntries: TGATEntry[]) {
   return [1, 3, 5].map((pos) => {

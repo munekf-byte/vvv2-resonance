@@ -440,7 +440,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, onEdit
                         className="text-[9px] font-mono font-bold px-2 py-0.5 rounded active:scale-95 transition-transform ml-2"
                         style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#93c5fd" }}
                       >
-                        取消
+                        [ヤメ]を取消
                       </button>
                     )}
                   </div>
