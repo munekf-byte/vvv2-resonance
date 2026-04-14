@@ -157,9 +157,11 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
 
   const lsKey = `tgr_totalG_${sessionId}`;
   const [totalGInput, setTotalGInput] = useState("");
+  const [showTotalGPopup, setShowTotalGPopup] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem(lsKey);
     if (saved) setTotalGInput(saved);
+    else setShowTotalGPopup(true);
   }, [lsKey]);
   function handleTotalGChange(v: string) {
     setTotalGInput(v);
@@ -275,7 +277,7 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
     <div className="pb-24">
       <div className="sticky top-0 z-20 bg-gray-100 border-b border-gray-300 px-3 py-2 flex items-center justify-between">
         <p className="text-[10px] font-mono font-bold text-red-600 leading-tight">
-          ※ 液晶画面の総消化ゲーム数を下記に入力してください
+          ※ 液晶メニューのTOTALゲーム数を下記に入力してください
         </p>
         <div className="flex gap-1.5 flex-shrink-0 ml-2">
           <button
@@ -302,11 +304,11 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
               液晶画面の
             </span>
             <span style={{ fontSize: "9px", fontWeight: 700, color: "#92400e", fontFamily: "monospace", display: "block", lineHeight: 1.4 }}>
-              総消化ゲーム数
+              TOTALゲーム数
             </span>
           </div>
           <input type="number" value={totalGInput} onChange={(e) => handleTotalGChange(e.target.value)}
-            placeholder="液晶の数値を入力"
+            placeholder="TOTALゲーム数を入力"
             style={{
               flex: 1, backgroundColor: "#ffffff", border: "2px solid #ca8a04", borderRadius: "4px",
               fontSize: "16px", fontFamily: "monospace", fontWeight: 700, textAlign: "right",
@@ -565,6 +567,31 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
         )}
 
       </div>
+
+      {/* ===== TOTALゲーム数未入力ポップアップ ===== */}
+      {showTotalGPopup && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center px-6" onClick={() => setShowTotalGPopup(false)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4" style={{ backgroundColor: "#92400e" }}>
+              <p className="text-white font-mono font-bold text-sm">TOTALゲーム数の入力</p>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-gray-700 font-mono text-sm leading-relaxed">
+                最初に液晶メニュー画面から<br />
+                <b>TOTALゲーム数</b>を転記してください。
+              </p>
+              <p className="text-gray-500 font-mono text-xs mt-2">集計の確率計算に必要です。</p>
+            </div>
+            <div className="border-t border-gray-200">
+              <button onClick={() => setShowTotalGPopup(false)}
+                className="w-full py-3 text-sm font-mono font-bold text-blue-600 hover:bg-gray-50 transition-colors">
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

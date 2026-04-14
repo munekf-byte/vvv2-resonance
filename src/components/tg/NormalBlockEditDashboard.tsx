@@ -398,40 +398,14 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
           <p className="text-[8px] text-gray-400 font-mono mt-1.5">各スロットを独立してタップ選択できます</p>
         </Section>
 
-        {/* ── アイキャッチ（複数記録） ── */}
-        <Section title="アイキャッチ（複数選択可）">
-          <div className="grid grid-cols-3 gap-2">
-            {([...TG_EYECATCH] as string[]).map((ec) => {
-              const ecArr = Array.isArray(form.eyecatch) ? form.eyecatch : (form.eyecatch ? [form.eyecatch] : []);
-              const sel = ecArr.includes(ec);
-              return (
-                <button
-                  key={ec}
-                  onClick={() => {
-                    const arr = Array.isArray(form.eyecatch) ? [...form.eyecatch] : (form.eyecatch ? [form.eyecatch] : []);
-                    if (sel) {
-                      setField("eyecatch", arr.filter((v) => v !== ec));
-                    } else {
-                      setField("eyecatch", [...arr, ec]);
-                    }
-                  }}
-                  className="py-3 rounded text-[10px] font-mono font-bold transition-all active:scale-95 text-center leading-tight"
-                  style={
-                    sel
-                      ? ec === "赫眼/喰種ver."
-                        ? { backgroundColor: "#b91c1c", color: "#fff", boxShadow: "0 0 0 2px #1f2937" }
-                        : { backgroundColor: "#374151", color: "#fff", boxShadow: "0 0 0 2px #1f2937" }
-                      : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
-                  }
-                >
-                  {ec}
-                </button>
-              );
-            })}
-          </div>
-          {Array.isArray(form.eyecatch) && form.eyecatch.length > 0 && (
-            <p className="text-[8px] text-gray-500 font-mono mt-1.5">{form.eyecatch.length}件選択中</p>
-          )}
+        {/* ── アイキャッチ（5スロット独立プルダウン） ── */}
+        <Section title="アイキャッチ（複数記録可）">
+          <MultiSlotPicker
+            values={Array.isArray(form.eyecatch) ? form.eyecatch : (form.eyecatch ? [form.eyecatch] : [])}
+            options={[...TG_EYECATCH]}
+            onChange={(vals) => setField("eyecatch", vals)}
+            colorFn={(v) => v === "赫眼/喰種ver." ? { backgroundColor: "#b91c1c", color: "#ffffff" } : { backgroundColor: "#374151", color: "#ffffff" }}
+          />
         </Section>
 
         {/* ── 赫眼状態 (nd-12) — 5スロット独立プルダウン ── */}
@@ -552,7 +526,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
 // 5個のスロットを並べ、各スロットが独立してプルダウン選択できる形式
 
 function MultiSlotPicker({
-  values, options, onChange, displayFn,
+  values, options, onChange, displayFn, colorFn,
   accentColor = "#374151", borderActive = "#374151",
   maxSlots = MAX_SLOTS, slotHeight = 60,
 }: {
@@ -560,6 +534,7 @@ function MultiSlotPicker({
   options: string[];
   onChange: (vals: string[]) => void;
   displayFn?: (v: string) => string;
+  colorFn?: (v: string) => { backgroundColor: string; color: string };
   accentColor?: string;
   borderActive?: string;
   maxSlots?: number;
@@ -593,7 +568,7 @@ function MultiSlotPicker({
               <div
                 className="absolute inset-0 flex items-center justify-center px-0.5 pointer-events-none"
                 style={hasValue
-                  ? { backgroundColor: accentColor, color: "#ffffff" }
+                  ? (colorFn ? colorFn(value) : { backgroundColor: accentColor, color: "#ffffff" })
                   : { backgroundColor: "#f9fafb", color: "#d1d5db" }
                 }
               >
