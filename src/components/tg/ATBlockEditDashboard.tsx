@@ -227,6 +227,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
   function handleTempSave() { onTempSave(buildRow()); }
 
   const ec = form.endingCard ?? emptyEndingCard();
+  const isED = form.character === "EDボナ";
 
   return (
     <>
@@ -274,8 +275,8 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           </div>
         </Section>
 
-        {/* 対決 (ad-5) */}
-        <Section title="対決（契機 + 成績）">
+        {/* 対決 (ad-5) — EDボナ時は非表示 */}
+        {!isED && <Section title="対決（契機 + 成績）">
           <div className="grid grid-cols-5 gap-1.5">
             {Array.from({ length: TG_MAX_BATTLE_RESULTS }, (_, i) => {
               const battle = form.battles[i] ?? { trigger: "", result: "" };
@@ -294,10 +295,10 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           <p className="text-[8px] text-gray-400 font-mono mt-1.5">
             上段: 対決契機を選択　下段: タップで × → ○ → 空
           </p>
-        </Section>
+        </Section>}
 
-        {/* 直乗せ (ad-7) */}
-        <Section title="直乗せ（契機 + 枚数）">
+        {/* 直乗せ (ad-7) — EDボナ時は非表示 */}
+        {!isED && <Section title="直乗せ（契機 + 枚数）">
           <div className="grid grid-cols-5 gap-1.5">
             {Array.from({ length: TG_MAX_DIRECT_ADDS }, (_, i) => {
               const d = form.directAdds[i] ?? { id: "", trigger: "", coins: null };
@@ -316,9 +317,10 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
           <p className="text-[8px] text-gray-400 font-mono mt-1.5">
             上段: 役を選択　下段: 獲得枚数を選択
           </p>
-        </Section>
+        </Section>}
 
-        {/* 不利益 (ad-7b) */}
+        {/* 不利益 (ad-7b) — EDボナ時は非表示 */}
+        {!isED && (
         <Section title="不利益">
           <div className="grid grid-cols-3 gap-2">
             {["-", "不利益⭕️", "不利益❌"].map((opt) => {
@@ -346,29 +348,31 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
             })}
           </div>
         </Section>
+        )}
 
-        {/* BITES種別 (ad-9) */}
+        {/* BITES種別 (ad-9) — EDボナ時は非表示・トグルキャンセル対応 */}
+        {!isED && (
         <Section title="BITES種別">
           <div className="grid grid-cols-3 gap-2">
             {TG_BITES_TYPES.map((bt) => {
-              const col  = getBitesTypeCellColor(bt);
               const sel  = form.bitesType === bt;
-              const desc = getBitesDesc(bt);
               return (
-                <button key={bt} onClick={() => setField("bitesType", bt)}
+                <button key={bt} onClick={() => setField("bitesType", sel ? "" : bt)}
                   className="py-2 px-1 rounded leading-tight text-center transition-all active:scale-95 flex flex-col items-center"
-                  style={sel ? { ...col, boxShadow: "0 0 0 2px #1f2937" }
+                  style={sel ? { backgroundColor: "#1f2937", color: "#f9fafb", border: "2px solid #1f2937", boxShadow: "0 0 0 2px #1f2937" }
                              : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }}
                 >
                   <span className="text-[10px] font-mono font-bold">{getBitesTypeShort(bt)}</span>
-                  {desc && <span className="text-[8px] font-mono opacity-75 mt-0.5">{desc}</span>}
+                  {getBitesDesc(bt) && <span className="text-[8px] font-mono opacity-75 mt-0.5">{getBitesDesc(bt)}</span>}
                 </button>
               );
             })}
           </div>
         </Section>
+        )}
 
-        {/* BITES獲得 (ad-11) */}
+        {/* BITES獲得 (ad-11) — EDボナ時は非表示 */}
+        {!isED && (
         <Section title="BITES獲得">
           <div className="grid grid-cols-5 gap-2 mb-3">
             {TG_BITES_COINS.map((c) => (
@@ -407,8 +411,34 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
             <span className="text-[10px] font-mono text-gray-500 shrink-0">枚</span>
           </div>
         </Section>
+        )}
 
-        {/* 赫眼状態（最大5回） */}
+        {/* 赫眼状態（最大5回）— EDボナ時は赫眼カウンターに切替 */}
+        {isED ? (
+          <Section title="赫眼カウンター（ED中）">
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={() => setField("edKakuganCount" as keyof typeof form, Math.max(0, (form.edKakuganCount ?? 0) - 1) as never)}
+                className="w-14 h-14 rounded-lg text-xl font-mono font-black active:scale-95 transition-transform"
+                style={{ backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #d1d5db" }}
+              >−</button>
+              <div className="flex flex-col items-center">
+                <span className="text-[28px] font-mono font-black leading-none" style={{ color: "#b91c1c" }}>
+                  {form.edKakuganCount ?? 0}
+                </span>
+                <span className="text-[9px] font-mono text-gray-500 mt-1">回</span>
+              </div>
+              <button
+                onClick={() => setField("edKakuganCount" as keyof typeof form, ((form.edKakuganCount ?? 0) + 1) as never)}
+                className="w-14 h-14 rounded-lg text-xl font-mono font-black active:scale-95 transition-transform"
+                style={{ backgroundColor: "#b91c1c", color: "#ffffff", border: "2px solid #b91c1c" }}
+              >＋</button>
+            </div>
+            <p className="text-[8px] text-gray-400 font-mono mt-2 text-center">
+              ED中の赫眼出現回数（G数区分なし・集計に反映されます）
+            </p>
+          </Section>
+        ) : (
         <Section title="赫眼状態（最大5回）">
           <div className="grid grid-cols-5 gap-1.5">
             {Array.from({ length: 5 }, (_, i) => {
@@ -446,8 +476,10 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
             })}
           </div>
         </Section>
+        )}
 
-        {/* 終了画面示唆 (nd-13) — 画像付きピッカー */}
+        {/* 終了画面示唆 (nd-13) — EDボナ時は非表示 */}
+        {!isED && (
         <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
           <span className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-wide">終了画面示唆</span>
           <EndingImagePicker
@@ -455,8 +487,10 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
             onChange={(v) => setField("endingSuggestion", v)}
           />
         </div>
+        )}
 
-        {/* トロフィー (nd-14) — 画像付きピッカー */}
+        {/* トロフィー (nd-14) — EDボナ時は非表示 */}
+        {!isED && (
         <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
           <span className="text-[10px] font-mono text-gray-500 font-bold uppercase tracking-wide">トロフィー</span>
           <TrophyImagePicker
@@ -464,6 +498,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
             onChange={(v) => setField("trophy", v)}
           />
         </div>
+        )}
 
         {/* エンディングカード (ad-15) — アコーディオン */}
         <EndingCardAccordion ec={ec} setEndingCardField={setEndingCardField} />

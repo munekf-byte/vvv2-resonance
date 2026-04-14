@@ -193,7 +193,8 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
     ...blocks.flatMap((b) => b.kakugan),
     ...getAllSets(atEntries).flatMap((s) => s.kakugan ?? []),
   ];
-  const kakuganTotal = allKakugan.length;
+  const edKakuganTotal = getAllSets(atEntries).reduce((s, set) => s + (set.edKakuganCount ?? 0), 0);
+  const kakuganTotal = allKakugan.length + edKakuganTotal;
   const kakuganBD = [...TG_KAKUGAN].map((k) => ({ label: k, count: allKakugan.filter((v) => v === k).length }));
 
   const allShinsekai = blocks.flatMap((b) => b.shinsekai);

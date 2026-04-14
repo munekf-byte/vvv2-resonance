@@ -109,6 +109,7 @@ export interface TGATSet {
   endingSuggestion?: string; // 終了画面示唆 ([終了画面] prefix のみ)
   trophy?: string;           // トロフィー
   endingCard?: TGEndingCard; // エンディングカード記録
+  edKakuganCount?: number;   // EDボナ時の赫眼出現回数（G数選択なし・単純カウント）
   memo?: string;             // フリーメモ
   directAdds: TGDirectAdd[]; // 直乗せ max 10
   battles: TGBattle[];       // 対決（契機+成績） max 10

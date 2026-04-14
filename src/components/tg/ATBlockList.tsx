@@ -110,7 +110,7 @@ export function ATBlockList({ atKeyList, atEntries, atEventMap, blocks, onAddRow
 
   return (
     <>
-      <div className="space-y-0">
+      <div className="space-y-2 py-1.5" style={{ backgroundColor: "#e8e2d8" }}>
         {atKeyList.map((atKey) => {
           const entry      = atEntries.find((e) => e.atKey === atKey) ?? { atKey, rows: [] };
           const summary    = computeSummary(entry);
@@ -194,7 +194,7 @@ function ATBlock({
   onAddRow, onEditRow, onDeleteRow,
 }: ATBlockProps) {
   return (
-    <div className="border border-gray-400 mb-4 mx-3 rounded overflow-hidden">
+    <div className="bg-white rounded-lg overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", border: "1px solid #000000" }}>
 
       {/* ── ATサマリーヘッダー ── */}
       <div
