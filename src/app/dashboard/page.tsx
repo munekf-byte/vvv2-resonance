@@ -19,7 +19,7 @@ export default function DashboardPage() {
             <span className="font-mono font-black text-red-400 text-lg tracking-wider">TGR</span>
             <div className="flex flex-col leading-none">
               <span className="font-mono text-gray-400 text-xs tracking-widest">RESONANCE</span>
-              <span className="font-mono text-gray-600 text-[9px] tracking-wider">v4.34</span>
+              <span className="font-mono text-gray-600 text-[9px] tracking-wider">v4.35</span>
             </div>
           </div>
         </div>

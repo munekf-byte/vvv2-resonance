@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, type ReactNode } from "react";
 interface Props {
   hint: string;
   children: ReactNode;
+  className?: string;
 }
 
 const LONG_PRESS_MS = 1500;
@@ -12,7 +13,7 @@ const LONG_PRESS_MS = 1500;
  * 子要素を長押し（1.5秒）するとヒントをフロート表示するラッパー。
  * 通常のタップ（短押し）は子要素の onClick にそのまま透過される。
  */
-export function LongPressHint({ hint, children }: Props) {
+export function LongPressHint({ hint, children, className }: Props) {
   const [show, setShow] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const firedRef = useRef(false);
@@ -35,6 +36,8 @@ export function LongPressHint({ hint, children }: Props) {
   return (
     <>
       <div
+        className={className}
+        style={{ WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" } as React.CSSProperties}
         onTouchStart={start}
         onTouchEnd={end}
         onTouchCancel={end}

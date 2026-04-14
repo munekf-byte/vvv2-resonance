@@ -296,7 +296,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
         {/* タブバー */}
         <div className="flex border-t border-gray-700 max-w-2xl mx-auto w-full">
-          <LongPressHint hint="通常時の周期データ（ゲーム数・ゾーン・モード・CZ・AT当選など）を時系列で記録・閲覧する画面です。">
+          <LongPressHint className="flex-1" hint="通常時の周期データ（ゲーム数・ゾーン・モード・CZ・AT当選など）を時系列で記録・閲覧する画面です。">
             <button
               onClick={() => setActiveTab("normal")}
               className="w-full py-2 text-[11px] font-mono font-bold transition-colors"
@@ -309,7 +309,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               通常時
             </button>
           </LongPressHint>
-          <LongPressHint hint="AT中の詳細を記録する画面です。各SET（喰種対決）のキャラ・BITES獲得・直乗せ・対決成績や、有馬ジャッジメントの結果を入力できます。">
+          <LongPressHint className="flex-1" hint="AT中の詳細を記録する画面です。各SET（喰種対決）のキャラ・BITES獲得・直乗せ・対決成績や、有馬ジャッジメントの結果を入力できます。">
             <button
               onClick={() => setActiveTab("at")}
               className="w-full py-2 text-[11px] font-mono font-bold transition-colors"
@@ -322,7 +322,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               AT記録 {atCount > 0 ? `(${atCount})` : ""}
             </button>
           </LongPressHint>
-          <LongPressHint hint="入力したデータを自動集計した分析画面です。CZ確率・AT確率・赫眼・ゾーン分布・設定示唆などを一覧で確認でき、画像保存やX共有もできます。">
+          <LongPressHint className="flex-1" hint="入力したデータを自動集計した分析画面です。CZ確率・AT確率・赫眼・ゾーン分布・設定示唆などを一覧で確認でき、画像保存やX共有もできます。">
             <button
               onClick={() => setActiveTab("summary")}
               className="w-full py-2 text-[11px] font-mono font-bold transition-colors"
@@ -437,7 +437,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
       {/* ===== FAB: 通常時タブのみ ===== */}
       {activeTab === "normal" && !anyEditOpen && (
         <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center gap-2 px-4 max-w-2xl mx-auto">
-          <LongPressHint hint="途中から打ち始める場合に、台のメニュー画面に表示されているゲーム数や差枚数を記録しておく機能です。集計の確率計算に使われます。">
+          <LongPressHint hint="朝イチ台ではない時は入力してください。メニュー液晶からG数などを転記。スランプグラフからおおよその現在差枚数を入力（重要）。集計計算に反映されます。">
             <button
               onClick={() => setUchidashiOpen(true)}
               className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
@@ -446,7 +446,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               打ち出し設定
             </button>
           </LongPressHint>
-          <LongPressHint hint="投資額（現金・手持ち枚数）と交換枚数を入力して、最終的な収支を記録する機能です。稼働終了時に入力してください。">
+          <LongPressHint hint="投資額（手持ち消費・現金投資）と最終交換枚数を入力する欄。投資は上書き方式です。交換枚数は終了時に入力してください。">
             <button
               onClick={() => setShushiOpen(true)}
               className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
@@ -455,7 +455,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               収支入力
             </button>
           </LongPressHint>
-          <LongPressHint hint="データから推測した設定をメモする機能です。ここで入力した内容は集計画面やセッション一覧に表示されます。">
+          <LongPressHint hint="確定演出などではなく、当日の状況や台の挙動などから、あなた自身が推測した設定結果を記録する欄です。">
             <button
               onClick={() => setSettingGuessOpen(true)}
               className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
