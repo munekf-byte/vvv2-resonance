@@ -470,23 +470,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
       </div>
 
       {/* ===== 保存ボタン ===== */}
-      <div className="flex-shrink-0 bg-white border-t-2 border-gray-400 safe-area-bottom px-4 py-3">
-        <div className="flex gap-2">
-          <button
-            onClick={handleTempSave}
-            className="flex-1 font-mono font-bold text-base py-5 rounded-xl border-2 border-gray-400 text-gray-700 bg-white active:scale-95 transition-transform"
-          >
-            一時保存
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex-1 font-mono font-bold text-base py-5 rounded-xl shadow-lg active:scale-95 transition-transform text-white"
-            style={{ backgroundColor: "#b91c1c" }}
-          >
-            保存
-          </button>
-        </div>
-      </div>
+      <NormalSaveBar onTempSave={handleTempSave} onSave={handleSave} />
 
       {/* ===== ヤメ確認ポッ��アップ ===== */}
       {yamePopup && (
@@ -742,6 +726,43 @@ function ColoredSelectIcon({
           </option>
         ))}
       </select>
+    </div>
+  );
+}
+
+// ─── 一時保存フィードバック付きSaveBar ────────────────────────────────────────
+
+function NormalSaveBar({ onTempSave, onSave }: { onTempSave: () => void; onSave: () => void }) {
+  const [tempSaved, setTempSaved] = useState(false);
+
+  function handleTempSave() {
+    onTempSave();
+    setTempSaved(true);
+    setTimeout(() => setTempSaved(false), 1200);
+  }
+
+  return (
+    <div className="flex-shrink-0 bg-white border-t-2 border-gray-400 safe-area-bottom px-4 py-3">
+      <div className="flex gap-2">
+        <button
+          onClick={handleTempSave}
+          disabled={tempSaved}
+          className="flex-1 font-mono font-bold text-base py-5 rounded-xl border-2 transition-all duration-300 disabled:opacity-90"
+          style={tempSaved
+            ? { backgroundColor: "#16a34a", color: "#ffffff", borderColor: "#16a34a", transform: "scale(0.97)" }
+            : { backgroundColor: "#ffffff", color: "#374151", borderColor: "#9ca3af" }
+          }
+        >
+          {tempSaved ? "✓ 保存しました" : "一時保存"}
+        </button>
+        <button
+          onClick={onSave}
+          className="flex-1 font-mono font-bold text-base py-5 rounded-xl shadow-lg active:scale-95 transition-transform text-white"
+          style={{ backgroundColor: "#b91c1c" }}
+        >
+          保存
+        </button>
+      </div>
     </div>
   );
 }

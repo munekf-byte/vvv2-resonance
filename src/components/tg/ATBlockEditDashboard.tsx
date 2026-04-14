@@ -94,8 +94,7 @@ function getBitesDesc(bt: string): string {
 
 export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", defaultAtType, onSave, onTempSave, onClose }: Props) {
   const isNew    = row === null;
-  const initType = row?.rowType ?? defaultRowType;
-  const [rowType, setRowType] = useState<"set" | "arima">(initType);
+  const rowType  = row?.rowType ?? defaultRowType;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-gray-100">
@@ -111,27 +110,9 @@ export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", defau
             一覧へ戻る
           </button>
           <p className="flex-1 text-[12px] font-mono font-bold text-white text-center truncate px-1">
-            {atKey} — {isNew ? "新規追加" : "編集"}
+            {atKey} — {isNew ? "新規追加" : "編集"} {rowType === "arima" ? "（有馬ジャッジメント）" : ""}
           </p>
         </div>
-        {isNew && (
-          <div className="flex border-t border-gray-600">
-            {(["set", "arima"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setRowType(t)}
-                className="flex-1 py-2 text-[11px] font-mono font-bold transition-colors"
-                style={
-                  rowType === t
-                    ? { backgroundColor: "#b91c1c", color: "#ffffff" }
-                    : { backgroundColor: "#374151", color: "#9ca3af" }
-                }
-              >
-                {t === "set" ? "SET行（喰種対決）" : "有馬ジャッジメント行"}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {rowType === "set" ? (
@@ -1272,15 +1253,27 @@ function SaveBar({
   textColor?: string;
   disabled?: boolean;
 }) {
+  const [tempSaved, setTempSaved] = useState(false);
+
+  function handleTempSave() {
+    onTempSave();
+    setTempSaved(true);
+    setTimeout(() => setTempSaved(false), 1200);
+  }
+
   return (
     <div className="flex-shrink-0 bg-white border-t-2 border-gray-400 safe-area-bottom px-4 py-3">
       <div className="flex gap-2">
         <button
-          onClick={onTempSave}
-          disabled={disabled}
-          className="flex-1 font-mono font-bold text-base py-5 rounded-xl border-2 border-gray-400 text-gray-700 bg-white active:scale-95 transition-transform disabled:opacity-40"
+          onClick={handleTempSave}
+          disabled={disabled || tempSaved}
+          className="flex-1 font-mono font-bold text-base py-5 rounded-xl border-2 transition-all duration-300 disabled:opacity-40"
+          style={tempSaved
+            ? { backgroundColor: "#16a34a", color: "#ffffff", borderColor: "#16a34a", transform: "scale(0.97)" }
+            : { backgroundColor: "#ffffff", color: "#374151", borderColor: "#9ca3af" }
+          }
         >
-          一時保存
+          {tempSaved ? "✓ 保存しました" : "一時保存"}
         </button>
         <button
           onClick={onSave}
