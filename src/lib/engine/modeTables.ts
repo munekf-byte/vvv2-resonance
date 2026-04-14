@@ -1,136 +1,110 @@
 // =============================================================================
-// TOKYO GHOUL RESONANCE: モード推定データテーブル
-// docs/tg-mode-estimation.md の仕様マトリクスをコード化
+// TOKYO GHOUL RESONANCE: モード推定データテーブル v2.0
+// ベイズ尤度更新方式
+// docs/tg-mode-estimation.md 準拠
 // =============================================================================
 
 import type { ModeKey } from "./modeEstimation";
 
 // -----------------------------------------------------------------------------
-// 1. 前兆フラグ判定テーブル (Hard Constraints)
-//    ゾーン × 前兆種別 → モード排除/確定
+// 0. 共通ユーティリティ
 // -----------------------------------------------------------------------------
 
-export type ZenchoAction =
-  | { type: "eliminate"; modes: ModeKey[] }       // 該当モードを0%に
-  | { type: "confirmAbove"; floor: ModeKey }      // floor以上のモード濃厚（以下を0%に）
-  | { type: "confirm"; mode: ModeKey }            // 単一モード確定（1.0）
-  | { type: "boost"; modes: ModeKey[]; factor: number } // ソフトブースト
-  | { type: "default" };                          // 補正なし
-
-// MODE順序（下位→上位）: A < B < C < CH < PRE < HEAVEN
 const MODE_ORDER: ModeKey[] = ["A", "B", "C", "CH", "PRE", "HEAVEN"];
 
-/** floor以上のモードだけ残す（floorより下位を全排除） */
 export function modesBelow(floor: ModeKey): ModeKey[] {
   const idx = MODE_ORDER.indexOf(floor);
   return MODE_ORDER.slice(0, idx);
 }
 
-/**
- * 前兆マトリクス
- * key1: ゾーンG数, key2: "前兆" | "東京上空" | "" (前兆なし)
- *
- * 仕様書 Section 2:
- *   50G  + 前兆(Stage)   → HEAVEN 濃厚
- *   50G  + 東京上空(NoStage) → CH以上 濃厚
- *   100G + なし(None)    → PRE 濃厚
- *   100G + 東京上空      → PRE 濃厚
- *   150G + なし          → B以上 期待（ソフト）
- *   150G + 前兆          → 本前兆濃厚（モード判定としてはdefault）
- *   150G + 東京上空      → B以上 濃厚
- *   200G + なし          → PRE 濃厚
- *   200G + 東京上空      → B以上 期待度UP（ソフト）
- *   250G + なし          → C以上 濃厚
- *   250G + 前兆          → 本前兆濃厚（default）
- *   250G + 東京上空      → C以上 濃厚
- *   300G + 東京上空      → CH 濃厚
- *   400G + なし          → C 濃厚
- *   500G + 東京上空      → CH 濃厚
- */
-export const ZENCHO_MATRIX: Record<string, Record<string, ZenchoAction>> = {
+// 0 = そのモードの天井超過により物理的に否定
+const X = 0;
+
+// -----------------------------------------------------------------------------
+// 1. 前兆履歴 尤度マトリクス (Likelihood Matrix)
+//    key1: ゾーンG数, key2: "前兆" | "東京上空" | "前兆なし" | ""
+//    値: 各モードの尤度（乗算後に正規化） null = 補正なし
+// -----------------------------------------------------------------------------
+
+type ModeLikelihood = Record<ModeKey, number>;
+
+export const ZENCHO_LIKELIHOOD: Record<string, Record<string, ModeLikelihood | null>> = {
   "50": {
-    "前兆":     { type: "confirm", mode: "HEAVEN" },           // 天国濃厚
-    "東京上空": { type: "confirmAbove", floor: "CH" },          // チャンス以上濃厚
-    "前兆なし": { type: "default" },
-    "":         { type: "default" },
+    //                                     A     B     C     CH    PRE   HEAVEN
+    "前兆":     { A: 0.01, B: 0.01, C: 0.01, CH: 0.05, PRE: 0.05, HEAVEN: 0.95 }, // 天国濃厚
+    "東京上空": { A: 0.01, B: 0.01, C: 0.05, CH: 0.30, PRE: 0.30, HEAVEN: 0.30 }, // CH以上濃厚
+    "前兆なし": null, // デフォルト
+    "":         null,
   },
   "100": {
-    "前兆":     { type: "default" },
-    "東京上空": { type: "confirm", mode: "PRE" },               // 天国準備濃厚
-    "前兆なし": { type: "confirm", mode: "PRE" },               // 天国準備濃厚
-    "":         { type: "confirm", mode: "PRE" },
+    "前兆":     null, // デフォルト
+    "東京上空": { A: 0.05, B: 0.05, C: 0.05, CH: 0.10, PRE: 0.85, HEAVEN: X }, // PRE濃厚
+    "前兆なし": { A: 0.10, B: 0.10, C: 0.10, CH: 0.10, PRE: 0.95, HEAVEN: X }, // PRE濃厚
+    "":         { A: 0.10, B: 0.10, C: 0.10, CH: 0.10, PRE: 0.95, HEAVEN: X },
   },
   "150": {
-    "前兆":     { type: "default" },                            // 本前兆（当選）濃厚
-    "東京上空": { type: "confirmAbove", floor: "B" },           // 通常B以上濃厚
-    "前兆なし": { type: "boost", modes: ["B", "C", "CH", "PRE", "HEAVEN"], factor: 1.5 }, // 通常B以上
-    "":         { type: "boost", modes: ["B", "C", "CH", "PRE", "HEAVEN"], factor: 1.5 },
+    "前兆":     null, // 本前兆（当選示唆、モード情報なし）
+    "東京上空": { A: 0.01, B: 0.40, C: 0.20, CH: 0.15, PRE: 0.15, HEAVEN: X }, // B以上濃厚
+    "前兆なし": { A: 0.05, B: 0.90, C: 0.05, CH: 0.05, PRE: X,    HEAVEN: X }, // B寄り
+    "":         { A: 0.05, B: 0.90, C: 0.05, CH: 0.05, PRE: X,    HEAVEN: X },
   },
   "200": {
-    "前兆":     { type: "default" },
-    "東京上空": { type: "boost", modes: ["B", "C", "CH", "PRE", "HEAVEN"], factor: 1.3 }, // B以上期待度UP
-    "前兆なし": { type: "confirm", mode: "PRE" },               // 天国準備濃厚
-    "":         { type: "confirm", mode: "PRE" },
+    "前兆":     null,
+    "東京上空": { A: 0.10, B: 0.30, C: 0.20, CH: 0.15, PRE: 0.15, HEAVEN: X }, // B以上期待度UP
+    "前兆なし": { A: 0.10, B: 0.10, C: 0.10, CH: 0.10, PRE: 0.95, HEAVEN: X }, // PRE濃厚
+    "":         { A: 0.10, B: 0.10, C: 0.10, CH: 0.10, PRE: 0.95, HEAVEN: X },
   },
   "250": {
-    "前兆":     { type: "default" },                            // 本前兆（当選）濃厚
-    "東京上空": { type: "confirmAbove", floor: "C" },           // 通常C以上濃厚
-    "前兆なし": { type: "confirmAbove", floor: "C" },           // 通常C以上濃厚
-    "":         { type: "confirmAbove", floor: "C" },
+    "前兆":     null, // 本前兆（当選示唆）
+    "東京上空": { A: 0.01, B: 0.01, C: 0.35, CH: 0.25, PRE: 0.25, HEAVEN: X }, // C以上濃厚
+    "前兆なし": { A: 0.01, B: 0.01, C: 0.80, CH: 0.10, PRE: X,    HEAVEN: X }, // C寄り
+    "":         { A: 0.01, B: 0.01, C: 0.80, CH: 0.10, PRE: X,    HEAVEN: X },
   },
   "300": {
-    "前兆":     { type: "default" },
-    "東京上空": { type: "confirm", mode: "CH" },                // チャンス濃厚
-    "前兆なし": { type: "confirm", mode: "CH" },                // チャンス濃厚
-    "":         { type: "confirm", mode: "CH" },                // ★修正: default → CH濃厚
+    "前兆":     null,
+    "東京上空": { A: 0.01, B: 0.01, C: 0.05, CH: 0.85, PRE: X,    HEAVEN: X }, // CH濃厚
+    "前兆なし": { A: 0.05, B: 0.05, C: 0.05, CH: 0.95, PRE: X,    HEAVEN: X }, // CH濃厚
+    "":         { A: 0.05, B: 0.05, C: 0.05, CH: 0.95, PRE: X,    HEAVEN: X },
   },
   "400": {
-    "前兆":     { type: "default" },
-    "東京上空": { type: "default" },
-    "前兆なし": { type: "confirm", mode: "C" },                 // 通常C濃厚
-    "":         { type: "confirm", mode: "C" },
+    "前兆":     null,
+    "東京上空": null, // デフォルト
+    "前兆なし": { A: 0.05, B: 0.05, C: 0.95, CH: X,    PRE: X,    HEAVEN: X }, // C濃厚
+    "":         { A: 0.05, B: 0.05, C: 0.95, CH: X,    PRE: X,    HEAVEN: X },
   },
   "500": {
-    "前兆":     { type: "default" },
-    "東京上空": { type: "confirm", mode: "CH" },                // チャンス濃厚
-    "前兆なし": { type: "confirm", mode: "CH" },                // ★修正: default → CH濃厚
-    "":         { type: "confirm", mode: "CH" },                // ★修正: default → CH濃厚
+    "前兆":     null,
+    "東京上空": { A: 0.01, B: 0.01, C: X,    CH: 0.90, PRE: X,    HEAVEN: X }, // CH濃厚
+    "前兆なし": { A: 0.05, B: 0.05, C: X,    CH: 0.95, PRE: X,    HEAVEN: X }, // CH濃厚
+    "":         { A: 0.05, B: 0.05, C: X,    CH: 0.95, PRE: X,    HEAVEN: X },
   },
   "600": {
-    "前兆":     { type: "default" },                            // 本前兆濃厚
-    "東京上空": { type: "default" },                            // 本前兆濃厚
-    "前兆なし": { type: "default" },
-    "":         { type: "default" },
+    "前兆":     null, // 本前兆濃厚
+    "東京上空": null, // 本前兆濃厚
+    "前兆なし": null,
+    "":         null,
   },
 };
 
 // -----------------------------------------------------------------------------
 // 2. 招待状制約テーブル (Hard Constraints)
-//    招待状の短縮キー → モード排除ルール
 // -----------------------------------------------------------------------------
 
 export interface InvitationConstraint {
-  /** 直接排除するモード */
   eliminateModes?: ModeKey[];
-  /** 残りG数上限（天井がこれを超えるモードを排除） */
   maxRemainingG?: number;
 }
 
-/** 各モードの天井G数 */
 export const MODE_CEILINGS: Record<ModeKey, number> = {
   A: 600, B: 600, C: 500, CH: 600, PRE: 300, HEAVEN: 100,
 };
 
-/**
- * 招待状キーワード → 制約マッピング
- * 招待状は "短縮名 - 説明" 形式。短縮名部分でマッチ。
- */
 export const INVITATION_CONSTRAINTS: Record<string, InvitationConstraint> = {
-  "最悪の":   { eliminateModes: ["A", "B", "CH"] },         // 600G天井否定
-  "3時までに": { maxRemainingG: 300 },                       // 残り300G以内
-  "2時までに": { maxRemainingG: 200 },                       // 残り200G以内
-  "今すぐ":   { maxRemainingG: 100 },                       // 残り100G以内
-  "喰うか喰": { maxRemainingG: 200, eliminateModes: [] },   // 200G以内 or 500G以上（複雑、簡易実装）
+  "最悪の":    { eliminateModes: ["A", "B", "CH"] },
+  "3時までに": { maxRemainingG: 300 },
+  "2時までに": { maxRemainingG: 200 },
+  "今すぐ":    { maxRemainingG: 100 },
+  "喰うか喰":  { maxRemainingG: 200 },
 };
 
 // -----------------------------------------------------------------------------
@@ -138,53 +112,39 @@ export const INVITATION_CONSTRAINTS: Record<string, InvitationConstraint> = {
 // -----------------------------------------------------------------------------
 
 export interface EyecatchEffect {
-  type: "none" | "boost" | "hardConfirm";
-  /** boostの場合: 対象モードに掛ける倍率 */
-  boostModes?: ModeKey[];
-  boostFactor?: number;
-  /** hardConfirmの場合: 確定モード */
+  type: "none" | "likelihood" | "hardConfirm";
+  likelihood?: ModeLikelihood;
   confirmMode?: ModeKey;
 }
 
 export const EYECATCH_TABLE: Record<string, EyecatchEffect> = {
   "金木研":         { type: "none" },
-  "霧嶋董香":       { type: "boost", boostModes: ["B", "C", "CH", "PRE", "HEAVEN"], boostFactor: 1.5 },
-  "笛口雛実":       { type: "boost", boostModes: ["C", "CH", "PRE", "HEAVEN"], boostFactor: 2.0 },
-  "月山習":         { type: "boost", boostModes: ["CH", "PRE", "HEAVEN"], boostFactor: 2.5 },
-  "神代利世":       { type: "boost", boostModes: ["PRE", "HEAVEN"], boostFactor: 3.0 },
+  "霧嶋董香":       { type: "likelihood", likelihood: { A: 0.10, B: 0.35, C: 0.20, CH: 0.15, PRE: 0.10, HEAVEN: 0.10 } },
+  "笛口雛実":       { type: "likelihood", likelihood: { A: 0.05, B: 0.10, C: 0.30, CH: 0.25, PRE: 0.15, HEAVEN: 0.15 } },
+  "月山習":         { type: "likelihood", likelihood: { A: 0.02, B: 0.03, C: 0.10, CH: 0.25, PRE: 0.30, HEAVEN: 0.30 } },
+  "神代利世":       { type: "likelihood", likelihood: { A: 0.01, B: 0.02, C: 0.05, CH: 0.10, PRE: 0.30, HEAVEN: 0.52 } },
   "赫眼/喰種ver.":  { type: "hardConfirm", confirmMode: "HEAVEN" },
 };
 
 // -----------------------------------------------------------------------------
 // 4. CZ失敗エンドカード → 次ブロック事前確率テーブル
-//    endingSuggestion の [cz失敗] 系 → 次ブロックのモード下限
 // -----------------------------------------------------------------------------
 
-/**
- * CZエンドカードキャラ名 → 次ブロックで排除するモード
- * endingSuggestion例: "[cz失敗] 亜門鋼太朗 - 通常B以上濃厚"
- * → キャラ名 "亜門鋼太朗" を抽出してマッチ
- */
 export const CZ_ENDCARD_TABLE: Record<string, ModeKey[]> = {
-  // キャラ名 → 排除するモード（下位を排除 = 以上が濃厚）
-  "金木研":         [],                                  // デフォルト
-  "霧嶋董香":       ["A"],                               // B以上示唆
-  "笛口雛実":       ["A"],                               // B以上示唆
-  "亜門鋼太朗":     ["A"],                               // B以上濃厚
-  "真戸呉緒":       ["A", "B"],                          // C以上濃厚
-  "金木研（喰種）": ["A", "B", "C"],                     // CH以上濃厚
-  "霧嶋董香（喰種）": ["A", "B", "C"],                   // CH以上濃厚
-  "月山習":         ["A", "B", "C", "CH"],               // PRE以上濃厚
-  "神代利世":       ["A", "B", "C", "CH", "PRE"],        // HEAVEN濃厚
-  "鈴屋什造":       [],                                  // 偶数設定濃厚（モード補正なし）
-  "梟":             [],                                  // 設定4以上（モード補正なし）
-  "有馬貴将":       [],                                  // 設定6（モード補正なし）
+  "金木研":           [],
+  "霧嶋董香":         ["A"],
+  "笛口雛実":         ["A"],
+  "亜門鋼太朗":       ["A"],
+  "真戸呉緒":         ["A", "B"],
+  "金木研（喰種）":   ["A", "B", "C"],
+  "霧嶋董香（喰種）": ["A", "B", "C"],
+  "月山習":           ["A", "B", "C", "CH"],
+  "神代利世":         ["A", "B", "C", "CH", "PRE"],
+  "鈴屋什造":         [],
+  "梟":               [],
+  "有馬貴将":         [],
 };
 
-/**
- * endingSuggestion からキャラ名を抽出
- * 例: "[cz失敗] 亜門鋼太朗 - 通常B以上濃厚" → "亜門鋼太朗"
- */
 export function extractEndCardCharacter(endingSuggestion: string): string | null {
   if (!endingSuggestion.startsWith("[cz失敗]")) return null;
   const match = endingSuggestion.match(/\[cz失敗\]\s*(.+?)\s*-/);
