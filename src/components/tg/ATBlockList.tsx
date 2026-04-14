@@ -7,6 +7,7 @@
 
 import { useState } from "react";
 import type { NormalBlock, TGATEntry, TGATSet, TGArimaJudgment, TGATRow, TGEndingCard } from "@/types";
+import { LongPressHint } from "@/components/ui/LongPressHint";
 import {
   getATCharColor,
   getBitesTypeCellColor,
@@ -290,19 +291,23 @@ function ATBlock({
 
       {/* ── 行追加ボタン（画像出力時は非表示） ── */}
       <div data-capture-hide="true" className="flex gap-2 px-3 py-2 border-t border-gray-300 bg-gray-50">
-        <button
-          onClick={() => onAddRow(atKey, "set")}
-          className="flex-1 text-[11px] font-mono font-bold py-2 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors"
-        >
-          ＋ SET行追加
-        </button>
-        <button
-          onClick={() => onAddRow(atKey, "arima")}
-          className="flex-1 text-[11px] font-mono font-bold py-2 rounded border border-yellow-500 text-yellow-700 hover:bg-yellow-50 transition-colors"
-          style={{ backgroundColor: "#fffde7" }}
-        >
-          ＋ ジャッジメント行追加
-        </button>
+        <LongPressHint hint="喰種対決の1SET分を追加します。敵キャラ・BITES獲得・直乗せ・対決成績などを入力してください。">
+          <button
+            onClick={() => onAddRow(atKey, "set")}
+            className="w-full text-[11px] font-mono font-bold py-2 rounded bg-gray-700 text-white hover:bg-gray-800 transition-colors"
+          >
+            ＋ SET行追加
+          </button>
+        </LongPressHint>
+        <LongPressHint hint="有馬ジャッジメント（有馬貴将との最終決戦）の結果を記録します。成否・役・CCGの死神枚数・有利切断を入力できます。">
+          <button
+            onClick={() => onAddRow(atKey, "arima")}
+            className="w-full text-[11px] font-mono font-bold py-2 rounded border border-yellow-500 text-yellow-700 hover:bg-yellow-50 transition-colors"
+            style={{ backgroundColor: "#fffde7" }}
+          >
+            ＋ ジャッジメント行追加
+          </button>
+        </LongPressHint>
       </div>
     </div>
   );

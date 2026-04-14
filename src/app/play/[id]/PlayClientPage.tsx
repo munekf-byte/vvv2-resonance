@@ -20,6 +20,7 @@ import { estimateAllModes } from "@/lib/engine/modeEstimation";
 import { captureAndDownload, captureAndShare } from "@/lib/tg/captureImage";
 import { inferSetting } from "@/components/tg/SummaryTab";
 import { computeMedalStamps, computeFinalResult } from "@/lib/tg/medalCalc";
+import { LongPressHint } from "@/components/ui/LongPressHint";
 
 interface PlayClientPageProps {
   initialSession: PlaySession;
@@ -295,39 +296,45 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
         {/* タブバー */}
         <div className="flex border-t border-gray-700 max-w-2xl mx-auto w-full">
-          <button
-            onClick={() => setActiveTab("normal")}
-            className="flex-1 py-2 text-[11px] font-mono font-bold transition-colors"
-            style={
-              activeTab === "normal"
-                ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" }
-                : { color: "#6b7280", borderBottom: "2px solid transparent" }
-            }
-          >
-            通常時
-          </button>
-          <button
-            onClick={() => setActiveTab("at")}
-            className="flex-1 py-2 text-[11px] font-mono font-bold transition-colors"
-            style={
-              activeTab === "at"
-                ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" }
-                : { color: "#6b7280", borderBottom: "2px solid transparent" }
-            }
-          >
-            AT記録 {atCount > 0 ? `(${atCount})` : ""}
-          </button>
-          <button
-            onClick={() => setActiveTab("summary")}
-            className="flex-1 py-2 text-[11px] font-mono font-bold transition-colors"
-            style={
-              activeTab === "summary"
-                ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" }
-                : { color: "#6b7280", borderBottom: "2px solid transparent" }
-            }
-          >
-            集計
-          </button>
+          <LongPressHint hint="通常時の周期データ（ゲーム数・ゾーン・モード・CZ・AT当選など）を時系列で記録・閲覧する画面です。">
+            <button
+              onClick={() => setActiveTab("normal")}
+              className="w-full py-2 text-[11px] font-mono font-bold transition-colors"
+              style={
+                activeTab === "normal"
+                  ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" }
+                  : { color: "#6b7280", borderBottom: "2px solid transparent" }
+              }
+            >
+              通常時
+            </button>
+          </LongPressHint>
+          <LongPressHint hint="AT中の詳細を記録する画面です。各SET（喰種対決）のキャラ・BITES獲得・直乗せ・対決成績や、有馬ジャッジメントの結果を入力できます。">
+            <button
+              onClick={() => setActiveTab("at")}
+              className="w-full py-2 text-[11px] font-mono font-bold transition-colors"
+              style={
+                activeTab === "at"
+                  ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" }
+                  : { color: "#6b7280", borderBottom: "2px solid transparent" }
+              }
+            >
+              AT記録 {atCount > 0 ? `(${atCount})` : ""}
+            </button>
+          </LongPressHint>
+          <LongPressHint hint="入力したデータを自動集計した分析画面です。CZ確率・AT確率・赫眼・ゾーン分布・設定示唆などを一覧で確認でき、画像保存やX共有もできます。">
+            <button
+              onClick={() => setActiveTab("summary")}
+              className="w-full py-2 text-[11px] font-mono font-bold transition-colors"
+              style={
+                activeTab === "summary"
+                  ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" }
+                  : { color: "#6b7280", borderBottom: "2px solid transparent" }
+              }
+            >
+              集計
+            </button>
+          </LongPressHint>
         </div>
       </header>
 
@@ -430,33 +437,41 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
       {/* ===== FAB: 通常時タブのみ ===== */}
       {activeTab === "normal" && !anyEditOpen && (
         <div className="fixed bottom-6 inset-x-0 z-40 flex justify-center gap-2 px-4 max-w-2xl mx-auto">
-          <button
-            onClick={() => setUchidashiOpen(true)}
-            className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
-            style={{ backgroundColor: "#1e40af", color: "#fff" }}
-          >
-            打ち出し設定
-          </button>
-          <button
-            onClick={() => setShushiOpen(true)}
-            className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
-            style={{ backgroundColor: "#059669", color: "#fff" }}
-          >
-            収支入力
-          </button>
-          <button
-            onClick={() => setSettingGuessOpen(true)}
-            className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
-            style={{ backgroundColor: "#92400e", color: "#fff" }}
-          >
-            推測設定
-          </button>
-          <button
-            onClick={handleNormalOpenNew}
-            className="flex items-center gap-1 bg-v2-red text-white font-mono font-bold text-[15px] px-6 py-4 rounded-full shadow-lg active:scale-95 transition-transform"
-          >
-            ＋ 周期追加
-          </button>
+          <LongPressHint hint="途中から打ち始める場合に、台のメニュー画面に表示されているゲーム数や差枚数を記録しておく機能です。集計の確率計算に使われます。">
+            <button
+              onClick={() => setUchidashiOpen(true)}
+              className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
+              style={{ backgroundColor: "#1e40af", color: "#fff" }}
+            >
+              打ち出し設定
+            </button>
+          </LongPressHint>
+          <LongPressHint hint="投資額（現金・手持ち枚数）と交換枚数を入力して、最終的な収支を記録する機能です。稼働終了時に入力してください。">
+            <button
+              onClick={() => setShushiOpen(true)}
+              className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
+              style={{ backgroundColor: "#059669", color: "#fff" }}
+            >
+              収支入力
+            </button>
+          </LongPressHint>
+          <LongPressHint hint="データから推測した設定をメモする機能です。ここで入力した内容は集計画面やセッション一覧に表示されます。">
+            <button
+              onClick={() => setSettingGuessOpen(true)}
+              className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
+              style={{ backgroundColor: "#92400e", color: "#fff" }}
+            >
+              推測設定
+            </button>
+          </LongPressHint>
+          <LongPressHint hint="通常時の周期データを1件追加します。CZやAT当選のたびに、ゲーム数・ゾーン・契機・イベントなどを記録してください。">
+            <button
+              onClick={handleNormalOpenNew}
+              className="flex items-center gap-1 bg-v2-red text-white font-mono font-bold text-[15px] px-6 py-4 rounded-full shadow-lg active:scale-95 transition-transform"
+            >
+              ＋ 周期追加
+            </button>
+          </LongPressHint>
         </div>
       )}
 
