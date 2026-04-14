@@ -179,16 +179,20 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
                     <ZoneLabel zone={block.zone} />
                   </Cell>
 
-                  {/* 推定モード */}
-                  <Cell color={getModeCellColor(block.estimatedMode)} borderR>
-                    <span className="flex flex-col items-center leading-tight">
-                      <span className="text-[11px] font-bold">{abbrevMode(block.estimatedMode)}</span>
-                      {modeProbs?.[index] && (
-                        <span className="text-[7px] font-mono opacity-70 leading-none mt-0.5">
-                          {topModes(modeProbs[index], 2).map((m) => `${m.mode}${m.pct}%`).join(" ")}
-                        </span>
-                      )}
-                    </span>
+                  {/* 推定モード（不明時はブロック直下にバー表示） */}
+                  <Cell color={block.estimatedMode !== "不明" ? getModeCellColor(block.estimatedMode) : { backgroundColor: "#f9fafb", color: "#d1d5db" }} borderR>
+                    {block.estimatedMode !== "不明" ? (
+                      <span className="flex flex-col items-center leading-tight">
+                        <span className="text-[11px] font-bold">{abbrevMode(block.estimatedMode)}</span>
+                        {modeProbs?.[index] && (
+                          <span className="text-[7px] font-mono opacity-70 leading-none mt-0.5">
+                            {topModes(modeProbs[index], 2).map((m) => `${m.mode}${m.pct}%`).join(" ")}
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-[8px] font-mono text-gray-400">推定</span>
+                    )}
                   </Cell>
 
                   {/* 当選契機 */}
@@ -240,6 +244,13 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
                     {hasExtras ? (isExpanded ? "▲" : "▼") : ""}
                   </button>
                 </div>
+
+                {/* ── モード推定バー（不明時、ブロック全幅） ── */}
+                {block.estimatedMode === "不明" && modeProbs?.[index] && (
+                  <div className="px-1 py-0.5" style={{ backgroundColor: "#f5f3ff" }}>
+                    <ModeProbBar probs={modeProbs[index]} />
+                  </div>
+                )}
 
                 {/* ── ATサマリーバー（AT当選ブロックのみ） ── */}
                 {atLabel && atEntries && (() => {
@@ -404,8 +415,8 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
                       </div>
                     )}
 
-                    {/* モード推定確率 */}
-                    {modeProbs?.[index] && (
+                    {/* モード推定確率（不明時はブロック直下に表示済みのため除外） */}
+                    {block.estimatedMode !== "不明" && modeProbs?.[index] && (
                       <div className="col-span-2 mb-1">
                         <p className="text-[9px] text-gray-500 font-mono mb-1 font-bold">モード推定</p>
                         <ModeProbBar probs={modeProbs[index]} />
