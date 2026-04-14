@@ -32,6 +32,7 @@ interface Props {
   sessionId: string;
   userSettingGuess?: string | null;
   uchidashi?: import("@/types").UchidashiState | null;
+  finalResult?: number;
 }
 
 // ── ユーティリティ ──────────────────────────────────────────────────────────
@@ -150,7 +151,7 @@ function SqIcon({ top, bottom, bg }: { top: string; bottom: string; bg: string }
 
 // ── メインコンポーネント ─────────────────────────────────────────────────
 
-export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi }: Props) {
+export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi, finalResult }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
 
   const lsKey = `tgr_totalG_${sessionId}`;
@@ -322,6 +323,25 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
       </div>
 
       <div ref={captureRef} style={{ padding: "8px 6px", backgroundColor: "#ffffff", fontFamily: "monospace" }}>
+
+        {/* ===== 0. 差枚数結果 ===== */}
+        {finalResult != null && (
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+            padding: "6px 8px", marginBottom: "4px", borderRadius: "3px",
+            border: `2px solid ${finalResult >= 0 ? "#16a34a" : "#dc2626"}`,
+            backgroundColor: finalResult >= 0 ? "#f0fdf4" : "#fef2f2",
+          }}>
+            <span style={{ fontSize: "10px", fontWeight: 700, color: "#6b7280" }}>差枚数(算出)</span>
+            <span style={{
+              fontSize: "16px", fontWeight: 900,
+              color: finalResult >= 0 ? "#16a34a" : "#dc2626",
+              fontVariantNumeric: "tabular-nums",
+            }}>
+              {finalResult >= 0 ? "+" : ""}{finalResult.toLocaleString()}枚
+            </span>
+          </div>
+        )}
 
         {/* ===== 1. 通常時 | CZ内容 ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>

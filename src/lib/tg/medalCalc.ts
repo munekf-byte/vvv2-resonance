@@ -93,3 +93,35 @@ export function computeMedalStamps(
 
   return stamps;
 }
+
+/**
+ * セッション全体の最終差枚数を算出する。
+ * stamps の最後のブロックの AT/CZ 獲得も含めた完全な結果。
+ */
+export function computeFinalResult(
+  blocks: NormalBlock[],
+  atLabels: Map<string, string>,
+  atEntries: TGATEntry[],
+  uchidashi: UchidashiState | null,
+): number {
+  const samai = uchidashi?.samai ?? 0;
+  let cumLoss = 0;
+  let cumGain = 0;
+
+  for (const block of blocks) {
+    cumLoss += (block.jisshuG ?? 0) * COIN_LOSS_PER_G;
+
+    const isCZ = block.event === "レミニセンス" || block.event === "大喰いの利世";
+    if (isCZ) cumGain += CZ_GAIN_PER;
+
+    if (block.atWin) {
+      const atKey = atLabels.get(block.id);
+      if (atKey) {
+        const entry = atEntries.find((e) => e.atKey === atKey);
+        if (entry) cumGain += computeATEntryGain(entry, block.event);
+      }
+    }
+  }
+
+  return Math.round(cumGain - cumLoss + samai);
+}

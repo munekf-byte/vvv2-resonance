@@ -30,6 +30,7 @@ interface Props {
   atEntries?: TGATEntry[];
   modeProbs?: ModeProbs[];
   medalStamps?: number[];
+  finalResult?: number;
   onEdit: (block: NormalBlock, index: number) => void;
   onDelete: (blockId: string) => void;
   onYameCancel?: (blockId: string) => void;
@@ -73,7 +74,7 @@ const HDR_TEXT     = "#f9fafb";
 const COL_BORDER_R = "border-r border-gray-400";
 const ROW_BORDER   = "border-b-2 border-gray-500";
 
-export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalStamps, onEdit, onDelete, onYameCancel }: Props) {
+export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalStamps, finalResult, onEdit, onDelete, onYameCancel }: Props) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null); // 削除確認中の blockId
 
@@ -438,23 +439,42 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
 
                 {/* ── ヤメ表示バナー（ブロック直下） ── */}
                 {block.yame && (
-                  <div
-                    className="flex items-center justify-center gap-1.5 py-1"
-                    style={{ backgroundColor: "#1e3a5f" }}
-                  >
-                    <span className="text-[10px] font-mono font-bold text-white tracking-wider">
-                      ヤメ{block.jisshuG != null ? ` · ${block.jisshuG}G` : ""}
-                    </span>
-                    {onYameCancel && (
-                      <button
-                        onClick={() => onYameCancel(block.id)}
-                        className="text-[9px] font-mono font-bold px-2 py-0.5 rounded active:scale-95 transition-transform ml-2"
-                        style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#93c5fd" }}
+                  <>
+                    <div
+                      className="flex items-center justify-center gap-1.5 py-1"
+                      style={{ backgroundColor: "#1e3a5f" }}
+                    >
+                      <span className="text-[10px] font-mono font-bold text-white tracking-wider">
+                        ヤメ{block.jisshuG != null ? ` · ${block.jisshuG}G` : ""}
+                      </span>
+                      {onYameCancel && (
+                        <button
+                          onClick={() => onYameCancel(block.id)}
+                          className="text-[9px] font-mono font-bold px-2 py-0.5 rounded active:scale-95 transition-transform ml-2"
+                          style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#93c5fd" }}
+                        >
+                          [ヤメ]を取消
+                        </button>
+                      )}
+                    </div>
+                    {/* ── 最終差枚数結果 ── */}
+                    {finalResult != null && (
+                      <div
+                        className="flex flex-col items-center justify-center py-3"
+                        style={{
+                          background: finalResult >= 0
+                            ? "linear-gradient(135deg, #14532d 0%, #166534 100%)"
+                            : "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)",
+                        }}
                       >
-                        [ヤメ]を取消
-                      </button>
+                        <span className="text-[9px] font-mono text-white/60 tracking-wider mb-0.5">SESSION RESULT</span>
+                        <span className="text-[22px] font-mono font-black text-white tracking-wide leading-none">
+                          {finalResult >= 0 ? "+" : ""}{finalResult.toLocaleString()}枚
+                        </span>
+                        <span className="text-[10px] font-mono text-white/50 mt-1">お疲れ様でした！</span>
+                      </div>
                     )}
-                  </div>
+                  </>
                 )}
               </div>
             );
