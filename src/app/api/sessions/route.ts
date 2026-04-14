@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { inferSetting } from "@/components/tg/SummaryTab";
 
 export async function GET() {
   try {
@@ -42,6 +43,23 @@ export async function GET() {
       const balance = sh
         ? ((sh.exchangeCoins ?? 0) - ((sh.handCoins ?? 0) + (sh.cashInvestK ?? 0) * (sh.coinRate ?? 46)))
         : null;
+      // 設定確定情報を算出
+      const czFail = blocks
+        .filter((b: unknown) => ((b as { endingSuggestion?: string })?.endingSuggestion ?? "").startsWith("[cz失敗]"))
+        .map((b: unknown) => (b as { endingSuggestion: string }).endingSuggestion);
+      const allSets = atEntries.flatMap((e: unknown) =>
+        ((e as { rows?: unknown[] })?.rows ?? []).filter((r: unknown) => (r as { rowType?: string })?.rowType === "set")
+      );
+      const endScreen = allSets
+        .map((s: unknown) => ((s as { endingSuggestion?: string })?.endingSuggestion ?? ""))
+        .filter((s: string) => s.startsWith("[終了画面]"));
+      const settingHint = inferSetting(
+        czFail as string[],
+        endScreen as string[],
+        blocks as import("@/types").NormalBlock[],
+        atEntries as import("@/types").TGATEntry[],
+      );
+
       return {
         id: row.id as string,
         machineName: (row.machine_name as string) ?? "セッション",
@@ -51,7 +69,7 @@ export async function GET() {
         atCount,
         totalGames,
         balance,
-        settingHint: "",
+        settingHint,
         userSettingGuess: ((row.user_setting_guess as string) ?? ""),
       };
     });
