@@ -98,12 +98,13 @@ function THead({ cols, color }: { cols: { label: string; width: string }[]; colo
 }
 
 /** テーブルデータ行 */
-function TRow({ cols, values, i, grade, bg }: {
+function TRow({ cols, values, i, grade, bg, fg }: {
   cols: { width: string }[];
   values: React.ReactNode[];
   i: number;
   grade?: SettingGrade;
   bg?: string;
+  fg?: string;
 }) {
   const sc = grade ? SETTING_COLORS[grade] : null;
   const baseBg = bg ? bg : (i % 2 === 0 ? "#ffffff" : "#f7f7f7");
@@ -112,7 +113,7 @@ function TRow({ cols, values, i, grade, bg }: {
       display: "grid",
       gridTemplateColumns: cols.map((c) => c.width).join(" "),
       backgroundColor: sc && grade !== "neutral" ? sc.bg : baseBg,
-      color: sc && grade !== "neutral" ? sc.color : undefined,
+      color: fg ? fg : (sc && grade !== "neutral" ? sc.color : undefined),
       borderBottom: "1px solid #e5e7eb",
       ...(grade === "vhigh" ? { fontWeight: 700 } : {}),
     }}>
@@ -378,6 +379,20 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           </Cat>
         </div>
 
+        {/* ===== 2b. 有馬set（AT+設定示唆の直下） ===== */}
+        {arimaByPos.some((a) => a.total > 0) && (
+          <Cat color="#f59e0b" title="有馬set（1,3,5セット目）" mb>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2px", padding: "4px" }}>
+              {arimaByPos.map(({ pos, count, total }) => (
+                <div key={pos} style={{ textAlign: "center", backgroundColor: "#f9fafb", borderRadius: "2px", padding: "3px 0", border: "1px solid #e5e7eb" }}>
+                  <div style={{ fontSize: "7px", color: "#6b7280", lineHeight: 1.4 }}>{pos}set目</div>
+                  <div style={{ fontSize: "9px", fontWeight: 700, lineHeight: 1.4 }}>{count}回 [{pct(count, total)}]</div>
+                </div>
+              ))}
+            </div>
+          </Cat>
+        )}
+
         {/* ===== 3. 赫眼 / 精神世界 ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <Cat color="#b71c1c" title="赫眼">
@@ -403,7 +418,7 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
             <THead cols={[{ label: "キャラ名", width: "1fr" }, { label: "回数", width: "44px" }]} color="#bf360c" />
             {TG_ENDING_SUGGESTIONS.filter((s) => s.startsWith("[cz失敗]")).map((s, i) => {
               const c = czFailSuggestions.filter((v) => v === s).length;
-              return <TRow key={s} cols={[{ width: "1fr" }, { width: "44px" }]} i={i} bg={suggBg(s)} values={[extractName(s), `${c}回`]} />;
+              return <TRow key={s} cols={[{ width: "1fr" }, { width: "44px" }]} i={i} bg={suggBg(s)} fg={suggTextColor(s)} values={[extractName(s), `${c}回`]} />;
             })}
           </Cat>
           <Cat color="#4e342e" title="[終了画面] 示唆">
@@ -411,7 +426,7 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
             {endScreenItems.map((s, i) => {
               const c = allEndScreenFromAT.filter((v) => v === s).length;
               const t = allEndScreenFromAT.length;
-              return <TRow key={s} cols={COLS_SUGG} i={i} bg={suggBg(s)} values={[extractName(s), `${c}回`, pct(c, t)]} />;
+              return <TRow key={s} cols={COLS_SUGG} i={i} bg={suggBg(s)} fg={suggTextColor(s)} values={[extractName(s), `${c}回`, pct(c, t)]} />;
             })}
           </Cat>
         </div>
@@ -424,8 +439,8 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
 
         {/* ===== 6. ゲーム数ゾーン集計（按分） ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <ZoneBlock label="全体[按分]" data={zoneAllProrate} prorated headerColor="#1565c0" />
-          <ZoneBlock label="AT後[按分]" data={zoneATProrate} prorated headerColor="#e65100" />
+          <ZoneBlock label="全体[按分]" data={zoneAllProrate} prorated headerColor="#1565c0" showDesc />
+          <ZoneBlock label="AT後[按分]" data={zoneATProrate} prorated headerColor="#e65100" showDesc />
         </div>
 
         {/* ===== 7. キャラ対決 / BITES ===== */}
@@ -446,29 +461,16 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           </Cat>
         </div>
 
-        {/* ===== 8. 有馬 ===== */}
-        {arimaByPos.some((a) => a.total > 0) && (
-          <Cat color="#f59e0b" title="有馬set（1,3,5セット目）" mb>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2px", padding: "4px" }}>
-              {arimaByPos.map(({ pos, count, total }) => (
-                <div key={pos} style={{ textAlign: "center", backgroundColor: "#f9fafb", borderRadius: "2px", padding: "3px 0", border: "1px solid #e5e7eb" }}>
-                  <div style={{ fontSize: "7px", color: "#6b7280", lineHeight: 1.4 }}>{pos}set目</div>
-                  <div style={{ fontSize: "9px", fontWeight: 700, lineHeight: 1.4 }}>{count}回 [{pct(count, total)}]</div>
-                </div>
-              ))}
-            </div>
-          </Cat>
-        )}
-
-        {/* ===== 9. BITES獲得履歴（改行対応） ===== */}
+        {/* ===== 8. BITES獲得履歴（AT単位改行・揃え） ===== */}
         {bitesHistoryByAT.length > 0 && (
           <Cat color="#14532d" title="BITES獲得履歴" mb>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "2px", padding: "4px" }}>
+            <div style={{ padding: "4px" }}>
               {bitesHistoryByAT.map((group, gi) => {
                 const bgColor = gi % 2 === 0 ? "#e8f5e9" : "#fff8e1";
+                const LW = "24px";
                 return (
-                  <div key={group.atKey} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1px", backgroundColor: bgColor, borderRadius: "3px", padding: "2px 3px" }}>
-                    <span style={{ fontSize: "7px", fontWeight: 700, color: "#374151", marginRight: "2px", lineHeight: 1.5 }}>{group.atKey}</span>
+                  <div key={group.atKey} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1px", backgroundColor: bgColor, borderRadius: "3px", padding: "2px 3px", marginBottom: "2px" }}>
+                    <span style={{ width: LW, fontSize: "7px", fontWeight: 700, color: "#374151", lineHeight: 1.5, flexShrink: 0 }}>{group.atKey}</span>
                     {group.items.map((h, i) => <SqIcon key={i} top={h.table} bottom={h.coins} bg="#14532d" />)}
                   </div>
                 );
@@ -477,15 +479,16 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           </Cat>
         )}
 
-        {/* ===== 10. 直乗せ履歴（改行対応） ===== */}
+        {/* ===== 9. 直乗せ履歴（AT単位改行・揃え） ===== */}
         {directHistoryByAT.length > 0 && (
           <Cat color="#1565c0" title="直乗せ履歴" mb>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "2px", padding: "4px" }}>
+            <div style={{ padding: "4px" }}>
               {directHistoryByAT.map((group, gi) => {
                 const bgColor = gi % 2 === 0 ? "#e3f2fd" : "#fce4ec";
+                const LW = "24px";
                 return (
-                  <div key={group.atKey} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1px", backgroundColor: bgColor, borderRadius: "3px", padding: "2px 3px" }}>
-                    <span style={{ fontSize: "7px", fontWeight: 700, color: "#374151", marginRight: "2px", lineHeight: 1.5 }}>{group.atKey}</span>
+                  <div key={group.atKey} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1px", backgroundColor: bgColor, borderRadius: "3px", padding: "2px 3px", marginBottom: "2px" }}>
+                    <span style={{ width: LW, fontSize: "7px", fontWeight: 700, color: "#374151", lineHeight: 1.5, flexShrink: 0 }}>{group.atKey}</span>
                     {group.items.map((d, i) => <SqIcon key={i} top={d.trigger} bottom={d.coins != null ? String(d.coins) : "—"} bg="#1565c0" />)}
                   </div>
                 );
@@ -531,7 +534,7 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
 
 // ── ゾーンブロック ──────────────────────────────────────────────────────────
 
-function ZoneBlock({ label, data, prorated, headerColor }: { label: string; data: { zone: string; count: number }[]; prorated?: boolean; headerColor?: string }) {
+function ZoneBlock({ label, data, prorated, headerColor, showDesc }: { label: string; data: { zone: string; count: number }[]; prorated?: boolean; headerColor?: string; showDesc?: boolean }) {
   const total = data.reduce((s, d) => s + d.count, 0);
   const filtered = data.filter((d) => d.count > 0);
   const cols = [{ label: "ゾーン", width: "1fr" }, { label: "回数", width: "50px" }, { label: "割合", width: "48px" }];
@@ -540,6 +543,11 @@ function ZoneBlock({ label, data, prorated, headerColor }: { label: string; data
   const c = headerColor ?? "#6a1b9a";
   return (
     <Cat color={c} title={`ゾーン ${label} (${totalLabel})`}>
+      {showDesc && (
+        <div style={{ backgroundColor: "#f5f3ff", padding: "3px 6px", borderBottom: "1px solid #e5e7eb", fontSize: "7px", color: "#6b7280", lineHeight: 1.5 }}>
+          ※ 300or400等のゾーン跨ぎを按分配分した集計
+        </div>
+      )}
       {/* カラーバー（出現ゾーンのみ） */}
       {total > 0 && (
         <div style={{ display: "flex", height: "16px" }}>
@@ -579,9 +587,11 @@ function zoneColor(z: string): string {
 // ── 色分けヘルパー（設定期待度） ─────────────────────────────────────────────
 
 function suggBg(s: string): string | undefined {
-  if (s.includes("設定6濃厚")) return "#fde68a";
+  // 設定6濃厚（有馬/あんていく全員集合） → 鮮やか黄色
+  if (s.includes("設定6濃厚")) return "#facc15";
   if (s.includes("設定5以上")) return "#fcd34d";
-  if (s.includes("設定4以上")) return "#fed7aa";
+  // 設定4以上濃厚（梟/金木研&霧嶋） → 濃い赤系
+  if (s.includes("設定4以上")) return "#f87171";
   if (s.includes("設定3以上")) return "#fecaca";
   if (s.includes("設定2以上")) return "#ffe4e6";
   if (s.includes("設定1否定")) return "#fff1f2";
@@ -595,6 +605,12 @@ function suggBg(s: string): string | undefined {
   if (s.includes("通常B以上濃厚")) return "#fefce8";
   if (s.includes("通常B以上示唆")) return "#f9fafb";
   if (s.includes("奇数")) return "#fce7f3";
+  return undefined;
+}
+
+/** 設定4以上/6濃厚は白テキストが必要かを判定 */
+function suggTextColor(s: string): string | undefined {
+  if (s.includes("設定4以上")) return "#ffffff";
   return undefined;
 }
 
