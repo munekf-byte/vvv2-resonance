@@ -101,7 +101,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
 
   return (
     <>
-      <div className="border-x border-gray-400">
+      <div style={{ backgroundColor: "#e8e2d8" }}>
 
         {/* ===== スティッキー列ヘッダー ===== */}
         <div
@@ -120,7 +120,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
         </div>
 
         {/* ===== データ行 ===== */}
-        <div className="space-y-1.5 px-1.5 py-1.5" style={{ backgroundColor: "#e8e2d8" }}>
+        <div className="space-y-1.5 py-1.5">
           {blocks.map((block, index) => {
             const isExpanded = expandedIds.has(block.id);
             const atLabel    = atLabels.get(block.id);
@@ -168,7 +168,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
                   </button>
 
                   {/* 実G数 */}
-                  <Cell color={{ backgroundColor: "#f9fafb", color: "#111827" }} borderR>
+                  <Cell color={{ backgroundColor: "#f9fafb", color: "#1d4ed8" }} borderR>
                     <span className="text-[11px] font-bold">
                       {block.jisshuG != null ? `${block.jisshuG}G` : "—"}
                     </span>
@@ -305,7 +305,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
                       </div>
                       <div
                         className="flex-1 overflow-hidden"
-                        style={{ border: "1.5px solid #14532d", borderLeft: "none" }}
+                        style={{ borderTop: "1.5px solid #14532d", borderLeft: "none" }}
                       >
                         {/* 上段 20px: サマリー情報 */}
                         <div style={{ display: "grid", gridTemplateColumns: s.ccgTotal > 0 ? "34px 1fr 1fr 1fr 1fr 1fr" : "34px 1fr 1fr 1fr 1fr", alignItems: "stretch", height: "20px" }}>
@@ -438,73 +438,70 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
                   </div>
                 )}
 
-                {/* ── ヤメ表示バナー（ブロック直下） ── */}
+                {/* ── ヤメ表示バナー（ブロック内） ── */}
                 {block.yame && (
-                  <>
-                    <div
-                      className="flex items-center justify-center gap-1.5 py-1"
-                      style={{ backgroundColor: "#1e3a5f" }}
-                    >
-                      <span className="text-[10px] font-mono font-bold text-white tracking-wider">
-                        ヤメ{block.jisshuG != null ? ` · ${block.jisshuG}G` : ""}
-                      </span>
-                      {onYameCancel && (
-                        <button
-                          onClick={() => onYameCancel(block.id)}
-                          className="text-[9px] font-mono font-bold px-2 py-0.5 rounded active:scale-95 transition-transform ml-2"
-                          style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#93c5fd" }}
-                        >
-                          [ヤメ]を取消
-                        </button>
-                      )}
-                    </div>
-                    {/* ── SESSION RESULT ── */}
-                    {(finalResult != null || userBalance != null) && (
-                      <div>
-                        <div className="flex items-center justify-center py-1" style={{ backgroundColor: "#111827" }}>
-                          <span className="text-[9px] font-mono font-bold text-white/60 tracking-widest">SESSION RESULT</span>
-                        </div>
-                        <div className="grid grid-cols-2">
-                          {/* 左: 台差枚（概算） */}
-                          <div
-                            className="flex flex-col items-center justify-center py-2.5"
-                            style={{
-                              background: finalResult != null
-                                ? (finalResult >= 0 ? "linear-gradient(135deg, #14532d 0%, #166534 100%)" : "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)")
-                                : "#374151",
-                              borderRight: "1px solid #000",
-                            }}
-                          >
-                            <span className="text-[8px] font-mono text-white/50 mb-0.5">計算上台差枚（概算）</span>
-                            <span className="text-[18px] font-mono font-black text-white leading-none">
-                              {finalResult != null ? `${finalResult >= 0 ? "+" : ""}${finalResult.toLocaleString()}枚` : "—"}
-                            </span>
-                          </div>
-                          {/* 右: あなたの収支 */}
-                          <div
-                            className="flex flex-col items-center justify-center py-2.5"
-                            style={{
-                              background: userBalance != null
-                                ? (userBalance >= 0 ? "linear-gradient(135deg, #14532d 0%, #166534 100%)" : "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)")
-                                : "#374151",
-                            }}
-                          >
-                            <span className="text-[8px] font-mono text-white/50 mb-0.5">あなたの収支</span>
-                            <span className="text-[18px] font-mono font-black text-white leading-none">
-                              {userBalance != null ? `${userBalance >= 0 ? "+" : ""}${userBalance.toLocaleString()}枚` : "未入力"}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-center py-1" style={{ backgroundColor: "#111827" }}>
-                          <span className="text-[9px] font-mono text-white/40">お疲れ様でした！</span>
-                        </div>
-                      </div>
+                  <div
+                    className="flex items-center justify-center gap-1.5 py-1"
+                    style={{ backgroundColor: "#1e3a5f" }}
+                  >
+                    <span className="text-[10px] font-mono font-bold text-white tracking-wider">
+                      ヤメ{block.jisshuG != null ? ` · ${block.jisshuG}G` : ""}
+                    </span>
+                    {onYameCancel && (
+                      <button
+                        onClick={() => onYameCancel(block.id)}
+                        className="text-[9px] font-mono font-bold px-2 py-0.5 rounded active:scale-95 transition-transform ml-2"
+                        style={{ backgroundColor: "rgba(255,255,255,0.2)", color: "#93c5fd" }}
+                      >
+                        [ヤメ]を取消
+                      </button>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
             );
           })}
+
+          {/* ===== SESSION RESULT（独立浮遊カード） ===== */}
+          {blocks.some((b) => b.yame) && (finalResult != null || userBalance != null) && (
+            <div className="rounded-lg overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.12)", border: "1px solid #000000" }}>
+              <div className="flex items-center justify-center py-1" style={{ backgroundColor: "#111827" }}>
+                <span className="text-[9px] font-mono font-bold text-white/60 tracking-widest">SESSION RESULT</span>
+              </div>
+              <div className="grid grid-cols-2">
+                <div
+                  className="flex flex-col items-center justify-center py-2.5"
+                  style={{
+                    background: finalResult != null
+                      ? (finalResult >= 0 ? "linear-gradient(135deg, #14532d 0%, #166534 100%)" : "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)")
+                      : "#374151",
+                    borderRight: "1px solid #000",
+                  }}
+                >
+                  <span className="text-[8px] font-mono text-white/50 mb-0.5">計算上台差枚（概算）</span>
+                  <span className="text-[18px] font-mono font-black text-white leading-none">
+                    {finalResult != null ? `${finalResult >= 0 ? "+" : ""}${finalResult.toLocaleString()}枚` : "—"}
+                  </span>
+                </div>
+                <div
+                  className="flex flex-col items-center justify-center py-2.5"
+                  style={{
+                    background: userBalance != null
+                      ? (userBalance >= 0 ? "linear-gradient(135deg, #14532d 0%, #166534 100%)" : "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)")
+                      : "#374151",
+                  }}
+                >
+                  <span className="text-[8px] font-mono text-white/50 mb-0.5">あなたの収支</span>
+                  <span className="text-[18px] font-mono font-black text-white leading-none">
+                    {userBalance != null ? `${userBalance >= 0 ? "+" : ""}${userBalance.toLocaleString()}枚` : "未入力"}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-center py-1" style={{ backgroundColor: "#111827" }}>
+                <span className="text-[9px] font-mono text-white/40">お疲れ様でした！</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
