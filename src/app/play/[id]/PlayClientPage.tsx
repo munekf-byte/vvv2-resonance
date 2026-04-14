@@ -369,6 +369,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
                 modeProbs={modeProbs}
                 medalStamps={medalStamps}
                 finalResult={finalResult}
+                userBalance={headerBalance}
                 onEdit={handleNormalEdit}
                 onDelete={(blockId) => deleteNormalBlock(blockId)}
                 onYameCancel={(blockId) => {
@@ -421,6 +422,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
             userSettingGuess={userSettingGuess}
             uchidashi={uchidashi}
             finalResult={finalResult}
+            userBalance={headerBalance}
           />
         )}
       </main>

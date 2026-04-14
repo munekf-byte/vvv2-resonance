@@ -31,6 +31,7 @@ interface Props {
   modeProbs?: ModeProbs[];
   medalStamps?: number[];
   finalResult?: number;
+  userBalance?: number | null;
   onEdit: (block: NormalBlock, index: number) => void;
   onDelete: (blockId: string) => void;
   onYameCancel?: (blockId: string) => void;
@@ -74,7 +75,7 @@ const HDR_TEXT     = "#f9fafb";
 const COL_BORDER_R = "border-r border-gray-400";
 const ROW_BORDER   = "border-b-2 border-gray-500";
 
-export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalStamps, finalResult, onEdit, onDelete, onYameCancel }: Props) {
+export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalStamps, finalResult, userBalance, onEdit, onDelete, onYameCancel }: Props) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null); // 削除確認中の blockId
 
@@ -457,21 +458,46 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
                         </button>
                       )}
                     </div>
-                    {/* ── 最終差枚数結果 ── */}
-                    {finalResult != null && (
-                      <div
-                        className="flex flex-col items-center justify-center py-3"
-                        style={{
-                          background: finalResult >= 0
-                            ? "linear-gradient(135deg, #14532d 0%, #166534 100%)"
-                            : "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)",
-                        }}
-                      >
-                        <span className="text-[9px] font-mono text-white/60 tracking-wider mb-0.5">SESSION RESULT</span>
-                        <span className="text-[22px] font-mono font-black text-white tracking-wide leading-none">
-                          {finalResult >= 0 ? "+" : ""}{finalResult.toLocaleString()}枚
-                        </span>
-                        <span className="text-[10px] font-mono text-white/50 mt-1">お疲れ様でした！</span>
+                    {/* ── SESSION RESULT ── */}
+                    {(finalResult != null || userBalance != null) && (
+                      <div>
+                        <div className="flex items-center justify-center py-1" style={{ backgroundColor: "#111827" }}>
+                          <span className="text-[9px] font-mono font-bold text-white/60 tracking-widest">SESSION RESULT</span>
+                        </div>
+                        <div className="grid grid-cols-2">
+                          {/* 左: 台差枚（概算） */}
+                          <div
+                            className="flex flex-col items-center justify-center py-2.5"
+                            style={{
+                              background: finalResult != null
+                                ? (finalResult >= 0 ? "linear-gradient(135deg, #14532d 0%, #166534 100%)" : "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)")
+                                : "#374151",
+                              borderRight: "1px solid #000",
+                            }}
+                          >
+                            <span className="text-[8px] font-mono text-white/50 mb-0.5">計算上台差枚（概算）</span>
+                            <span className="text-[18px] font-mono font-black text-white leading-none">
+                              {finalResult != null ? `${finalResult >= 0 ? "+" : ""}${finalResult.toLocaleString()}枚` : "—"}
+                            </span>
+                          </div>
+                          {/* 右: あなたの収支 */}
+                          <div
+                            className="flex flex-col items-center justify-center py-2.5"
+                            style={{
+                              background: userBalance != null
+                                ? (userBalance >= 0 ? "linear-gradient(135deg, #14532d 0%, #166534 100%)" : "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)")
+                                : "#374151",
+                            }}
+                          >
+                            <span className="text-[8px] font-mono text-white/50 mb-0.5">あなたの収支</span>
+                            <span className="text-[18px] font-mono font-black text-white leading-none">
+                              {userBalance != null ? `${userBalance >= 0 ? "+" : ""}${userBalance.toLocaleString()}枚` : "未入力"}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-center py-1" style={{ backgroundColor: "#111827" }}>
+                          <span className="text-[9px] font-mono text-white/40">お疲れ様でした！</span>
+                        </div>
                       </div>
                     )}
                   </>

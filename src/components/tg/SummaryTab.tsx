@@ -33,6 +33,7 @@ interface Props {
   userSettingGuess?: string | null;
   uchidashi?: import("@/types").UchidashiState | null;
   finalResult?: number;
+  userBalance?: number | null;
 }
 
 // ── ユーティリティ ──────────────────────────────────────────────────────────
@@ -151,7 +152,7 @@ function SqIcon({ top, bottom, bg }: { top: string; bottom: string; bg: string }
 
 // ── メインコンポーネント ─────────────────────────────────────────────────
 
-export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi, finalResult }: Props) {
+export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi, finalResult, userBalance }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
 
   const lsKey = `tgr_totalG_${sessionId}`;
@@ -324,22 +325,37 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
 
       <div ref={captureRef} style={{ padding: "8px 6px", backgroundColor: "#ffffff", fontFamily: "monospace" }}>
 
-        {/* ===== 0. 差枚数結果 ===== */}
-        {finalResult != null && (
-          <div style={{
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-            padding: "6px 8px", marginBottom: "4px", borderRadius: "3px",
-            border: `2px solid ${finalResult >= 0 ? "#16a34a" : "#dc2626"}`,
-            backgroundColor: finalResult >= 0 ? "#f0fdf4" : "#fef2f2",
-          }}>
-            <span style={{ fontSize: "10px", fontWeight: 700, color: "#6b7280" }}>差枚数(算出)</span>
-            <span style={{
-              fontSize: "16px", fontWeight: 900,
-              color: finalResult >= 0 ? "#16a34a" : "#dc2626",
-              fontVariantNumeric: "tabular-nums",
+        {/* ===== 0. SESSION RESULT ===== */}
+        {(finalResult != null || userBalance != null) && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+            <div style={{
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              padding: "6px 4px", borderRadius: "3px",
+              border: `2px solid ${finalResult != null ? (finalResult >= 0 ? "#16a34a" : "#dc2626") : "#d1d5db"}`,
+              backgroundColor: finalResult != null ? (finalResult >= 0 ? "#f0fdf4" : "#fef2f2") : "#f9fafb",
             }}>
-              {finalResult >= 0 ? "+" : ""}{finalResult.toLocaleString()}枚
-            </span>
+              <span style={{ fontSize: "8px", fontWeight: 700, color: "#6b7280", marginBottom: "2px" }}>計算上台差枚（概算）</span>
+              <span style={{
+                fontSize: "14px", fontWeight: 900, fontVariantNumeric: "tabular-nums",
+                color: finalResult != null ? (finalResult >= 0 ? "#16a34a" : "#dc2626") : "#9ca3af",
+              }}>
+                {finalResult != null ? `${finalResult >= 0 ? "+" : ""}${finalResult.toLocaleString()}枚` : "—"}
+              </span>
+            </div>
+            <div style={{
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              padding: "6px 4px", borderRadius: "3px",
+              border: `2px solid ${userBalance != null ? (userBalance >= 0 ? "#16a34a" : "#dc2626") : "#d1d5db"}`,
+              backgroundColor: userBalance != null ? (userBalance >= 0 ? "#f0fdf4" : "#fef2f2") : "#f9fafb",
+            }}>
+              <span style={{ fontSize: "8px", fontWeight: 700, color: "#6b7280", marginBottom: "2px" }}>あなたの収支</span>
+              <span style={{
+                fontSize: "14px", fontWeight: 900, fontVariantNumeric: "tabular-nums",
+                color: userBalance != null ? (userBalance >= 0 ? "#16a34a" : "#dc2626") : "#9ca3af",
+              }}>
+                {userBalance != null ? `${userBalance >= 0 ? "+" : ""}${userBalance.toLocaleString()}枚` : "未入力"}
+              </span>
+            </div>
           </div>
         )}
 
