@@ -110,6 +110,7 @@ export interface TGATSet {
   trophy?: string;           // トロフィー
   endingCard?: TGEndingCard; // エンディングカード記録
   edKakuganCount?: number;   // EDボナ時の赫眼出現回数（G数選択なし・単純カウント）
+  coinsHint?: string;        // 枚数表示示唆: "456OVER" | "666OVER" | "1000-7OVER" | ""
   memo?: string;             // フリーメモ
   directAdds: TGDirectAdd[]; // 直乗せ max 10
   battles: TGBattle[];       // 対決（契機+成績） max 10

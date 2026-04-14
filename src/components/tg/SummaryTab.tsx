@@ -697,10 +697,16 @@ export function inferSetting(czFail: string[], endScreen: string[], blocks: Norm
     else if (t.includes("銅")) hints.push("2以上濃厚");
   }
   for (const entry of atEntries) for (const row of entry.rows) {
-    if (row.rowType !== "set" || !row.endingCard) continue;
-    const ec = row.endingCard;
-    if (ec.confirmed4 > 0) hints.push("6確定濃厚"); if (ec.confirmed3 > 0) hints.push("5以上濃厚");
-    if (ec.confirmed2 > 0) hints.push("4以上濃厚"); if (ec.confirmed1 > 0) hints.push("3以上濃厚");
+    if (row.rowType !== "set") continue;
+    // エンディングカード
+    if (row.endingCard) {
+      const ec = row.endingCard;
+      if (ec.confirmed4 > 0) hints.push("6確定濃厚"); if (ec.confirmed3 > 0) hints.push("5以上濃厚");
+      if (ec.confirmed2 > 0) hints.push("4以上濃厚"); if (ec.confirmed1 > 0) hints.push("3以上濃厚");
+    }
+    // 枚数表示示唆
+    if (row.coinsHint === "666OVER" || row.coinsHint === "1000-7OVER") hints.push("6確定濃厚");
+    else if (row.coinsHint === "456OVER") hints.push("4以上濃厚");
   }
   if (hints.length === 0) return "";
   const priority = ["6確定濃厚", "5以上濃厚", "4以上濃厚", "3以上濃厚", "2以上濃厚", "1否定"];

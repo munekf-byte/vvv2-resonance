@@ -478,6 +478,32 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
         </Section>
         )}
 
+        {/* 枚数表示示唆 — 終了画面の直上 */}
+        {!isED && (
+        <Section title="枚数表示示唆">
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { value: "456OVER", label: "456 OVER", hint: "設定4以上濃厚" },
+              { value: "666OVER", label: "666 OVER", hint: "設定6濃厚" },
+              { value: "1000-7OVER", label: "1000-7 OVER", hint: "設定6濃厚" },
+            ] as const).map(({ value, label, hint }) => {
+              const sel = form.coinsHint === value;
+              return (
+                <button key={value}
+                  onClick={() => setField("coinsHint", sel ? "" : value)}
+                  className="py-3 rounded text-center transition-all active:scale-95 flex flex-col items-center"
+                  style={sel
+                    ? { backgroundColor: "#fde68a", color: "#92400e", border: "2px solid #f59e0b", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }}>
+                  <span className="text-[11px] font-mono font-black">{label}</span>
+                  <span className="text-[7px] font-mono mt-0.5 opacity-75">{hint}</span>
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+        )}
+
         {/* 終了画面示唆 (nd-13) — EDボナ時は非表示 */}
         {!isED && (
         <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
@@ -500,8 +526,12 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
         </div>
         )}
 
-        {/* エンディングカード (ad-15) — アコーディオン */}
-        <EndingCardAccordion ec={ec} setEndingCardField={setEndingCardField} />
+        {/* エンディングカード — EDボナ時のみ表示（常時展開） */}
+        {isED && (
+          <Section title="エンディングカード">
+            <EndingCardContent ec={ec} setEndingCardField={setEndingCardField} />
+          </Section>
+        )}
 
         {/* フリーメモ */}
         <Section title="フリーメモ">
@@ -975,6 +1005,65 @@ function TrophyImagePicker({ value, onChange }: { value: string; onChange: (v: s
 
 // ─── EndingCardAccordion (エンディングカード アコーディオン) ──────────────────
 
+/** エンディングカード中身（展開コンテンツ） */
+function EndingCardContent({
+  ec, setEndingCardField,
+}: {
+  ec: TGEndingCard;
+  setEndingCardField: (k: keyof TGEndingCard, v: number) => void;
+}) {
+  return (
+    <>
+      <div className="space-y-2">
+        {TG_ENDING_CARD_LABELS.map(({ key, label, color, textColor, characters }) => (
+          <EndingCardCounter
+            key={key}
+            cardKey={key}
+            label={label}
+            color={color}
+            textColor={textColor}
+            value={(ec[key as keyof TGEndingCard] as number) ?? 0}
+            characters={characters}
+            onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
+          />
+        ))}
+      </div>
+      <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+        <p className="text-[9px] font-mono font-bold text-gray-500 mb-1">【銅カード】</p>
+        {TG_COPPER_CARD_TYPES.map(({ key, label, character, color, textColor }) => (
+          <EndingCardCounter
+            key={key}
+            cardKey={key}
+            label={`${label} — ${character}`}
+            color={color}
+            textColor={textColor}
+            value={(ec[key as keyof TGEndingCard] as number) ?? 0}
+            characters={[]}
+            onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
+          />
+        ))}
+      </div>
+      <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+        <p className="text-[9px] font-mono font-bold text-gray-500 mb-1">【確定カード】</p>
+        {TG_CONFIRMED_CARD_TYPES.map(({ key, label, character, color, textColor, rainbow }) => (
+          <EndingCardCounter
+            key={key}
+            cardKey={key}
+            label={`${label} — ${character}`}
+            color={color}
+            textColor={textColor}
+            value={(ec[key as keyof TGEndingCard] as number) ?? 0}
+            characters={[]}
+            onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
+            rainbow={rainbow}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
+/** エンディングカード アコーディオン（通常SET時用） */
 function EndingCardAccordion({
   ec, setEndingCardField,
 }: {
@@ -982,22 +1071,15 @@ function EndingCardAccordion({
   setEndingCardField: (k: keyof TGEndingCard, v: number) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-
-  // 入力済みカード数を集計
   const totalCount = Object.values(ec).reduce((sum, v) => sum + (typeof v === "number" ? v : 0), 0);
 
   return (
     <div className="bg-white rounded border border-gray-400 overflow-hidden">
-      {/* トグルボタン */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="relative w-full flex items-center justify-between px-4 py-4 active:scale-[0.98] transition-transform overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
-          minHeight: "64px",
-        }}
+        style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)", minHeight: "64px" }}
       >
-        {/* 扇状カードオブジェクト */}
         <div className="absolute right-12 top-1/2 -translate-y-1/2" style={{ width: "90px", height: "56px" }}>
           {[
             { src: "/images/ending_card/設定6濃厚.png", rotate: -15, z: 1 },
@@ -1006,89 +1088,20 @@ function EndingCardAccordion({
             { src: "/images/ending_card/設定1否定.png", rotate: 8, z: 4 },
             { src: "/images/ending_card/設定2否定.png", rotate: 16, z: 5 },
           ].map(({ src, rotate, z }) => (
-            <img
-              key={src}
-              src={src}
-              alt=""
-              className="absolute rounded shadow-md"
-              style={{
-                width: "36px",
-                height: "44px",
-                objectFit: "cover",
-                left: "50%",
-                top: "50%",
-                transform: `translate(-50%, -50%) rotate(${rotate}deg)`,
-                zIndex: z,
-                border: "1.5px solid rgba(255,255,255,0.5)",
-              }}
-            />
+            <img key={src} src={src} alt="" className="absolute rounded shadow-md"
+              style={{ width: "36px", height: "44px", objectFit: "cover", left: "50%", top: "50%",
+                transform: `translate(-50%, -50%) rotate(${rotate}deg)`, zIndex: z, border: "1.5px solid rgba(255,255,255,0.5)" }} />
           ))}
         </div>
-
         <div className="flex flex-col items-start gap-0.5 relative z-10">
           <span className="text-white font-mono font-bold text-sm">エンディングカード入力</span>
-          {totalCount > 0 && (
-            <span className="bg-white/20 text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">
-              {totalCount}枚記録済
-            </span>
-          )}
+          {totalCount > 0 && <span className="bg-white/20 text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-full">{totalCount}枚記録済</span>}
         </div>
         <span className="text-white text-sm font-bold relative z-10">{expanded ? "▲" : "▼"}</span>
       </button>
-
-      {/* アコーディオン中身 */}
       {expanded && (
         <div className="px-3 pt-3 pb-4">
-          {/* 白/青/赤 カード */}
-          <div className="space-y-2">
-            {TG_ENDING_CARD_LABELS.map(({ key, label, color, textColor, characters }) => (
-              <EndingCardCounter
-                key={key}
-                cardKey={key}
-                label={label}
-                color={color}
-                textColor={textColor}
-                value={(ec[key as keyof TGEndingCard] as number) ?? 0}
-                characters={characters}
-                onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
-              />
-            ))}
-          </div>
-
-          {/* 銅カード */}
-          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-            <p className="text-[9px] font-mono font-bold text-gray-500 mb-1">【銅カード】</p>
-            {TG_COPPER_CARD_TYPES.map(({ key, label, character, color, textColor }) => (
-              <EndingCardCounter
-                key={key}
-                cardKey={key}
-                label={`${label} — ${character}`}
-                color={color}
-                textColor={textColor}
-                value={(ec[key as keyof TGEndingCard] as number) ?? 0}
-                characters={[]}
-                onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
-              />
-            ))}
-          </div>
-
-          {/* 確定カード */}
-          <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-            <p className="text-[9px] font-mono font-bold text-gray-500 mb-1">【確定カード】</p>
-            {TG_CONFIRMED_CARD_TYPES.map(({ key, label, character, color, textColor, rainbow }) => (
-              <EndingCardCounter
-                key={key}
-                cardKey={key}
-                label={`${label} — ${character}`}
-                color={color}
-                textColor={textColor}
-                value={(ec[key as keyof TGEndingCard] as number) ?? 0}
-                characters={[]}
-                onChange={(v) => setEndingCardField(key as keyof TGEndingCard, v)}
-                rainbow={rainbow}
-              />
-            ))}
-          </div>
+          <EndingCardContent ec={ec} setEndingCardField={setEndingCardField} />
         </div>
       )}
     </div>
