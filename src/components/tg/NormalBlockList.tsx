@@ -120,7 +120,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
         </div>
 
         {/* ===== データ行 ===== */}
-        <div>
+        <div className="space-y-1.5 px-1 pt-1">
           {blocks.map((block, index) => {
             const isExpanded = expandedIds.has(block.id);
             const atLabel    = atLabels.get(block.id);
@@ -140,7 +140,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
               !!hasCZ;
 
             return (
-              <div key={block.id} className={`${ROW_BORDER} bg-white`}>
+              <div key={block.id} className="bg-white rounded-lg border border-gray-300 overflow-hidden shadow-sm">
 
                 {/* ── メイン行 ── */}
                 <div className={`grid ${COLS}`}>
@@ -295,8 +295,8 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
 
                   return (
                     <div className="flex">
-                      {/* セットバック余白(8px) + AT番号(26px) = 通常行の編集列52pxより内側に開始 */}
-                      <div className="shrink-0" style={{ width: "8px" }} />
+                      {/* セットバック余白(26px) + AT番号(26px) = 編集列52pxの右辺に揃え */}
+                      <div className="shrink-0" style={{ width: "26px" }} />
                       <div className="shrink-0 flex flex-col" style={{ width: "26px" }}>
                         <div className="flex flex-col items-center justify-center flex-1 rounded-l" style={{ backgroundColor: "#14532d" }}>
                           <span className="text-white font-mono font-black text-[10px] leading-none">AT</span>
