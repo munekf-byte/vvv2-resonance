@@ -169,9 +169,10 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
 
                   {/* 実G数 */}
                   <Cell color={{ backgroundColor: "#f9fafb", color: "#1d4ed8" }} borderR>
-                    <span className="text-[11px] font-bold">
-                      {block.jisshuG != null ? `${block.jisshuG}G` : "—"}
+                    <span className="text-[15px] font-black leading-none">
+                      {block.jisshuG != null ? `${block.jisshuG}` : "—"}
                     </span>
+                    {block.jisshuG != null && <span className="text-[8px] font-bold ml-px opacity-70">G</span>}
                   </Cell>
 
                   {/* ゾーン */}
