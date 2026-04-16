@@ -26,9 +26,9 @@ const DEFAULT_PRIORS: ModeProbs = {
   A: 0.40, B: 0.20, C: 0.10, CH: 0.15, PRE: 0.10, HEAVEN: 0.05,
 };
 
-/** 継承時の減衰係数（誤判定の永続防止） */
-const DECAY_FACTOR = 0.95;
-const DECAY_FLOOR = (1 - DECAY_FACTOR) / ALL_MODES.length; // ≈ 0.0083
+/** 継承時の減衰係数（誤判定の永続防止・自己修復促進） */
+const DECAY_FACTOR = 0.85;
+const DECAY_FLOOR = 0.025; // 最低2.5%は全モードに復活チャンス
 
 /** HEAVEN濃厚とみなす閾値 */
 const HEAVEN_THRESHOLD = 0.50;
