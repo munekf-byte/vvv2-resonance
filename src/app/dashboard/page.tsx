@@ -14,12 +14,14 @@ export default function DashboardPage() {
         className="sticky top-0 z-40 border-b-2 border-gray-600 safe-area-top shadow-md"
         style={{
           backgroundImage: "url('/images/top_head.png')",
-          backgroundSize: "cover",
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
+          backgroundColor: "#1a0a0a",
         }}
       >
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-end justify-start">
-          <span className="font-mono text-white/40 text-[9px] tracking-wider pb-1">v4.50</span>
+          <span className="font-mono text-white/40 text-[9px] tracking-wider pb-1">v4.51</span>
         </div>
       </header>
 
