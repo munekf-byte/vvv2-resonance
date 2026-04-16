@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { inferSetting } from "@/components/tg/SummaryTab";
 
 export async function GET() {
   try {
@@ -16,10 +15,6 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    console.log("[/api/sessions] fetching for user:", user.id);
-
-    // RLS任せにせず明示的に user_id でフィルタ
-    // PGRST204回避: select('*') で全カラム取得
     const { data, error } = await supabase
       .from("play_sessions")
       .select("*")
@@ -32,8 +27,6 @@ export async function GET() {
       return NextResponse.json({ error: error.message, code: error.code }, { status: 500 });
     }
 
-    console.log("[/api/sessions] found", (data ?? []).length, "sessions");
-
     const sessions = (data ?? []).map((row: Record<string, unknown>) => {
       const blocks = Array.isArray(row.normal_blocks) ? row.normal_blocks : [];
       const atEntries = Array.isArray(row.at_entries) ? row.at_entries : [];
@@ -43,22 +36,50 @@ export async function GET() {
       const balance = sh
         ? ((sh.exchangeCoins ?? 0) - ((sh.handCoins ?? 0) + (sh.cashInvestK ?? 0) * (sh.coinRate ?? 46)))
         : null;
-      // 設定確定情報を算出
-      const czFail = blocks
-        .filter((b: unknown) => ((b as { endingSuggestion?: string })?.endingSuggestion ?? "").startsWith("[cz失敗]"))
-        .map((b: unknown) => (b as { endingSuggestion: string }).endingSuggestion);
-      const allSets = atEntries.flatMap((e: unknown) =>
-        ((e as { rows?: unknown[] })?.rows ?? []).filter((r: unknown) => (r as { rowType?: string })?.rowType === "set")
-      );
-      const endScreen = allSets
-        .map((s: unknown) => ((s as { endingSuggestion?: string })?.endingSuggestion ?? ""))
-        .filter((s: string) => s.startsWith("[終了画面]"));
-      const settingHint = inferSetting(
-        czFail as string[],
-        endScreen as string[],
-        blocks as import("@/types").NormalBlock[],
-        atEntries as import("@/types").TGATEntry[],
-      );
+
+      // 設定確定情報: サーバーでは軽量に算出（inferSettingに依存しない）
+      const hints: string[] = [];
+      // CZ失敗終了画面
+      for (const b of blocks) {
+        const es = (b as { endingSuggestion?: string })?.endingSuggestion ?? "";
+        if (es.includes("設定6濃厚")) hints.push("6確定濃厚");
+        else if (es.includes("設定5以上")) hints.push("5以上濃厚");
+        else if (es.includes("設定4以上")) hints.push("4以上濃厚");
+        else if (es.includes("設定3以上")) hints.push("3以上濃厚");
+        else if (es.includes("設定2以上")) hints.push("2以上濃厚");
+        else if (es.includes("設定1否定")) hints.push("1否定");
+      }
+      // AT終了画面
+      for (const e of atEntries) {
+        for (const r of ((e as { rows?: unknown[] })?.rows ?? [])) {
+          const row2 = r as { rowType?: string; endingSuggestion?: string; trophy?: string; coinsHint?: string; endingCard?: Record<string, number> };
+          if (row2.rowType !== "set") continue;
+          const es = row2.endingSuggestion ?? "";
+          if (es.includes("設定6濃厚")) hints.push("6確定濃厚");
+          else if (es.includes("設定5以上")) hints.push("5以上濃厚");
+          else if (es.includes("設定4以上")) hints.push("4以上濃厚");
+          // トロフィー
+          const t = row2.trophy ?? "";
+          if (t.includes("虹")) hints.push("6確定濃厚");
+          else if (t.includes("喰種柄")) hints.push("5以上濃厚");
+          else if (t.includes("金")) hints.push("4以上濃厚");
+          else if (t.includes("銀")) hints.push("3以上濃厚");
+          else if (t.includes("銅")) hints.push("2以上濃厚");
+          // 枚数表示示唆
+          if (row2.coinsHint === "666OVER" || row2.coinsHint === "1000-7OVER") hints.push("6確定濃厚");
+          else if (row2.coinsHint === "456OVER") hints.push("4以上濃厚");
+          // エンディングカード
+          const ec = row2.endingCard;
+          if (ec) {
+            if ((ec.confirmed4 ?? 0) > 0) hints.push("6確定濃厚");
+            if ((ec.confirmed3 ?? 0) > 0) hints.push("5以上濃厚");
+            if ((ec.confirmed2 ?? 0) > 0) hints.push("4以上濃厚");
+            if ((ec.confirmed1 ?? 0) > 0) hints.push("3以上濃厚");
+          }
+        }
+      }
+      const priority = ["6確定濃厚", "5以上濃厚", "4以上濃厚", "3以上濃厚", "2以上濃厚", "1否定"];
+      const settingHint = [...new Set(hints)].sort((a, b) => priority.indexOf(a) - priority.indexOf(b)).join(" / ");
 
       return {
         id: row.id as string,
