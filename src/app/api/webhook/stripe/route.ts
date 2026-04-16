@@ -2,11 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/server";
 import { createClient } from "@supabase/supabase-js";
 
+// 環境変数チェック（モジュール読み込み時）
+const whSecPrefix = process.env.STRIPE_WEBHOOK_SECRET?.slice(0, 6) ?? "UNDEFINED";
+console.log(`[Stripe Webhook Module] STRIPE_WEBHOOK_SECRET loaded: ${whSecPrefix}...`);
+
 export async function POST(request: NextRequest) {
+  console.log("🔥🔥🔥 WEBHOOK HIT! 🔥🔥🔥");
+  console.log("[Stripe Webhook] Method:", request.method, "URL:", request.url);
+
   const body = await request.text();
   const sig = request.headers.get("stripe-signature");
 
-  console.log("[Stripe Webhook] Received event, sig present:", !!sig);
+  console.log("[Stripe Webhook] Body length:", body.length, "sig present:", !!sig);
 
   if (!sig) {
     console.error("[Stripe Webhook] Missing stripe-signature header");
