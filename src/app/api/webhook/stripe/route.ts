@@ -1,96 +1,89 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/server";
 import { createClient } from "@supabase/supabase-js";
 
-// 環境変数チェック（モジュール読み込み時）
-const whSecPrefix = process.env.STRIPE_WEBHOOK_SECRET?.slice(0, 6) ?? "UNDEFINED";
-console.log(`[Stripe Webhook Module] STRIPE_WEBHOOK_SECRET loaded: ${whSecPrefix}...`);
+// Node.js ランタイムを明示（Edge では Stripe SDK が動作しない場合がある）
+export const runtime = "nodejs";
 
-export async function POST(request: NextRequest) {
+// Stripe Webhook は raw body が必要なため、Next.js の自動パースを無効化
+export const dynamic = "force-dynamic";
+
+export async function POST(request: Request) {
   console.log("🔥🔥🔥 WEBHOOK HIT! 🔥🔥🔥");
-  console.log("[Stripe Webhook] Method:", request.method, "URL:", request.url);
+
+  const whSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  console.log("[Webhook] STRIPE_WEBHOOK_SECRET present:", !!whSecret, whSecret?.slice(0, 6) ?? "NONE");
 
   const body = await request.text();
   const sig = request.headers.get("stripe-signature");
 
-  console.log("[Stripe Webhook] Body length:", body.length, "sig present:", !!sig);
+  console.log("[Webhook] Body length:", body.length, "sig present:", !!sig);
 
-  if (!sig) {
-    console.error("[Stripe Webhook] Missing stripe-signature header");
-    return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  if (!sig || !whSecret) {
+    console.error("[Webhook] Missing sig or secret");
+    return NextResponse.json({ error: "Missing signature or secret" }, { status: 400 });
   }
 
   let event;
   try {
-    event = getStripe().webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!,
-    );
+    event = getStripe().webhooks.constructEvent(body, sig, whSecret);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
-    console.error("[Stripe Webhook] Signature verification failed:", msg);
+    console.error("[Webhook] Signature verification failed:", msg);
     return NextResponse.json({ error: `Webhook Error: ${msg}` }, { status: 400 });
   }
 
-  console.log("[Stripe Webhook] Event type:", event.type, "ID:", event.id);
+  console.log("[Webhook] Event type:", event.type, "ID:", event.id);
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-
-    console.log("[Stripe Webhook] Session ID:", session.id);
-    console.log("[Stripe Webhook] client_reference_id:", session.client_reference_id);
-    console.log("[Stripe Webhook] customer_email:", session.customer_email);
-    console.log("[Stripe Webhook] payment_status:", session.payment_status);
-
     const userId = session.client_reference_id;
 
+    console.log("[Webhook] client_reference_id:", userId);
+    console.log("[Webhook] customer_email:", session.customer_email);
+
     if (!userId) {
-      console.error("[Stripe Webhook] No client_reference_id in session — cannot identify user");
+      console.error("[Webhook] No client_reference_id");
       return NextResponse.json({ error: "No user ID" }, { status: 400 });
     }
 
-    // Supabase Admin Client (service role) で RLS バイパス
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!supabaseUrl || !serviceRoleKey) {
-      console.error("[Stripe Webhook] Missing SUPABASE_URL or SERVICE_ROLE_KEY env vars");
-      return NextResponse.json({ error: "Server config error" }, { status: 500 });
+    if (!supabaseUrl || !serviceKey) {
+      console.error("[Webhook] Missing Supabase env vars");
+      return NextResponse.json({ error: "Config error" }, { status: 500 });
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
-    // まず対象ユーザーが存在するか確認
-    const { data: profile, error: fetchError } = await supabaseAdmin
+    const { data: profile, error: fetchErr } = await supabaseAdmin
       .from("profiles")
       .select("id, email, is_pro")
       .eq("id", userId)
       .single();
 
-    if (fetchError || !profile) {
-      console.error("[Stripe Webhook] Profile not found for userId:", userId, fetchError?.message);
+    if (fetchErr || !profile) {
+      console.error("[Webhook] Profile not found:", userId, fetchErr?.message);
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    console.log("[Stripe Webhook] Found profile:", profile.email, "current is_pro:", profile.is_pro);
+    console.log("[Webhook] Profile:", profile.email, "is_pro:", profile.is_pro);
 
-    if (profile.is_pro) {
-      console.log("[Stripe Webhook] User already Pro, skipping update");
-      return NextResponse.json({ received: true, already_pro: true });
+    if (!profile.is_pro) {
+      const { error: updateErr } = await supabaseAdmin
+        .from("profiles")
+        .update({ is_pro: true })
+        .eq("id", userId);
+
+      if (updateErr) {
+        console.error("[Webhook] Update failed:", updateErr.message);
+        return NextResponse.json({ error: "DB error" }, { status: 500 });
+      }
+      console.log("[Webhook] SUCCESS: is_pro=true for", userId);
+    } else {
+      console.log("[Webhook] Already Pro, skipped");
     }
-
-    const { error: updateError } = await supabaseAdmin
-      .from("profiles")
-      .update({ is_pro: true })
-      .eq("id", userId);
-
-    if (updateError) {
-      console.error("[Stripe Webhook] Failed to update is_pro:", updateError.message, updateError.details);
-      return NextResponse.json({ error: "DB update failed" }, { status: 500 });
-    }
-
-    console.log("[Stripe Webhook] SUCCESS: is_pro = true for user:", userId, profile.email);
   }
 
   return NextResponse.json({ received: true });
