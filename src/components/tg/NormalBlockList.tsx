@@ -103,15 +103,18 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
     <>
       <div className="relative overflow-hidden" style={{ backgroundColor: "#e8e2d8" }}>
         {/* 背景画像（東京上空） */}
-        <div style={{
-          position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-          backgroundImage: "url(/images/tokyo_joku.png)",
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
-          opacity: 0.12,
-          zIndex: 0,
-          pointerEvents: "none",
-        }} />
+        <img
+          src="/images/tokyo_joku.png"
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+            objectFit: "cover", objectPosition: "center top",
+            opacity: 0.15,
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
 
         {/* ===== スティッキー列ヘッダー ===== */}
         <div
