@@ -2,22 +2,15 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/server";
 import { createClient } from "@supabase/supabase-js";
 
-// Node.js ランタイムを明示（Edge では Stripe SDK が動作しない場合がある）
 export const runtime = "nodejs";
-
-// Stripe Webhook は raw body が必要なため、Next.js の自動パースを無効化
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   console.log("🔥🔥🔥 WEBHOOK HIT! 🔥🔥🔥");
 
   const whSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  console.log("[Webhook] STRIPE_WEBHOOK_SECRET present:", !!whSecret, whSecret?.slice(0, 6) ?? "NONE");
-
   const body = await request.text();
   const sig = request.headers.get("stripe-signature");
-
-  console.log("[Webhook] Body length:", body.length, "sig present:", !!sig);
 
   if (!sig || !whSecret) {
     console.error("[Webhook] Missing sig or secret");
@@ -29,60 +22,59 @@ export async function POST(request: Request) {
     event = getStripe().webhooks.constructEvent(body, sig, whSecret);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
-    console.error("[Webhook] Signature verification failed:", msg);
-    return NextResponse.json({ error: `Webhook Error: ${msg}` }, { status: 400 });
+    console.error("[Webhook] Sig verify failed:", msg);
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  console.log("[Webhook] Event type:", event.type, "ID:", event.id);
+  console.log("[Webhook] Event:", event.type, event.id);
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const userId = session.client_reference_id;
+    const email = session.customer_email ?? "";
 
-    console.log("[Webhook] client_reference_id:", userId);
-    console.log("[Webhook] customer_email:", session.customer_email);
+    console.log("[Webhook] userId:", userId, "email:", email);
 
     if (!userId) {
       console.error("[Webhook] No client_reference_id");
       return NextResponse.json({ error: "No user ID" }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !serviceKey) {
-      console.error("[Webhook] Missing Supabase env vars");
-      return NextResponse.json({ error: "Config error" }, { status: 500 });
-    }
-
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const supabaseAdmin = createClient(supabaseUrl, serviceKey);
 
-    const { data: profile, error: fetchErr } = await supabaseAdmin
+    // 直接 update（select不要）
+    const { data: updated, error: updateErr } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, is_pro")
+      .update({ is_pro: true })
       .eq("id", userId)
-      .single();
+      .select("id")
+      .maybeSingle();
 
-    if (fetchErr || !profile) {
-      console.error("[Webhook] Profile not found:", userId, fetchErr?.message);
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    if (updateErr) {
+      console.error("[Webhook] Update error:", updateErr.message);
+      return NextResponse.json({ error: "DB update failed" }, { status: 500 });
     }
 
-    console.log("[Webhook] Profile:", profile.email, "is_pro:", profile.is_pro);
-
-    if (!profile.is_pro) {
-      const { error: updateErr } = await supabaseAdmin
-        .from("profiles")
-        .update({ is_pro: true })
-        .eq("id", userId);
-
-      if (updateErr) {
-        console.error("[Webhook] Update failed:", updateErr.message);
-        return NextResponse.json({ error: "DB error" }, { status: 500 });
-      }
+    if (updated) {
       console.log("[Webhook] SUCCESS: is_pro=true for", userId);
     } else {
-      console.log("[Webhook] Already Pro, skipped");
+      // プロフィール未作成 → insert で新規作成 + Pro付与
+      console.log("[Webhook] Profile not found, inserting new profile for", userId);
+      const { error: insertErr } = await supabaseAdmin
+        .from("profiles")
+        .insert({
+          id: userId,
+          email: email,
+          is_pro: true,
+        });
+
+      if (insertErr) {
+        console.error("[Webhook] Insert error:", insertErr.message);
+        return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
+      }
+      console.log("[Webhook] SUCCESS: New profile created with is_pro=true for", userId);
     }
   }
 
