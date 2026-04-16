@@ -59,15 +59,28 @@ export function getModeCellColor(mode: string): CellColor {
 }
 
 export function abbrevMode(mode: string): string {
-  if (!mode || mode === "不明") return "—";
-  if (mode.startsWith("通常A")) return "通A";
-  if (mode.startsWith("通常B")) return "通B";
-  if (mode.startsWith("通常C")) return "通C";
-  if (mode.startsWith("チャンス")) return "チャンス";
-  if (mode.startsWith("天国準備")) return "天国P";
+  if (!mode || mode === "不明") return "";
+  if (mode.startsWith("通常A")) return "A";
+  if (mode.startsWith("通常B")) return "B";
+  if (mode.startsWith("通常C")) return "C";
+  if (mode.startsWith("チャンス")) return "チャ";
+  if (mode.startsWith("天国準備")) return "準備";
   if (mode.startsWith("天国")) return "天国";
   if (mode.startsWith("朝一")) return "朝一";
-  return mode.slice(0, 4);
+  return mode.slice(0, 3);
+}
+
+/** ModeKey ("A","B","C","CH","PRE","HEAVEN") → 表示用略称 */
+export function abbrevModeKey(key: string): string {
+  switch (key) {
+    case "A": return "A";
+    case "B": return "B";
+    case "C": return "C";
+    case "CH": return "チャ";
+    case "PRE": return "準備";
+    case "HEAVEN": return "天国";
+    default: return key;
+  }
 }
 
 // ─── 当選契機 ────────────────────────────────────────────────────────────────

@@ -11,7 +11,7 @@ import {
   getZoneCellColor,
   getModeCellColor,
   getATCharColor,
-  abbrevMode,
+  abbrevMode, abbrevModeKey,
   getTriggerCellColor,
   abbrevTrigger,
   getEventCellColor,
@@ -181,16 +181,27 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
                   </Cell>
 
                   {/* 推定モード */}
-                  <Cell color={getModeCellColor(block.estimatedMode)} borderR>
-                    <span className="flex flex-col items-center leading-tight">
+                  {block.estimatedMode !== "不明" ? (
+                    /* ユーザー手入力あり → 入力値を優先表示 */
+                    <Cell color={getModeCellColor(block.estimatedMode)} borderR>
                       <span className="text-[11px] font-bold">{abbrevMode(block.estimatedMode)}</span>
-                      {block.estimatedMode !== "不明" && modeProbs?.[index] && (
-                        <span className="text-[7px] font-mono opacity-70 leading-none mt-0.5">
-                          {topModes(modeProbs[index], 2).map((m) => `${m.mode}${m.pct}%`).join(" ")}
-                        </span>
-                      )}
-                    </span>
-                  </Cell>
+                    </Cell>
+                  ) : modeProbs?.[index] ? (
+                    /* 不明 + 推定結果あり → 上位3モードを%表示 */
+                    <Cell color={{ backgroundColor: "#f9fafb", color: "#374151" }} borderR>
+                      <span className="flex flex-col items-center leading-none gap-px">
+                        {topModes(modeProbs[index], 3).map((m) => (
+                          <span key={m.mode} className="text-[7px] font-mono font-bold">
+                            {abbrevModeKey(m.mode)}<span className="opacity-60">{m.pct}%</span>
+                          </span>
+                        ))}
+                      </span>
+                    </Cell>
+                  ) : (
+                    <Cell color={{ backgroundColor: "#f9fafb", color: "#d1d5db" }} borderR>
+                      <span className="text-[9px]" />
+                    </Cell>
+                  )}
 
                   {/* 当選契機 */}
                   <Cell color={getTriggerCellColor(block.winTrigger)} borderR>
@@ -697,7 +708,7 @@ function ModeProbBar({ probs }: { probs: ModeProbs }) {
           }}
         >
           <span className="text-[8px] font-mono font-bold whitespace-nowrap">
-            {mode}{pct}
+            {abbrevModeKey(mode)}{pct}
           </span>
         </div>
       ))}
