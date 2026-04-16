@@ -9,19 +9,17 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f3f4f6" }}>
 
-      {/* ===== ヘッダー ===== */}
+      {/* ===== ヘッダー（背景画像） ===== */}
       <header
         className="sticky top-0 z-40 border-b-2 border-gray-600 safe-area-top shadow-md"
-        style={{ backgroundColor: "#1f2937" }}
+        style={{
+          backgroundImage: "url('/images/top_head.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
       >
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="font-mono font-black text-red-400 text-lg tracking-wider">TGR</span>
-            <div className="flex flex-col leading-none">
-              <span className="font-mono text-gray-400 text-xs tracking-widest">RESONANCE</span>
-              <span className="font-mono text-gray-600 text-[9px] tracking-wider">v4.47</span>
-            </div>
-          </div>
+        <div className="max-w-2xl mx-auto px-4 h-14 flex items-end justify-start">
+          <span className="font-mono text-white/40 text-[9px] tracking-wider pb-1">v4.48</span>
         </div>
       </header>
 
