@@ -66,9 +66,9 @@ export function DashboardShell() {
       <div className="px-4 py-6">
         {tab === "log" ? (
           <>
-            <div className="mb-5">
-              <h1 className="text-lg font-mono font-bold text-gray-900">稼働ログ</h1>
-              <p className="text-gray-500 text-xs font-mono mt-0.5">SESSION LIST · データはクラウドに保存されます</p>
+            <div className="mb-3 flex items-center justify-between">
+              <h1 className="text-base font-mono font-bold text-gray-900">稼働ログ</h1>
+              <span className="text-[9px] font-mono text-gray-400">データはクラウドに保存されます</span>
             </div>
             <DashboardClient />
           </>

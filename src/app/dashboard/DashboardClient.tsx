@@ -128,17 +128,16 @@ export function DashboardClient() {
     <div className="space-y-4">
       {/* ソートセレクター */}
       {sessions.length > 1 && (
-        <div className="flex items-center justify-end gap-2">
-          <span className="text-[9px] font-mono text-gray-500">並べ替え</span>
+        <div className="flex items-center justify-end">
           <select
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
-            className="text-[11px] font-mono font-bold px-2 py-1.5 rounded border-2 border-gray-300 bg-white text-gray-700 focus:outline-none focus:border-gray-500"
+            className="text-[12px] font-mono font-bold px-3 py-2.5 rounded-lg border-2 border-gray-400 bg-white text-gray-700 focus:outline-none focus:border-gray-600"
           >
-            <option value="date">日付順（新しい順）</option>
+            <option value="date">日付順</option>
             <option value="balance">勝ち額順</option>
             <option value="hall">ホール名順</option>
-            <option value="setting">設定順（確定優先）</option>
+            <option value="setting">設定順</option>
           </select>
         </div>
       )}
@@ -154,7 +153,7 @@ export function DashboardClient() {
       ) : (
         <div className="space-y-2">
           {sortedSessions.map((s) => (
-            <div key={s.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+            <div key={s.id} className="bg-white rounded-xl border-2 border-gray-400 shadow-sm overflow-hidden">
               <div className="flex items-stretch">
                 <button onClick={() => handleOpen(s.id)}
                   className="flex-1 text-left px-3 py-2.5 hover:bg-gray-50 transition-colors min-w-0">
