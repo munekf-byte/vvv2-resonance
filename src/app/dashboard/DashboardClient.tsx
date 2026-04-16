@@ -33,6 +33,7 @@ export function DashboardClient() {
   const [creating, setCreating] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sortKey, setSortKey] = useState<"date" | "balance" | "hall" | "setting">("date");
 
   useEffect(() => { loadSessions(); }, []);
 
@@ -100,8 +101,48 @@ export function DashboardClient() {
     setDeleteConfirmId(null);
   }
 
+  // ソート適用
+  const sortedSessions = [...sessions].sort((a, b) => {
+    switch (sortKey) {
+      case "balance":
+        return (b.balance ?? -99999) - (a.balance ?? -99999);
+      case "hall":
+        return a.machineName.localeCompare(b.machineName, "ja");
+      case "setting": {
+        const priority = ["6確定濃厚", "5以上濃厚", "4以上濃厚", "3以上濃厚", "2以上濃厚", "1否定"];
+        const rankA = a.settingHint ? priority.findIndex((p) => a.settingHint.includes(p)) : 99;
+        const rankB = b.settingHint ? priority.findIndex((p) => b.settingHint.includes(p)) : 99;
+        const ra = rankA === -1 ? 98 : rankA;
+        const rb = rankB === -1 ? 98 : rankB;
+        if (ra !== rb) return ra - rb;
+        // 同ランクなら推測設定で比較
+        return (b.userSettingGuess ?? "").localeCompare(a.userSettingGuess ?? "", "ja");
+      }
+      case "date":
+      default:
+        return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
+    }
+  });
+
   return (
     <div className="space-y-4">
+      {/* ソートセレクター */}
+      {sessions.length > 1 && (
+        <div className="flex items-center justify-end gap-2">
+          <span className="text-[9px] font-mono text-gray-500">並べ替え</span>
+          <select
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+            className="text-[11px] font-mono font-bold px-2 py-1.5 rounded border-2 border-gray-300 bg-white text-gray-700 focus:outline-none focus:border-gray-500"
+          >
+            <option value="date">日付順（新しい順）</option>
+            <option value="balance">勝ち額順</option>
+            <option value="hall">ホール名順</option>
+            <option value="setting">設定順（確定優先）</option>
+          </select>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-center text-gray-500 font-mono py-8 text-sm">読み込み中...</p>
       ) : sessions.length === 0 ? (
@@ -112,8 +153,7 @@ export function DashboardClient() {
         </div>
       ) : (
         <div className="space-y-2">
-          {/* 全件表示（slice なし） */}
-          {sessions.map((s) => (
+          {sortedSessions.map((s) => (
             <div key={s.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="flex items-stretch">
                 <button onClick={() => handleOpen(s.id)}

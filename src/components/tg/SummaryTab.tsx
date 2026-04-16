@@ -572,23 +572,17 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
       {showTotalGPopup && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center px-6" onClick={() => setShowTotalGPopup(false)}>
           <div className="absolute inset-0 bg-black/40" />
-          <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="relative rounded-2xl shadow-xl max-w-sm w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="px-5 py-4" style={{ backgroundColor: "#92400e" }}>
-              <p className="text-white font-mono font-bold text-sm">TOTALゲーム数の入力</p>
-            </div>
-            <div className="px-5 py-4">
-              <p className="text-gray-700 font-mono text-sm leading-relaxed">
-                最初に液晶メニュー画面から<br />
-                <b>TOTALゲーム数</b>を転記してください。
+              <p className="text-white font-mono font-bold text-sm leading-relaxed">
+                終了時に液晶メニューから<br />TOTALゲーム数 を転記してください
               </p>
-              <p className="text-gray-500 font-mono text-xs mt-2">集計の確率計算に必要です。</p>
             </div>
-            <div className="border-t border-gray-200">
-              <button onClick={() => setShowTotalGPopup(false)}
-                className="w-full py-3 text-sm font-mono font-bold text-blue-600 hover:bg-gray-50 transition-colors">
-                OK
-              </button>
-            </div>
+            <button onClick={() => setShowTotalGPopup(false)}
+              className="w-full py-3 text-sm font-mono font-bold text-white hover:opacity-80 transition-opacity"
+              style={{ backgroundColor: "#78350f" }}>
+              OK
+            </button>
           </div>
         </div>
       )}

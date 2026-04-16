@@ -20,7 +20,7 @@ export async function GET() {
       .select("*")
       .eq("user_id", user.id)
       .eq("is_deleted", false)
-      .order("updated_at", { ascending: false });
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("[/api/sessions] query error:", error.message, error.details, error.hint, error.code);
