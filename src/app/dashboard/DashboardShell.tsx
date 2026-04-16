@@ -29,14 +29,10 @@ export function DashboardShell() {
           <span className="text-[11px] font-mono text-gray-600 truncate max-w-[150px]">
             {profile?.display_name ?? user?.email ?? ""}
           </span>
-          {isPro && <span className="text-[9px] font-mono font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded">PRO</span>}
-          {isAdmin && <span className="text-[9px] font-mono font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">ADMIN</span>}
-          <span className="text-[8px] font-mono text-orange-500">Pro:{String(isPro)} Admin:{String(isAdmin)}</span>
         </div>
         <div className="flex items-center gap-2">
-          <a href="/pro" className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded active:scale-95 transition-transform"
-            style={{ backgroundColor: isPro ? "#f59e0b" : "#7c3aed", color: "#fff" }}>
-            👑 {isPro ? "VIP" : "Pro"}
+          <a href="/pro" className="active:scale-95 transition-transform flex-shrink-0">
+            <img src="/images/pro_plan.png" alt={isPro ? "VIP" : "Pro"} className="h-6 rounded" style={{ opacity: isPro ? 1 : 0.5 }} />
           </a>
           {isAdmin && (
             <a href="/admin" className="text-[10px] font-mono text-gray-500 hover:text-gray-800">管理</a>

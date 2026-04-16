@@ -101,20 +101,12 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
 
   return (
     <>
-      <div className="relative overflow-hidden" style={{ backgroundColor: "#e8e2d8" }}>
-        {/* 背景画像（東京上空） */}
-        <img
-          src="/images/tokyo_joku.png"
-          alt=""
-          aria-hidden="true"
-          style={{
-            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-            objectFit: "cover", objectPosition: "center top",
-            opacity: 0.15,
-            zIndex: 0,
-            pointerEvents: "none",
-          }}
-        />
+      <div style={{
+        backgroundColor: "#e8e2d8",
+        backgroundImage: "linear-gradient(rgba(232,226,216,0.85), rgba(232,226,216,0.85)), url(/images/tokyo_joku.png)",
+        backgroundSize: "cover",
+        backgroundPosition: "center top",
+      }}>
 
         {/* ===== スティッキー列ヘッダー ===== */}
         <div
@@ -133,7 +125,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
         </div>
 
         {/* ===== データ行 ===== */}
-        <div className="relative z-10 space-y-1.5 py-1.5">
+        <div className="space-y-1.5 py-1.5">
           {blocks.map((block, index) => {
             const isExpanded = expandedIds.has(block.id);
             const atLabel    = atLabels.get(block.id);
