@@ -31,9 +31,19 @@ export function DashboardShell() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <a href="/pro" className="active:scale-95 transition-transform flex-shrink-0">
-            <img src="/images/pro_plan.png" alt={isPro ? "VIP" : "Pro"} className="h-6 rounded" style={{ opacity: isPro ? 1 : 0.5 }} />
-          </a>
+          {isPro ? (
+            <a href="/pro" className="active:scale-95 transition-transform flex-shrink-0">
+              <img src="/images/pro_plan.png" alt="PRO" className="h-6 rounded" />
+            </a>
+          ) : (
+            <>
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-gray-200 text-gray-500">無料版</span>
+              <a href="/pro" className="text-[9px] font-mono font-bold px-2 py-0.5 rounded active:scale-95 transition-transform"
+                style={{ backgroundColor: "#7c3aed", color: "#fff" }}>
+                Pro詳細
+              </a>
+            </>
+          )}
           {isAdmin && (
             <a href="/admin" className="text-[10px] font-mono text-gray-500 hover:text-gray-800">管理</a>
           )}
@@ -56,9 +66,11 @@ export function DashboardShell() {
             ? { backgroundColor: "#1f2937", color: "#f9fafb", borderLeft: "2px solid #374151" }
             : { backgroundColor: "#f3f4f6", color: "#6b7280", borderLeft: "2px solid #374151" }}>
           <span>トータル数値分析</span>
-          <span className="block text-[7px] font-bold tracking-wider" style={{ color: tab === "total" ? "#fbbf24" : "#f59e0b" }}>
-            {isPro ? "PRO PLAN" : "🔒 PRO限定"}
-          </span>
+          {isPro ? (
+            <span className="block text-[7px] font-bold tracking-wider" style={{ color: tab === "total" ? "#fbbf24" : "#f59e0b" }}>PRO PLAN</span>
+          ) : (
+            <span className="block text-[11px] font-bold mt-0.5" style={{ color: tab === "total" ? "#fbbf24" : "#f59e0b" }}>🔒 PRO限定</span>
+          )}
         </button>
       </div>
 
