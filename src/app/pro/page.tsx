@@ -4,12 +4,52 @@
 // 無課金 → 課金誘導 / Pro → Discordコミュニティ案内
 // =============================================================================
 
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthContext";
+import { Suspense } from "react";
 import { LINK_X, LINK_DISCORD } from "@/lib/config/links";
 
 export default function ProPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "#f5f0e8" }}><p className="font-mono text-gray-500">読み込み中...</p></div>}>
+      <ProPageInner />
+    </Suspense>
+  );
+}
+
+function ProPageInner() {
   const { profile } = useAuth();
   const isPro = profile?.is_pro ?? false;
+  const searchParams = useSearchParams();
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("success") === "true") {
+      setSuccessMsg(true);
+      // 数秒後にリロードしてPro状態を反映
+      const timer = setTimeout(() => window.location.replace("/pro"), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
+  async function handleStripeCheckout() {
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch("/api/checkout", { method: "POST" });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || "決済画面の生成に失敗しました");
+        setCheckoutLoading(false);
+      }
+    } catch {
+      alert("通信エラーが発生しました");
+      setCheckoutLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f5f0e8" }}>
@@ -163,13 +203,26 @@ export default function ProPage() {
                 </p>
                 <p className="font-mono text-gray-500 text-xs mt-1">（税込・月額ではありません）</p>
 
-                <div className="mt-5 bg-white/10 rounded-lg px-4 py-3">
-                  <p className="font-mono text-sm font-bold" style={{ color: "#fef3c7" }}>
-                    現在 PayPay での手動決済を受付中
+                {/* Stripe 決済ボタン */}
+                <button
+                  onClick={handleStripeCheckout}
+                  disabled={checkoutLoading}
+                  className="w-full mt-5 py-4 rounded-lg font-mono font-bold text-base active:scale-95 transition-transform disabled:opacity-60"
+                  style={{
+                    background: "linear-gradient(135deg, #635bff 0%, #7c3aed 100%)",
+                    color: "#ffffff",
+                  }}
+                >
+                  {checkoutLoading ? "決済画面を準備中..." : "クレジットカードで購入（993円）"}
+                </button>
+
+                {/* PayPay 手動決済 */}
+                <div className="mt-4 bg-white/10 rounded-lg px-4 py-3">
+                  <p className="font-mono text-xs font-bold" style={{ color: "#fef3c7" }}>
+                    PayPay での手動決済も受付中
                   </p>
-                  <p className="font-mono text-xs text-gray-400 mt-1.5 leading-relaxed">
-                    送金完了後、以下のアカウントへ<br />
-                    ユーザー名をお知らせください
+                  <p className="font-mono text-[10px] text-gray-400 mt-1 leading-relaxed">
+                    送金完了後、X のDMでユーザー名をお知らせください
                   </p>
                 </div>
 
@@ -177,7 +230,7 @@ export default function ProPage() {
                   href={LINK_X}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block mt-4 px-8 py-3 rounded-lg font-mono font-bold text-sm active:scale-95 transition-transform"
+                  className="inline-block mt-3 px-8 py-2.5 rounded-lg font-mono font-bold text-xs active:scale-95 transition-transform"
                   style={{
                     background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
                     color: "#ffffff",
@@ -188,9 +241,17 @@ export default function ProPage() {
               </div>
             </div>
 
+            {/* 成功メッセージ */}
+            {successMsg && (
+              <div className="bg-green-50 border-2 border-green-500 rounded-xl px-5 py-4 text-center">
+                <p className="font-mono font-bold text-green-700 text-sm">決済が完了しました！</p>
+                <p className="font-mono text-green-600 text-xs mt-1">権限が反映されるまで数秒お待ちください...</p>
+              </div>
+            )}
+
             {/* 補足 */}
             <p className="text-center text-gray-400 font-mono text-[10px] leading-relaxed">
-              ※ 決済方法はPayPayのみ対応（送金方式）<br />
+              ※ クレジットカード決済は Stripe を利用<br />
               ※ 一度の購入で永久利用可能です
             </p>
           </div>
