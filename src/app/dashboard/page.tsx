@@ -19,7 +19,7 @@ export default function DashboardPage() {
         }}
       >
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-end justify-start">
-          <span className="font-mono text-white/40 text-[9px] tracking-wider pb-1">v4.48</span>
+          <span className="font-mono text-white/40 text-[9px] tracking-wider pb-1">v4.49</span>
         </div>
       </header>
 

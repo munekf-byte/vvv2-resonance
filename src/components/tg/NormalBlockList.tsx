@@ -101,7 +101,14 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
 
   return (
     <>
-      <div style={{ backgroundColor: "#e8e2d8" }}>
+      <div className="relative" style={{ backgroundColor: "#e8e2d8" }}>
+        {/* 背景画像（東京上空） */}
+        <div className="absolute inset-0 z-0 pointer-events-none" style={{
+          backgroundImage: "url('/images/tokyo_joku.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.08,
+        }} />
 
         {/* ===== スティッキー列ヘッダー ===== */}
         <div
@@ -120,7 +127,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
         </div>
 
         {/* ===== データ行 ===== */}
-        <div className="space-y-1.5 py-1.5">
+        <div className="relative z-10 space-y-1.5 py-1.5">
           {blocks.map((block, index) => {
             const isExpanded = expandedIds.has(block.id);
             const atLabel    = atLabels.get(block.id);
