@@ -175,7 +175,14 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-32">
 
         {/* ── メインカード ── */}
-        <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4 space-y-3">
+        <div className="relative bg-white rounded border border-gray-400 px-3 pt-3 pb-4 space-y-3 overflow-hidden">
+          {/* 背景画像（東京喰種ゴールド） */}
+          <div className="absolute inset-0 z-0 pointer-events-none" style={{
+            backgroundImage: "url('/images/tujo_dashboard_main.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.08,
+          }} />
 
           {/* Row 1: 実G数 | ゾーン | 推定MODE */}
           <div className="grid grid-cols-3 gap-2">
