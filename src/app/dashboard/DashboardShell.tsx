@@ -37,7 +37,7 @@ export function DashboardShell() {
           {isAdmin && (
             <a href="/admin" className="text-[10px] font-mono text-gray-500 hover:text-gray-800">管理</a>
           )}
-          <button onClick={handleSignOut} className="text-[10px] font-mono text-gray-400 hover:text-gray-700">ログアウト</button>
+          <button onClick={handleSignOut} className="text-[10px] font-mono font-bold px-2 py-1 rounded border border-gray-300 text-gray-500 hover:text-red-600 hover:border-red-300 transition-colors">ログアウト</button>
         </div>
       </div>
 
@@ -51,8 +51,10 @@ export function DashboardShell() {
         <button onClick={() => setTab("total")}
           className="flex-1 py-2.5 text-[12px] font-mono font-bold transition-colors relative"
           style={tab === "total" ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" } : { color: "#6b7280", borderBottom: "2px solid transparent" }}>
-          トータル数値分析
-          {!isPro && <span className="ml-1 text-[9px]">🔒</span>}
+          <span>トータル数値分析</span>
+          <span className="block text-[7px] font-bold tracking-wider" style={{ color: "#f59e0b" }}>
+            {isPro ? "PRO PLAN" : "🔒 PRO限定"}
+          </span>
         </button>
       </div>
 

@@ -101,12 +101,7 @@ export function NormalBlockList({ blocks, atLabels, atEntries, modeProbs, medalS
 
   return (
     <>
-      <div style={{
-        backgroundColor: "#e8e2d8",
-        backgroundImage: "linear-gradient(rgba(232,226,216,0.85), rgba(232,226,216,0.85)), url(/images/tokyo_joku.png)",
-        backgroundSize: "cover",
-        backgroundPosition: "center top",
-      }}>
+      <div style={{ backgroundColor: "#e8e2d8" }}>
 
         {/* ===== スティッキー列ヘッダー ===== */}
         <div
