@@ -294,47 +294,27 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           </div>
         </div>
 
-        {/* タブバー */}
-        <div className="flex border-t border-gray-700 max-w-2xl mx-auto w-full">
-          <LongPressHint className="flex-1" hint="通常時の周期データ（ゲーム数・ゾーン・モード・CZ・AT当選など）を時系列で記録・閲覧する画面です。">
-            <button
-              onClick={() => setActiveTab("normal")}
-              className="w-full py-2 text-[11px] font-mono font-bold transition-colors"
-              style={
-                activeTab === "normal"
-                  ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" }
-                  : { color: "#6b7280", borderBottom: "2px solid transparent" }
-              }
-            >
-              通常時
-            </button>
-          </LongPressHint>
-          <LongPressHint className="flex-1" hint="AT中の詳細を記録する画面です。各SET（喰種対決）のキャラ・BITES獲得・直乗せ・対決成績や、有馬ジャッジメントの結果を入力できます。">
-            <button
-              onClick={() => setActiveTab("at")}
-              className="w-full py-2 text-[11px] font-mono font-bold transition-colors"
-              style={
-                activeTab === "at"
-                  ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" }
-                  : { color: "#6b7280", borderBottom: "2px solid transparent" }
-              }
-            >
-              AT記録 {atCount > 0 ? `(${atCount})` : ""}
-            </button>
-          </LongPressHint>
-          <LongPressHint className="flex-1" hint="入力したデータを自動集計した分析画面です。CZ確率・AT確率・赫眼・ゾーン分布・設定示唆などを一覧で確認でき、画像保存やX共有もできます。">
-            <button
-              onClick={() => setActiveTab("summary")}
-              className="w-full py-2 text-[11px] font-mono font-bold transition-colors"
-              style={
-                activeTab === "summary"
-                  ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" }
-                  : { color: "#6b7280", borderBottom: "2px solid transparent" }
-              }
-            >
-              集計
-            </button>
-          </LongPressHint>
+        {/* タブバー（セグメントコントロール） */}
+        <div className="flex mx-2 my-1.5 rounded-lg overflow-hidden" style={{ border: "2px solid #4b5563" }}>
+          {([
+            { key: "normal" as const, label: "通常時", hint: "通常時の周期データ（ゲーム数・ゾーン・モード・CZ・AT当選など）を時系列で記録・閲覧する画面です。" },
+            { key: "at" as const, label: `AT記録${atCount > 0 ? ` (${atCount})` : ""}`, hint: "AT中の詳細を記録する画面です。各SET（喰種対決）のキャラ・BITES獲得・直乗せ・対決成績や、有馬ジャッジメントの結果を入力できます。" },
+            { key: "summary" as const, label: "集計", hint: "入力したデータを自動集計した分析画面です。CZ確率・AT確率・赫眼・ゾーン分布・設定示唆などを一覧で確認でき、画像保存やX共有もできます。" },
+          ] as const).map((t, i) => (
+            <LongPressHint key={t.key} className="flex-1" hint={t.hint}>
+              <button
+                onClick={() => setActiveTab(t.key)}
+                className="w-full py-2.5 text-[11px] font-mono font-bold transition-colors"
+                style={{
+                  backgroundColor: activeTab === t.key ? "#dc2626" : "#1f2937",
+                  color: activeTab === t.key ? "#ffffff" : "#9ca3af",
+                  borderLeft: i > 0 ? "1px solid #4b5563" : "none",
+                }}
+              >
+                {t.label}
+              </button>
+            </LongPressHint>
+          ))}
         </div>
       </header>
 

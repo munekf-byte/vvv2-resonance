@@ -128,6 +128,8 @@ export function TotalAnalysis() {
   const captureRef = useRef<HTMLDivElement>(null);
   const [sessions, setSessions] = useState<PlaySession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectorOpen, setSelectorOpen] = useState(false);
 
   useEffect(() => {
     const list = lsGetSessionList();
@@ -137,13 +139,25 @@ export function TotalAnalysis() {
       if (session) loaded.push(session);
     }
     setSessions(loaded);
+    // デフォルト: 全選択
+    setSelectedIds(new Set(loaded.map((s) => s.id)));
     setLoading(false);
   }, []);
 
-  // セッション独立性を保持したまま、集計用にブロック・ATエントリを収集
-  const allBlocks = sessions.flatMap((s) => s.normalBlocks);
-  const allATEntries = sessions.flatMap((s) => s.atEntries);
+  function toggleSession(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  // 選択されたセッションのみで集計
+  const activeSessions = sessions.filter((s) => selectedIds.has(s.id));
+  const allBlocks = activeSessions.flatMap((s) => s.normalBlocks);
+  const allATEntries = activeSessions.flatMap((s) => s.atEntries);
   const sessionCount = sessions.length;
+  const selectedCount = activeSessions.length;
 
   if (loading) return <p className="text-center text-gray-500 font-mono py-8">読み込み中...</p>;
   if (sessionCount === 0) return (
@@ -231,22 +245,64 @@ export function TotalAnalysis() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-lg font-mono font-bold text-gray-900">トータル数値分析</h1>
-          <p className="text-gray-500 text-xs font-mono mt-0.5">{sessionCount}セッションの合算</p>
+      {/* ヘッダー + セッション選択 */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-mono font-bold text-gray-900">トータル数値分析</h1>
+            <p className="text-gray-500 text-xs font-mono mt-0.5">
+              {selectedCount === sessionCount ? `全${sessionCount}セッション` : `${selectedCount} / ${sessionCount} セッション選択中`}
+            </p>
+          </div>
+          <div className="flex gap-1.5">
+            <button onClick={() => setSelectorOpen(!selectorOpen)}
+              className="text-[10px] font-mono font-bold px-3 py-2 rounded active:scale-95 transition-transform"
+              style={{ backgroundColor: selectorOpen ? "#1f2937" : "#e5e7eb", color: selectorOpen ? "#fff" : "#374151" }}>
+              {selectorOpen ? "閉じる" : "セッション選択"}
+            </button>
+            <button onClick={() => captureRef.current && captureAndDownload(captureRef.current, `TG_Total_${new Date().toISOString().slice(0, 10)}.png`)}
+              className="text-[10px] font-mono font-bold px-3 py-2 rounded bg-gray-800 text-white active:scale-95 transition-transform">
+              画像で保存
+            </button>
+          </div>
         </div>
-        <button onClick={() => captureRef.current && captureAndDownload(captureRef.current, `TG_Total_${new Date().toISOString().slice(0, 10)}.png`)}
-          className="text-[11px] font-mono font-bold px-4 py-2 rounded bg-gray-800 text-white active:scale-95 transition-transform">
-          画像で保存
-        </button>
+
+        {/* セッション選択パネル */}
+        {selectorOpen && (
+          <div className="mt-2 bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
+            <div className="flex gap-2 px-3 py-2 border-b border-gray-200 bg-gray-50">
+              <button onClick={() => setSelectedIds(new Set(sessions.map((s) => s.id)))}
+                className="text-[9px] font-mono font-bold px-2 py-1 rounded bg-gray-700 text-white active:scale-95">全選択</button>
+              <button onClick={() => setSelectedIds(new Set())}
+                className="text-[9px] font-mono font-bold px-2 py-1 rounded border border-gray-400 text-gray-600 active:scale-95">全解除</button>
+            </div>
+            <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+              {sessions.map((s) => {
+                const checked = selectedIds.has(s.id);
+                const totalG = s.normalBlocks.reduce((sum, b) => sum + (b.jisshuG ?? 0), 0);
+                const atC = s.normalBlocks.filter((b) => b.atWin).length;
+                return (
+                  <button key={s.id} onClick={() => toggleSession(s.id)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors"
+                    style={{ backgroundColor: checked ? "#eff6ff" : "#ffffff" }}>
+                    <span className="text-[14px] shrink-0">{checked ? "☑" : "☐"}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-mono font-bold text-gray-800 truncate">{s.machineName}</p>
+                      <p className="text-[9px] font-mono text-gray-500">{totalG.toLocaleString()}G · AT{atC}回</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       <div ref={captureRef} style={{ padding: "8px 6px", backgroundColor: "#ffffff", fontFamily: "monospace" }}>
 
         {/* 通常時 | CZ内容 */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <Cat color="#1565c0" title={`通常時 (${sessionCount}稼働)`}>
+          <Cat color="#1565c0" title={`通常時 (${selectedCount}稼働)`}>
             <THead cols={COLS3} color="#1565c0" />
             <TRow cols={COLS3} i={0} values={[<b key="l">通常時G</b>, `${sum2.toLocaleString()}G`, "—"]} />
             <TRow cols={COLS3} i={1} values={[<b key="l">CZ</b>, `${czCount}回`, prob(czCount, sum2)]} grade={gradeByProb(czCount, sum2, [...CZ_PROB])} />

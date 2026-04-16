@@ -41,18 +41,22 @@ export function DashboardShell() {
         </div>
       </div>
 
-      {/* タブバー */}
-      <div className="flex border-b-2 border-gray-300" style={{ backgroundColor: "#1f2937" }}>
+      {/* タブバー（セグメントコントロール） */}
+      <div className="flex mx-3 my-2 rounded-lg overflow-hidden" style={{ border: "2px solid #374151" }}>
         <button onClick={() => setTab("log")}
           className="flex-1 py-2.5 text-[12px] font-mono font-bold transition-colors"
-          style={tab === "log" ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" } : { color: "#6b7280", borderBottom: "2px solid transparent" }}>
+          style={tab === "log"
+            ? { backgroundColor: "#1f2937", color: "#f9fafb" }
+            : { backgroundColor: "#f3f4f6", color: "#6b7280" }}>
           稼働ログ
         </button>
         <button onClick={() => setTab("total")}
-          className="flex-1 py-2.5 text-[12px] font-mono font-bold transition-colors relative"
-          style={tab === "total" ? { color: "#f9fafb", borderBottom: "2px solid #ef4444" } : { color: "#6b7280", borderBottom: "2px solid transparent" }}>
+          className="flex-1 py-2.5 text-[12px] font-mono font-bold transition-colors"
+          style={tab === "total"
+            ? { backgroundColor: "#1f2937", color: "#f9fafb", borderLeft: "2px solid #374151" }
+            : { backgroundColor: "#f3f4f6", color: "#6b7280", borderLeft: "2px solid #374151" }}>
           <span>トータル数値分析</span>
-          <span className="block text-[7px] font-bold tracking-wider" style={{ color: "#f59e0b" }}>
+          <span className="block text-[7px] font-bold tracking-wider" style={{ color: tab === "total" ? "#fbbf24" : "#f59e0b" }}>
             {isPro ? "PRO PLAN" : "🔒 PRO限定"}
           </span>
         </button>
