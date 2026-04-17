@@ -35,20 +35,7 @@ function ProPageInner() {
   }, [searchParams]);
 
   async function handleStripeCheckout() {
-    setCheckoutLoading(true);
-    try {
-      const res = await fetch("/api/checkout", { method: "POST" });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert(data.error || "決済画面の生成に失敗しました");
-        setCheckoutLoading(false);
-      }
-    } catch {
-      alert("通信エラーが発生しました");
-      setCheckoutLoading(false);
-    }
+    alert("現在パイロット版で準備中です。正式リリースまでお待ちください。");
   }
 
   return (
