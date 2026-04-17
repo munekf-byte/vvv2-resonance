@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 
-const PUBLIC_PATHS = ["/terms", "/privacy"];
+const PUBLIC_PATHS = ["/terms", "/privacy", "/tutorial"];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

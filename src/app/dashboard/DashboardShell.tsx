@@ -47,6 +47,7 @@ export function DashboardShell() {
           {isAdmin && (
             <a href="/admin" className="text-[10px] font-mono text-gray-500 hover:text-gray-800">管理</a>
           )}
+          <a href="/tutorial" className="text-[9px] font-mono text-gray-400 hover:text-gray-600">使い方</a>
           <button onClick={handleSignOut} className="text-[10px] font-mono font-bold px-2 py-1 rounded border border-gray-300 text-gray-500 hover:text-red-600 hover:border-red-300 transition-colors">ログアウト</button>
         </div>
       </div>
