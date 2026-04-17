@@ -128,7 +128,7 @@ export default function TutorialPage() {
           <P>
             <b>TOTALゲーム数</b>は、稼働終了時に液晶メニュー画面の数値を転記してください。確率計算の分母になります。
           </P>
-          <Img src="/images/tutrial/TG_Normal_2026-04-17 2.PNG" alt="通常時一覧" caption="記録が積み重なった通常時一覧（実際の稼働例）" />
+          <Img src="/images/tutrial/TG_Normal.PNG" alt="通常時一覧" caption="記録が積み重なった通常時一覧（実際の稼働例）" />
         </Card>
 
         {/* 7. ヒント */}
