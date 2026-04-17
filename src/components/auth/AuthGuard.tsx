@@ -93,6 +93,7 @@ function LoginOverlay() {
           )}
         </button>
 
+        <a href="/tutorial" className="text-gray-400 font-mono text-[11px] underline hover:text-gray-600">使い方ガイド</a>
         <p className="text-gray-300 font-mono text-[10px]">© TGR RESONANCE</p>
       </div>
     </div>

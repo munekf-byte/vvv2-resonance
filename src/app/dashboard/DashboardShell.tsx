@@ -106,10 +106,10 @@ export function DashboardShell() {
       {/* Pro Discord リンク */}
       {isPro && (
         <div className="px-4 pb-4">
-          <a href={LINK_DISCORD} target="_blank" rel="noopener noreferrer"
-            className="block bg-indigo-600 hover:bg-indigo-700 text-white text-center font-mono font-bold text-sm rounded-lg px-4 py-3 transition-colors">
+          <button onClick={() => alert("現在パイロット版で準備中です")}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-center font-mono font-bold text-sm rounded-lg px-4 py-3 transition-colors">
             Discord コミュニティに参加
-          </a>
+          </button>
         </div>
       )}
     </div>

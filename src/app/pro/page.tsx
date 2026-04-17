@@ -109,17 +109,15 @@ function ProPageInner() {
                 </p>
               </div>
               <div className="bg-white px-5 py-5 text-center">
-                <a
-                  href={LINK_DISCORD}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block px-8 py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform"
+                <button
+                  onClick={() => alert("現在パイロット版で準備中です")}
+                  className="px-8 py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform"
                   style={{ backgroundColor: "#5865F2" }}
                 >
                   Discordに参加する →
-                </a>
+                </button>
                 <p className="text-gray-400 font-mono text-[10px] mt-3">
-                  招待リンクはProメンバー専用です
+                  現在準備中です
                 </p>
               </div>
             </div>
