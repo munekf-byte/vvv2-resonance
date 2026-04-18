@@ -47,6 +47,7 @@ export default function TutorialPage() {
             <TabLabel color="#dc2626" label="AT記録" desc="AT中の詳細を記録" />
             <TabLabel color="#dc2626" label="集計" desc="自動集計・分析" />
           </div>
+          <LongPressNote text="各タブはアプリ上で1.5秒長押しすると、詳しい説明が表示されます。" />
           <P>画面下部の4つのボタン:</P>
           <div className="grid grid-cols-2 gap-2 my-3">
             <BtnLabel color="#1e40af" label="打ち出し設定" desc="途中から打つ場合にメニュー画面の情報を転記" />
@@ -54,6 +55,7 @@ export default function TutorialPage() {
             <BtnLabel color="#92400e" label="推測設定" desc="自分が推測した設定を記録" />
             <BtnLabel color="#b91c1c" label="＋ 周期追加" desc="通常時1周期分のデータを追加" />
           </div>
+          <LongPressNote text="これらのボタンもアプリ上で1.5秒長押しすると、それぞれの詳しい説明が表示されます。" />
         </Card>
 
         {/* 3. 通常時の記録 */}
@@ -105,6 +107,7 @@ export default function TutorialPage() {
           </P>
           <Img src="/images/tutrial/IMG_2306.PNG" alt="BITES獲得" caption="BITES獲得・赫眼・枚数表示示唆" />
 
+          <LongPressNote text="「＋ SET行追加」「＋ ジャッジメント行追加」もアプリ上で長押しすると説明が表示されます。" />
           <SubTitle text="有馬ジャッジメント行" />
           <Img src="/images/tutrial/IMG_2308.PNG" alt="ジャッジメント行" caption="有馬ジャッジメント入力画面" />
           <P>
@@ -184,6 +187,15 @@ function Img({ src, alt, caption }: { src: string; alt: string; caption: string 
     <div className="my-3">
       <img src={src} alt={alt} className="w-full max-w-[280px] mx-auto rounded-xl border border-gray-300 shadow-md" />
       <p className="text-center text-[10px] font-mono text-gray-400 mt-1.5">{caption}</p>
+    </div>
+  );
+}
+
+function LongPressNote({ text }: { text: string }) {
+  return (
+    <div className="flex items-start gap-2 bg-indigo-50 border border-indigo-200 rounded-lg px-3 py-2 my-2">
+      <span className="text-[14px] shrink-0 mt-px">👆</span>
+      <p className="text-[11px] font-mono text-indigo-700 leading-relaxed">{text}</p>
     </div>
   );
 }
