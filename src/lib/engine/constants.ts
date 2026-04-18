@@ -35,6 +35,7 @@ export const TG_WIN_TRIGGERS = [
   "精神世界",
   "精神世界 [赫眼]",
   "直撃",
+  "AT間天井",
 ] as const;
 
 export const TG_EVENTS = [

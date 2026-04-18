@@ -97,6 +97,7 @@ const TRIGGER_MAP: Record<string, CellColor> = {
   "精神世界":           { backgroundColor: "#d9d2e9", color: BLK },
   "精神世界 [赫眼]":    { backgroundColor: "#d9d2e9", color: BLK },
   "直撃":               { backgroundColor: "#cc0000", color: WHT },
+  "AT間天井":           { backgroundColor: "#1f2937", color: WHT },
 };
 
 export function getTriggerCellColor(trigger: string): CellColor {
@@ -116,6 +117,7 @@ export function abbrevTrigger(t: string): string {
     "精神世界": "精神",
     "精神世界 [赫眼]": "精神[赫]",
     "直撃": "直撃",
+    "AT間天井": "AT天井",
   };
   return map[t] ?? t;
 }
