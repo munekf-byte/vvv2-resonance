@@ -1,11 +1,3 @@
-# CLAUDE.md スニペット — TGR Resonance プロジェクト用
-
-> このファイルの内容をプロジェクトルートの `CLAUDE.md` にコピーして使用する。
-> Claude Code がプロジェクトを開いた際に自動的に読み込まれるルールとなる。
-
----
-
-```markdown
 # TGR Resonance — プロジェクトルール
 
 ## スタック
@@ -80,4 +72,3 @@ vercel ls で確認
 | モード推定仕様 | `docs/tg-mode-estimation.md` |
 | UIレギュレーション | `.claude/commands/ui-regulation.md` |
 | スキルファイル | `.claude/skills/nextjs-supabase-app/SKILL.md` |
-```
