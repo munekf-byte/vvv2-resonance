@@ -176,7 +176,7 @@ export const TG_ARIMA_RESULTS = ["成功", "失敗"] as const;
 
 export const TG_ARIMA_ROLES = ["小役ナシ", "リプレイ", "レア役"] as const;
 
-export const TG_CCG_COINS = [500, 1000, 2000] as const;
+export const TG_CCG_COINS = [300, 500, 1000, 2000] as const;
 
 export const TG_FAVORABLE_CUT = ["-", "切断[ED]", "切断[推定]"] as const;
 

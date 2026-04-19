@@ -734,11 +734,11 @@ function ArimaForm({ initial, onSave, onTempSave }: {
           <p className="text-[9px] font-mono text-gray-400 mb-2">
             ジャッジメント成功時に権利獲得。獲得枚数を選択してください。
           </p>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-2">
             {TG_CCG_COINS.map((c) => (
               <button key={c}
                 onClick={() => setField("ccgCoins", form.ccgCoins === c ? null : c)}
-                className="py-5 rounded text-sm font-mono font-bold transition-all active:scale-95 text-center"
+                className="py-5 rounded text-[13px] font-mono font-bold transition-all active:scale-95 text-center"
                 style={
                   form.ccgCoins === c
                     ? { backgroundColor: "#b91c1c", color: "#fff", border: "2px solid #b91c1c", boxShadow: "0 0 0 2px #1f2937" }
