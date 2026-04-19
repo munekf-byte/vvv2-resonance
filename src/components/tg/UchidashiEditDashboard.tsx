@@ -91,13 +91,12 @@ export function UchidashiEditDashboard({ data, onSave, onClose }: Props) {
         {/* ── 差枚数 ── */}
         <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4 space-y-3">
           <p className="text-[11px] font-mono font-bold text-gray-700 border-b border-gray-300 pb-1">差枚数</p>
-          <NumField
+          <SignedNumField
             label="打ち出し時差枚数（わかる範囲で）"
             value={form.samai}
-            onChange={(v) => handleNumChange("samai", v)}
-            placeholder="±枚数"
+            onChange={(v) => setField("samai", v)}
+            placeholder="枚数"
             suffix="枚"
-            allowNegative
           />
         </div>
 
@@ -181,6 +180,96 @@ function NumField({
         {suffix && value != null && (
           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-gray-400">
             {suffix}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── 符号付き数値入力フィールド ──────────────────────────────────────────────
+// +/− ボタンで符号を切り替え、入力欄には絶対値を入力する
+
+function SignedNumField({
+  label, value, onChange, placeholder, suffix,
+}: {
+  label: string;
+  value: number | null;
+  onChange: (v: number | null) => void;
+  placeholder: string;
+  suffix?: string;
+}) {
+  const [sign, setSign] = useState<1 | -1>(() =>
+    value != null && value < 0 ? -1 : 1,
+  );
+  const absValue = value != null ? Math.abs(value) : null;
+
+  function handleInputChange(raw: string) {
+    if (raw === "") {
+      onChange(null);
+      return;
+    }
+    const n = Math.abs(Number(raw));
+    if (Number.isNaN(n)) return;
+    onChange(sign * n);
+  }
+
+  function handleSignChange(newSign: 1 | -1) {
+    setSign(newSign);
+    if (absValue != null) {
+      onChange(newSign * absValue);
+    }
+  }
+
+  const baseBtn =
+    "font-mono font-bold text-base rounded transition-all active:scale-95 py-3";
+  const selStyle = {
+    backgroundColor: "#1f2937",
+    color: "#fff",
+    border: "1px solid #374151",
+    boxShadow: "0 0 0 2px #1f2937",
+  } as const;
+  const unselStyle = {
+    backgroundColor: "#f3f4f6",
+    color: "#6b7280",
+    border: "1px solid #374151",
+  } as const;
+
+  return (
+    <div>
+      <p className="text-[10px] font-mono text-gray-500 mb-1">{label}</p>
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <button
+          type="button"
+          onClick={() => handleSignChange(1)}
+          className={baseBtn}
+          style={sign === 1 ? selStyle : unselStyle}
+        >
+          ＋（プラス）
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSignChange(-1)}
+          className={baseBtn}
+          style={sign === -1 ? selStyle : unselStyle}
+        >
+          −（マイナス）
+        </button>
+      </div>
+      <div className="relative">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          placeholder={placeholder}
+          className="w-full text-sm font-mono rounded px-2 py-3 focus:outline-none bg-white text-center"
+          style={{ border: "1px solid #374151" }}
+          value={absValue ?? ""}
+          onChange={(e) => handleInputChange(e.target.value)}
+        />
+        {suffix && absValue != null && (
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-gray-400">
+            {sign === -1 ? "−" : "＋"}{suffix}
           </span>
         )}
       </div>
