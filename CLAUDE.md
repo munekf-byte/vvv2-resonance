@@ -72,3 +72,5 @@ vercel ls で確認
 | モード推定仕様 | `docs/tg-mode-estimation.md` |
 | UIレギュレーション | `.claude/commands/ui-regulation.md` |
 | スキルファイル | `.claude/skills/nextjs-supabase-app/SKILL.md` |
+| Discord連携 作業順序 | `docs/discord/IMPLEMENTATION_ORDER.md` |
+| Discord連携 仕様書 | `docs/discord/TGR_DISCORD_INTEGRATION_SPEC.md` |

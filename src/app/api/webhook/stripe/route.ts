@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
 
     if (updated) {
       console.log("[Webhook] SUCCESS: is_pro=true for", userId);
+      await grantDiscordRoleForUser(supabaseAdmin, userId);
     } else {
       // プロフィール未作成 → insert で新規作成 + Pro付与
       console.log("[Webhook] Profile not found, inserting new profile for", userId);
@@ -75,8 +76,51 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
       }
       console.log("[Webhook] SUCCESS: New profile created with is_pro=true for", userId);
+      await grantDiscordRoleForUser(supabaseAdmin, userId);
     }
   }
 
   return NextResponse.json({ received: true });
+}
+
+// Discord ロール付与失敗は決済成功を妨げない（ログだけ）
+async function grantDiscordRoleForUser(
+  supabaseAdmin: SupabaseClient,
+  userId: string,
+) {
+  try {
+    const { data: profileData } = await supabaseAdmin
+      .from("profiles")
+      .select("discord_id")
+      .eq("id", userId)
+      .single();
+
+    const discordId = (profileData as { discord_id?: string | null } | null)?.discord_id;
+    if (!discordId) return;
+
+    const botApiUrl = process.env.DISCORD_BOT_API_URL;
+    const botApiSecret = process.env.DISCORD_BOT_API_SECRET;
+    if (!botApiUrl || !botApiSecret) {
+      console.warn("[Webhook] Bot API URL/Secret not configured, skipping role grant");
+      return;
+    }
+
+    const res = await fetch(`${botApiUrl}/api/discord/grant-role`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${botApiSecret}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ discord_id: discordId, role: "TGR-Pro" }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error("[Webhook] Bot API error:", res.status, body);
+    } else {
+      console.log("[Webhook] Discord role granted for", userId);
+    }
+  } catch (err) {
+    console.error("[Webhook] Discord role grant failed:", err);
+  }
 }

@@ -24,6 +24,10 @@ function ProPageInner() {
   const searchParams = useSearchParams();
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
+  const [discordId, setDiscordId] = useState("");
+  const [discordLinked, setDiscordLinked] = useState(false);
+  const [discordSaving, setDiscordSaving] = useState(false);
+  const [discordError, setDiscordError] = useState("");
 
   useEffect(() => {
     if (searchParams.get("success") === "true") {
@@ -33,6 +37,39 @@ function ProPageInner() {
       return () => clearTimeout(timer);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (profile?.discord_id) {
+      setDiscordId(profile.discord_id);
+      setDiscordLinked(true);
+    }
+  }, [profile]);
+
+  async function handleDiscordLink() {
+    if (!discordId || !/^\d{17,20}$/.test(discordId)) {
+      setDiscordError("Discord IDは17〜20桁の数字です");
+      return;
+    }
+    setDiscordSaving(true);
+    setDiscordError("");
+    try {
+      const res = await fetch("/api/discord-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discord_id: discordId }),
+      });
+      if (res.ok) {
+        setDiscordLinked(true);
+      } else {
+        const data = await res.json();
+        setDiscordError(data.error || "保存に失敗しました");
+      }
+    } catch {
+      setDiscordError("通信エラーが発生しました");
+    } finally {
+      setDiscordSaving(false);
+    }
+  }
 
   async function handleStripeCheckout() {
     alert("現在パイロット版で準備中です。正式リリースまでお待ちください。");
@@ -94,6 +131,51 @@ function ProPageInner() {
                     <span className="ml-auto text-green-600 font-mono font-bold text-xs">有効</span>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Discord ID 連携 */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="px-5 py-3" style={{ backgroundColor: "#292524" }}>
+                <p className="text-sm font-mono font-bold" style={{ color: "#fef3c7" }}>
+                  🔗 Discord 連携
+                </p>
+              </div>
+              <div className="px-5 py-4">
+                {discordLinked ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-600 font-mono font-bold text-sm">✓ 連携済み</span>
+                    <span className="text-gray-400 font-mono text-xs">{discordId}</span>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="font-mono text-xs text-gray-500 leading-relaxed">
+                      Discord ユーザーID を入力すると、機種別チャンネルへのアクセスが自動で有効になります。
+                    </p>
+                    <p className="font-mono text-[10px] text-gray-400 leading-relaxed">
+                      ※ 確認方法: Discord設定 → マイアカウント → ユーザー名の下の「...」→ ユーザーIDをコピー（開発者モードONが必要）
+                    </p>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Discord ユーザーID（数字）"
+                      value={discordId}
+                      onChange={(e) => setDiscordId(e.target.value.replace(/\D/g, ""))}
+                      className="w-full px-3 py-2.5 rounded-lg border border-gray-300 font-mono text-sm text-gray-900 placeholder:text-gray-400"
+                    />
+                    {discordError && (
+                      <p className="font-mono text-xs text-red-500">{discordError}</p>
+                    )}
+                    <button
+                      onClick={handleDiscordLink}
+                      disabled={discordSaving || !discordId}
+                      className="w-full py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform disabled:opacity-60"
+                      style={{ backgroundColor: "#5865F2" }}
+                    >
+                      {discordSaving ? "保存中..." : "連携する"}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
