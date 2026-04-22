@@ -24,10 +24,10 @@ function ProPageInner() {
   const searchParams = useSearchParams();
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
-  const [discordId, setDiscordId] = useState("");
-  const [discordLinked, setDiscordLinked] = useState(false);
-  const [discordSaving, setDiscordSaving] = useState(false);
-  const [discordError, setDiscordError] = useState("");
+  const [discordMsg, setDiscordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const discordId = profile?.discord_id ?? "";
+  const discordLinked = Boolean(profile?.discord_id);
 
   useEffect(() => {
     if (searchParams.get("success") === "true") {
@@ -39,37 +39,25 @@ function ProPageInner() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (profile?.discord_id) {
-      setDiscordId(profile.discord_id);
-      setDiscordLinked(true);
+    const status = searchParams.get("discord");
+    if (!status) return;
+    const errorMap: Record<string, string> = {
+      denied: "Discord 側でアクセスが拒否されました",
+      invalid: "認証リクエストが不正です",
+      state_mismatch: "認証セッションが一致しません（やり直してください）",
+      unauth: "ログインが必要です",
+      unconfigured: "Discord 連携が未設定です（管理者へ連絡）",
+      token_failed: "Discord トークン取得に失敗しました",
+      user_failed: "Discord ユーザー情報の取得に失敗しました",
+      invalid_id: "取得した Discord ID が不正です",
+      db_failed: "保存に失敗しました",
+    };
+    if (status === "success") {
+      setDiscordMsg({ type: "success", text: "Discord 連携が完了しました" });
+    } else if (errorMap[status]) {
+      setDiscordMsg({ type: "error", text: errorMap[status] });
     }
-  }, [profile]);
-
-  async function handleDiscordLink() {
-    if (!discordId || !/^\d{17,20}$/.test(discordId)) {
-      setDiscordError("Discord IDは17〜20桁の数字です");
-      return;
-    }
-    setDiscordSaving(true);
-    setDiscordError("");
-    try {
-      const res = await fetch("/api/discord-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ discord_id: discordId }),
-      });
-      if (res.ok) {
-        setDiscordLinked(true);
-      } else {
-        const data = await res.json();
-        setDiscordError(data.error || "保存に失敗しました");
-      }
-    } catch {
-      setDiscordError("通信エラーが発生しました");
-    } finally {
-      setDiscordSaving(false);
-    }
-  }
+  }, [searchParams]);
 
   async function handleStripeCheckout() {
     alert("現在パイロット版で準備中です。正式リリースまでお待ちください。");
@@ -150,29 +138,25 @@ function ProPageInner() {
                 ) : (
                   <div className="space-y-3">
                     <p className="font-mono text-xs text-gray-500 leading-relaxed">
-                      Discord ユーザーID を入力すると、機種別チャンネルへのアクセスが自動で有効になります。
+                      ボタンを押して Discord にログインするだけで連携が完了します。機種別チャンネルへのアクセスが自動で有効になります。
                     </p>
-                    <p className="font-mono text-[10px] text-gray-400 leading-relaxed">
-                      ※ 確認方法: Discord設定 → マイアカウント → ユーザー名の下の「...」→ ユーザーIDをコピー（開発者モードONが必要）
-                    </p>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="Discord ユーザーID（数字）"
-                      value={discordId}
-                      onChange={(e) => setDiscordId(e.target.value.replace(/\D/g, ""))}
-                      className="w-full px-3 py-2.5 rounded-lg border border-gray-300 font-mono text-sm text-gray-900 placeholder:text-gray-400"
-                    />
-                    {discordError && (
-                      <p className="font-mono text-xs text-red-500">{discordError}</p>
+                    {discordMsg && (
+                      <p
+                        className={`font-mono text-xs ${
+                          discordMsg.type === "success" ? "text-green-600" : "text-red-500"
+                        }`}
+                      >
+                        {discordMsg.text}
+                      </p>
                     )}
                     <button
-                      onClick={handleDiscordLink}
-                      disabled={discordSaving || !discordId}
-                      className="w-full py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform disabled:opacity-60"
+                      onClick={() => {
+                        window.location.href = "/api/discord-oauth/start";
+                      }}
+                      className="w-full py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform"
                       style={{ backgroundColor: "#5865F2" }}
                     >
-                      {discordSaving ? "保存中..." : "連携する"}
+                      Discord で連携する
                     </button>
                   </div>
                 )}
