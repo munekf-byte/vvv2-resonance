@@ -25,6 +25,7 @@ function ProPageInner() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
   const [discordMsg, setDiscordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [discordLoading, setDiscordLoading] = useState(false);
 
   const discordId = profile?.discord_id ?? "";
   const discordLinked = Boolean(profile?.discord_id);
@@ -151,13 +152,32 @@ function ProPageInner() {
                     )}
                     <button
                       onClick={() => {
+                        if (discordLoading) return;
+                        setDiscordLoading(true);
                         window.location.href = "/api/discord-oauth/start";
                       }}
-                      className="w-full py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform"
+                      disabled={discordLoading}
+                      className="w-full py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform disabled:opacity-70 disabled:active:scale-100"
                       style={{ backgroundColor: "#5865F2" }}
                     >
-                      Discord で連携する
+                      {discordLoading ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"
+                            aria-hidden="true"
+                          />
+                          Discord へ接続中…
+                        </span>
+                      ) : (
+                        "Discord で連携する"
+                      )}
                     </button>
+                    {discordLoading && (
+                      <p className="font-mono text-[11px] text-gray-500 text-center leading-relaxed">
+                        Discord のログイン画面を読み込んでいます。数秒かかることがあります。<br />
+                        画面が切り替わるまでお待ちください。
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
