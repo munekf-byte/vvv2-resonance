@@ -63,6 +63,12 @@ vercel ls で確認
 ## ファイル作成
 - npx 系インタラクティブ CLI は使わない。Write/Edit/Bash で直接作成する。
 
+## Pro化 + Discord連携
+Stripe買い切り決済 → `profiles.is_pro = true` → Discord OAuth連携 → Bot がロール自動付与。
+このフローは固定パターン。新規実装・改修時は必ずスキルを参照：
+- `.claude/skills/stripe-discord-pro-upgrade/SKILL.md`（フル仕様・実装順序・トラブルシュート）
+- `.claude/skills/stripe-discord-pro-upgrade/templates/`（コピペ可能なファイルテンプレート）
+
 ## 参照ドキュメント
 | ドキュメント | パス |
 |-------------|------|
@@ -71,6 +77,8 @@ vercel ls で確認
 | 差枚数計算仕様 | `docs/tg-medal-calculation.md` |
 | モード推定仕様 | `docs/tg-mode-estimation.md` |
 | UIレギュレーション | `.claude/commands/ui-regulation.md` |
-| スキルファイル | `.claude/skills/nextjs-supabase-app/SKILL.md` |
+| Next.js+Supabaseスキル | `.claude/skills/nextjs-supabase-app/SKILL.md` |
+| **Pro化+Discord連携スキル** | `.claude/skills/stripe-discord-pro-upgrade/SKILL.md` |
 | Discord連携 作業順序 | `docs/discord/IMPLEMENTATION_ORDER.md` |
 | Discord連携 仕様書 | `docs/discord/TGR_DISCORD_INTEGRATION_SPEC.md` |
+| Stripe本番化+E2E手順 | `docs/discord/STRIPE_PRODUCTION_AND_E2E_TEST.md` |
