@@ -101,9 +101,13 @@ export default function TermsPage() {
           <hr className="my-8 border-gray-200" />
 
           {/* フッターリンク */}
-          <div className="flex items-center justify-center gap-4 text-xs font-mono text-gray-400">
+          <div className="flex items-center justify-center gap-3 text-xs font-mono text-gray-400">
             <Link href="/privacy" className="hover:text-gray-600 transition-colors">
               プライバシーポリシー
+            </Link>
+            <span className="text-gray-300">|</span>
+            <Link href="/tokushoho" className="hover:text-gray-600 transition-colors">
+              特定商取引法
             </Link>
             <span className="text-gray-300">|</span>
             <Link href="/dashboard" className="hover:text-gray-600 transition-colors">
