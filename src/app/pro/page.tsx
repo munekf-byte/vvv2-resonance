@@ -61,7 +61,19 @@ function ProPageInner() {
   }, [searchParams]);
 
   async function handleStripeCheckout() {
-    alert("現在パイロット版で準備中です。正式リリースまでお待ちください。");
+    if (checkoutLoading) return;
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch("/api/checkout", { method: "POST" });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "決済画面の起動に失敗しました");
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setCheckoutLoading(false);
+      alert(err instanceof Error ? err.message : "決済画面の起動に失敗しました");
+    }
   }
 
   return (
@@ -270,7 +282,7 @@ function ProPageInner() {
               <div className="px-6 py-6 text-center">
                 <p className="font-mono text-gray-400 text-xs">買い切り価格</p>
                 <p className="font-mono font-black text-4xl mt-1" style={{ color: "#fef3c7" }}>
-                  ¥993
+                  ¥1,500
                 </p>
                 <p className="font-mono text-gray-500 text-xs mt-1">（税込・月額ではありません）</p>
 
@@ -284,7 +296,7 @@ function ProPageInner() {
                     color: "#ffffff",
                   }}
                 >
-                  {checkoutLoading ? "決済画面を準備中..." : "クレジットカードで購入（993円）"}
+                  {checkoutLoading ? "決済画面を準備中..." : "クレジットカードで購入（1,500円）"}
                 </button>
 
                 {/* PayPay 手動決済 */}
