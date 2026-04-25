@@ -38,10 +38,10 @@ export function DashboardShell() {
           ) : (
             <>
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-gray-200 text-gray-500">無料版</span>
-              <button onClick={() => alert("現在パイロット版で準備中です")} className="text-[9px] font-mono font-bold px-2 py-0.5 rounded active:scale-95 transition-transform"
+              <a href="/pro" className="text-[9px] font-mono font-bold px-2 py-0.5 rounded active:scale-95 transition-transform inline-block"
                 style={{ backgroundColor: "#7c3aed", color: "#fff" }}>
                 Pro詳細
-              </button>
+              </a>
             </>
           )}
           {isAdmin && (
