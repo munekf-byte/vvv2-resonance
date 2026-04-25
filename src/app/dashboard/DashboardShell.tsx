@@ -94,11 +94,11 @@ export function DashboardShell() {
             <p className="font-mono text-purple-600 text-sm">
               トータル数値分析は Pro版 で利用できます。
             </p>
-            <button onClick={() => alert("現在パイロット版で準備中です")}
-              className="mt-2 px-6 py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform"
+            <a href="/pro"
+              className="mt-2 px-6 py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform inline-block"
               style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" }}>
               👑 Proプランの詳細を見る
-            </button>
+            </a>
           </div>
         )}
       </div>
