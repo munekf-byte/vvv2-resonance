@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TOKYO GHOUL RESONANCE | Pro Plan</title>
+<meta name="description" content="レバーを叩くのはひとり。でもその先に、データを持ち寄る仲間がいる。頼もしい孤独を、ここで。">
+<meta property="og:title" content="TOKYO GHOUL RESONANCE — 頼もしい孤独">
+<meta property="og:description" content="ひとりで打つ人が、実データを持ち寄って考察し合うコミュニティ。軍団お断り。買い切り¥1,500。">
+<meta property="og:type" content="website">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=JetBrains+Mono:wght@400;700;800&display=swap');
+
+  :root {
+    --bg-void: #0c0b09;
+    --bg-surface: #141310;
+    --bg-card: #1a1915;
+    --bg-warm: #1e1c17;
+    --border-dim: #2e2b24;
+    --border-warm: #3d3830;
+    --text-primary: #f0ece4;
+    --text-secondary: #a89f93;
+    --text-muted: #6b6358;
+    --gold: #d4a24a;
+    --gold-bright: #e8b960;
+    --gold-dim: #7a5c2a;
+    --red-accent: #c0392b;
+    --red-dark: #8b2020;
+    --red-ban: #dc2626;
+    --green-calm: #5a9a6b;
+    --discord: #5865F2;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg-void);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    line-height: 1.8;
+  }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ===== HERO ===== */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px 24px 48px;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 500px 500px at 50% 40%, rgba(212, 162, 74, 0.04) 0%, transparent 70%),
+      linear-gradient(180deg, var(--bg-void) 0%, #0e0d0a 100%);
+    z-index: 0;
+  }
+
+  .hero > * { position: relative; z-index: 1; }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: 1px solid var(--border-warm);
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 32px;
+    animation: fadeIn 0.8s ease-out;
+  }
+
+  .hero-eyebrow {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    margin-bottom: 14px;
+    animation: fadeInUp 0.8s ease-out 0.1s both;
+  }
+
+  .hero-title {
+    font-size: clamp(26px, 7vw, 38px);
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 20px;
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+  }
+
+  .hero-title .warm { color: var(--gold); }
+
+  .hero-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+    max-width: 360px;
+    margin: 0 auto 36px;
+    line-height: 2.1;
+    animation: fadeInUp 0.8s ease-out 0.35s both;
+  }
+
+  .hero-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 32px;
+    background: var(--bg-warm);
+    border: 1px solid var(--border-warm);
+    color: var(--gold-bright);
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.15s, background 0.3s;
+    animation: fadeInUp 0.8s ease-out 0.5s both;
+  }
+
+  .hero-cta:active { transform: scale(0.96); background: var(--bg-card); }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--text-muted);
+    font-size: 10px;
+    animation: bounce 2.5s ease-in-out infinite 2s;
+    opacity: 0.5;
+  }
+
+  /* ===== SECTIONS ===== */
+  section {
+    padding: 48px 24px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--gold-dim);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 900;
+    line-height: 1.55;
+    margin-bottom: 16px;
+  }
+
+  .section-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 28px;
+    line-height: 2;
+  }
+
+  /* ===== BAN / WELCOME ===== */
+  .ban-card {
+    background: linear-gradient(135deg, #1a1210 0%, #1c1412 100%);
+    border: 1px solid var(--red-dark);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .ban-header {
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--red-ban);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ban-body {
+    font-size: 12px;
+    color: #b08080;
+    line-height: 1.9;
+  }
+
+  .ban-body strong { color: var(--red-ban); }
+
+  .welcome-card {
+    background: linear-gradient(135deg, #121a14 0%, #141c15 100%);
+    border: 1px solid #2a4a2e;
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .welcome-header {
+    font-size: 14px;
+    font-weight: 900;
+    color: var(--green-calm);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .welcome-body {
+    font-size: 12px;
+    color: #8aaa8e;
+    line-height: 1.9;
+  }
+
+  /* ===== NARRATIVE ===== */
+  .narrative {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 2.2;
+    margin-bottom: 28px;
+  }
+
+  .narrative strong { color: var(--text-primary); font-weight: 700; }
+  .narrative .gold { color: var(--gold-bright); font-weight: 700; }
+
+  .narrative-divider {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin: 28px 0;
+    letter-spacing: 0.5em;
+  }
+
+  /* ===== ARCHITECTURE ===== */
+  .arch-diagram {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 16px;
+    padding: 24px 20px;
+    margin-bottom: 20px;
+  }
+
+  .arch-flow { display: flex; flex-direction: column; align-items: center; gap: 0; }
+
+  .arch-node {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .arch-node.everyone {
+    background: linear-gradient(135deg, #1e2a1f 0%, #1a2e1e 100%);
+    color: #8aaa8e;
+    border: 1px solid #2a4a2e;
+  }
+
+  .arch-node.engine {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-dim);
+    color: var(--text-secondary);
+  }
+
+  .arch-node.community {
+    background: linear-gradient(135deg, #2a2210 0%, #2e2512 100%);
+    color: var(--gold-bright);
+    border: 1px solid var(--gold-dim);
+  }
+
+  .arch-arrow {
+    width: 1px;
+    height: 18px;
+    background: var(--border-dim);
+    position: relative;
+  }
+
+  .arch-arrow::after {
+    content: '↓';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .arch-note {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 4px 0;
+  }
+
+  /* ===== BENEFIT CARDS ===== */
+  .benefit-cards { display: flex; flex-direction: column; gap: 14px; }
+
+  .benefit-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 14px;
+    padding: 20px;
+  }
+
+  .benefit-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .benefit-card-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .benefit-card-title { font-size: 14px; font-weight: 900; }
+
+  .benefit-card-body {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.9;
+  }
+
+  .benefit-card-body ul { list-style: none; margin-top: 8px; }
+
+  .benefit-card-body li {
+    padding: 3px 0 3px 14px;
+    position: relative;
+  }
+
+  .benefit-card-body li::before {
+    content: '–';
+    position: absolute;
+    left: 0;
+    color: var(--gold-dim);
+  }
+
+  /* ===== COMPARE ===== */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 20px; }
+
+  .compare-table thead th {
+    padding: 10px 6px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 11px;
+    border-bottom: 2px solid var(--border-dim);
+  }
+
+  .compare-table thead th:first-child { text-align: left; color: var(--text-secondary); }
+  .compare-table thead th:nth-child(2) { color: var(--text-muted); }
+  .compare-table thead th:nth-child(3) { color: var(--gold); }
+
+  .compare-table tbody td {
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--border-dim);
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 11px;
+  }
+
+  .compare-table tbody td:first-child {
+    text-align: left;
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+
+  .ck { color: var(--green-calm); font-weight: 700; }
+  .cx { color: var(--text-muted); }
+  .gk { color: var(--gold-bright); font-weight: 700; }
+
+  .hl td {
+    background: rgba(212, 162, 74, 0.04);
+    border-bottom-color: rgba(212, 162, 74, 0.12);
+  }
+
+  /* ===== PRICING ===== */
+  .pricing-card {
+    background: var(--bg-card);
+    border: 1px solid var(--gold-dim);
+    border-radius: 18px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+
+  .pricing-header {
+    background: linear-gradient(135deg, #1a1810 0%, #1c1a10 100%);
+    padding: 24px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .pricing-label { font-size: 11px; color: var(--gold-dim); font-weight: 700; letter-spacing: 0.1em; margin-bottom: 6px; }
+
+  .pricing-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 44px;
+    font-weight: 800;
+    color: var(--gold-bright);
+    line-height: 1;
+  }
+
+  .pricing-amount .yen { font-size: 22px; vertical-align: top; margin-right: 2px; }
+
+  .pricing-note { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+  .pricing-body { padding: 20px; }
+
+  .pricing-includes { list-style: none; margin-bottom: 20px; }
+
+  .pricing-includes li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-dim);
+  }
+
+  .pricing-includes li:last-child { border-bottom: none; }
+
+  .li-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(212, 162, 74, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+
+  .cta-primary {
+    display: block;
+    width: 100%;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, var(--gold-dim) 0%, #6b4c22 100%);
+    color: #fef3c7;
+    font-weight: 700;
+    font-size: 15px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.3s;
+    box-shadow: 0 4px 20px rgba(122, 92, 42, 0.2);
+  }
+
+  .cta-primary:active { transform: scale(0.97); }
+
+  .payment-alt {
+    text-align: center;
+    margin-top: 14px;
+    padding: 14px;
+    background: var(--bg-surface);
+    border-radius: 12px;
+    border: 1px solid var(--border-dim);
+  }
+
+  .payment-alt p { font-size: 11px; color: var(--text-muted); line-height: 1.9; }
+  .payment-alt a { color: var(--gold); text-decoration: none; font-weight: 700; }
+
+  /* ===== COST NOTE ===== */
+  .cost-note {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 2;
+    margin-bottom: 20px;
+  }
+
+  .cost-note strong { color: var(--gold-bright); font-weight: 900; }
+
+  .cost-note .big {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold-bright);
+    display: block;
+    margin: 8px 0;
+  }
+
+  /* ===== DISCORD ===== */
+  .discord-card {
+    background: linear-gradient(135deg, #16182d 0%, #12142a 100%);
+    border: 1px solid rgba(88, 101, 242, 0.3);
+    border-radius: 16px;
+    padding: 24px 20px;
+    text-align: center;
+  }
+
+  .discord-card h3 { color: #c5caf5; font-size: 15px; margin-bottom: 8px; }
+  .discord-card p { font-size: 12px; color: #7a7eb0; line-height: 1.9; margin-bottom: 14px; }
+
+  .discord-features { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 14px; }
+
+  .discord-feat-tag {
+    padding: 4px 10px;
+    background: rgba(88, 101, 242, 0.1);
+    border: 1px solid rgba(88, 101, 242, 0.2);
+    border-radius: 100px;
+    font-size: 10px;
+    color: #9498d0;
+    font-weight: 700;
+  }
+
+  /* ===== FAQ ===== */
+  .faq-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .faq-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .faq-q {
+    padding: 14px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+
+  .faq-q::after {
+    content: '+';
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    color: var(--text-muted);
+    transition: transform 0.3s;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+
+  .faq-item.open .faq-q::after { transform: rotate(45deg); }
+  .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.35s ease, padding 0.35s ease; }
+  .faq-item.open .faq-a { max-height: 400px; padding: 0 18px 14px; }
+  .faq-a p { font-size: 12px; color: var(--text-secondary); line-height: 1.9; }
+
+  /* ===== FOOTER ===== */
+  .lp-footer {
+    text-align: center;
+    padding: 40px 24px 60px;
+    border-top: 1px solid var(--border-dim);
+  }
+
+  .lp-footer p { font-size: 10px; color: var(--text-muted); line-height: 2; }
+  .lp-footer a { color: var(--text-secondary); text-decoration: none; }
+
+  /* ===== FLOATING CTA ===== */
+  .floating-cta {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 20px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    background: rgba(12, 11, 9, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border-dim);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 500px;
+    margin: 0 auto;
+    transform: translateY(100%);
+    transition: transform 0.4s ease;
+  }
+
+  .floating-cta.visible { transform: translateY(0); }
+  .floating-cta-info { flex: 1; }
+
+  .floating-cta-price {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--gold-bright);
+  }
+
+  .floating-cta-note { font-size: 9px; color: var(--text-muted); }
+
+  .floating-cta-btn {
+    padding: 11px 22px;
+    background: linear-gradient(135deg, var(--gold-dim) 0%, #6b4c22 100%);
+    color: #fef3c7;
+    font-weight: 700;
+    font-size: 12px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: transform 0.15s;
+  }
+
+  .floating-cta-btn:active { transform: scale(0.96); }
+
+  /* ===== DIVIDER ===== */
+  .section-divider { max-width: 500px; margin: 0 auto; padding: 0 24px; }
+
+  .section-divider hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--border-dim) 50%, transparent 100%);
+  }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes bounce { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(5px); } }
+
+  .fade-in {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+  .em-gold { color: var(--gold-bright); font-weight: 900; }
+</style>
+</head>
+<body>
+
+<!-- ====== HERO ====== -->
+<div class="hero">
+  <div class="hero-badge">
+    <span class="mono">TOKYO GHOUL RESONANCE</span>
+  </div>
+
+  <div class="hero-eyebrow">— 頼もしい孤独 —</div>
+
+  <h1 class="hero-title">
+    レバーを叩くのは、<br>
+    いつだって<span class="warm">ひとり</span>だ。
+  </h1>
+
+  <p class="hero-sub">
+    でも、その先に<br>
+    データを持ち寄り、考察し合う仲間がいたら。<br>
+    それはもう、ただの孤独じゃない。
+  </p>
+
+  <a href="#about" class="hero-cta">この場所について ↓</a>
+
+  <div class="scroll-hint">▼</div>
+</div>
+
+<!-- ====== MANIFESTO ====== -->
+<section class="fade-in" id="about">
+  <div class="section-label">Our Stance</div>
+  <h2 class="section-title">最初に、大事なことを。</h2>
+
+  <div class="ban-card">
+    <div class="ban-header">🚫 軍団・グループ稼働の方へ</div>
+    <div class="ban-body">
+      <strong>ここはあなたたちの場所ではありません。</strong><br><br>
+      複数人で利益を共有し、数の暴力で台を占拠し、一般客が割を食う。そういう稼働スタイルを取る方の参加は一切お断りしています。<br><br>
+      このアプリも、Discordコミュニティも、そういった用途には使わせません。見つけ次第、即排除します。
+    </div>
+  </div>
+
+  <div class="welcome-card">
+    <div class="welcome-header">🪑 こういう人に来てほしい</div>
+    <div class="welcome-body">
+      週末にひとりでふらっとホールに行く人。<br>
+      ピンで黙々と打って、帰りの電車で今日の稼働を振り返る人。<br>
+      横のつながりはあまりないけど、パチスロが好きで、ちゃんと考えて打ちたい人。<br><br>
+      ひとりで打つスタイルは変えなくていい。<br>
+      ただ、その後ろに同じように考えている仲間がいる状態を作りたかった。
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ====== BACKGROUND ====== -->
+<section class="fade-in">
+  <div class="section-label">Background</div>
+  <h2 class="section-title">なぜこれを作ったのか</h2>
+
+  <div class="narrative">
+    パチスロの解析情報を取り巻く環境について、正直に思っていることがあります。<br><br>
+    <strong>それっぽいデータを並べた情報商材。</strong>根拠が不透明な「独自解析」。それを安易に買ってしまう人たち。中には本物もある。でも眉唾のものも少なくない。<br><br>
+    そしてそれは、<strong>時系列から切り離された、時間が止まった情報</strong>です。<br>
+    買った瞬間にその時点の「最適っぽい何か」を手に入れるだけで、そこからの発展は何もない。
+  </div>
+
+  <div class="narrative-divider">・ ・ ・</div>
+
+  <div class="narrative">
+    そうじゃなくて。<br><br>
+    <strong>同じツールを使っている仲間がデータを持ち寄って、考察し合い、情報交換を続けていく。</strong><br><br>
+    これって、素晴らしいと思いませんか。<br><br>
+    知らない誰かから一方的に「解析結果」を買うんじゃなく、<br>
+    自分たちの実データから、自分たちで正しい答えに辿り着く。<br>
+    しかもそれが、<span class="gold">止まらずに、更新され続ける</span>。
+  </div>
+
+  <div class="narrative-divider">・ ・ ・</div>
+
+  <div class="narrative">
+    自分はこれまでヴァルヴレイヴ・ヴァルヴレイヴ2のデータシートを作って、<strong>延べ2,000人近くのユーザー</strong>に使ってもらってきました。<br><br>
+    そこで見えたのは、みんなのデータが集まれば、ひとりでは絶対に見えない数値が浮かび上がるということ。<br><br>
+    以前はそのデータを自分だけが見て解析していた。<br>
+    でもそれを<span class="gold">みんなで見られるようにしたら、もっといいんじゃないか</span>。<br><br>
+    そう思って立ち上げたのが、このアプリとコミュニティです。
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ====== HOW IT WORKS ====== -->
+<section class="fade-in">
+  <div class="section-label">How It Works</div>
+  <h2 class="section-title">仕組みはシンプルです</h2>
+
+  <p class="section-desc">
+    RESONANCEで自分の稼働を記録する。<br>
+    そのデータがクラウドに集まる。<br>
+    集まったデータの分析結果を、メンバーで共有する。<br>
+    ただそれだけ。<strong>全員が持ち寄り、全員が受け取る。</strong>
+  </p>
+
+  <div class="arch-diagram">
+    <div class="arch-flow">
+      <div class="arch-node everyone">🙋 みんなの実戦データ<br><span style="font-size:10px;opacity:0.7">（無料・Pro問わず全ユーザー）</span></div>
+      <div class="arch-arrow"></div>
+      <div class="arch-note">クラウドに自動集約</div>
+      <div class="arch-arrow"></div>
+      <div class="arch-node engine">⚙️ 集合データの集計・分析<br><span style="font-size:10px;opacity:0.7">設定別 × 項目別に横断</span></div>
+      <div class="arch-arrow"></div>
+      <div class="arch-note">分析結果を共有</div>
+      <div class="arch-arrow"></div>
+      <div class="arch-node community">👑 Proメンバーのコミュニティ<br><span style="font-size:10px">Discordで閲覧・議論・考察</span></div>
+    </div>
+  </div>
+
+  <div class="narrative" style="margin-bottom:0">
+    一般に公開されている解析は、メーカー公表値やシミュレーション値がベースです。それはそれで意味がある。<br><br>
+    でも、<strong>実際にユーザーが記録した生データからしか分からない部分</strong>がある。公開データの構造上、そこには辿り着けない。<br><br>
+    <span class="gold">その部分が見える場所は、今のところここだけです。</span><br><br>
+    そしてそれは一度きりの売り切りの情報じゃない。使う人が増えるほどデータは厚くなり、日々更新されていく。<strong>生きた情報</strong>です。
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ====== WHAT YOU GET ====== -->
+<section class="fade-in">
+  <div class="section-label">Pro Plan</div>
+  <h2 class="section-title">Proで何ができるか</h2>
+  <p class="section-desc">無料版でも主要機能はすべて使えます。<br>Proは「もっと深く、みんなと」のための拡張です。</p>
+
+  <div class="benefit-cards">
+    <div class="benefit-card">
+      <div class="benefit-card-header">
+        <div class="benefit-card-icon" style="background:rgba(90,154,107,0.12)">📊</div>
+        <div class="benefit-card-title">稼働ログ無制限</div>
+      </div>
+      <div class="benefit-card-body">
+        無料版はセッション3件まで。Proなら何件でも。長く使うほどデータが積み上がり、自分自身の傾向も見えてくる。
+        <ul>
+          <li>過去の全稼働を残して比較・振り返り</li>
+          <li>日付・収支・ホール・設定でソート</li>
+          <li>クラウド同期で端末変更もOK</li>
+        </ul>
+      </div>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-card-header">
+        <div class="benefit-card-icon" style="background:rgba(212,162,74,0.12)">📈</div>
+        <div class="benefit-card-title">トータル数値分析</div>
+      </div>
+      <div class="benefit-card-body">
+        全セッションを横断した合算集計。自分のデータだけでも、数が集まれば見えるものがある。
+        <ul>
+          <li>CZ確率・AT確率・赫眼・精神世界・ゾーン分布</li>
+          <li>任意のセッションだけ選んで集計</li>
+          <li>設定示唆一覧（CZ失敗画面・終了画面・トロフィー・EDカード）</li>
+          <li>キャラ対決通算勝率・BITES/直乗せ履歴</li>
+          <li>集計結果をPNG保存・X共有</li>
+        </ul>
+      </div>
+    </div>
+    <div class="benefit-card">
+      <div class="benefit-card-header">
+        <div class="benefit-card-icon" style="background:rgba(88,101,242,0.12)">💬</div>
+        <div class="benefit-card-title">限定Discordコミュニティ</div>
+      </div>
+      <div class="benefit-card-body">
+        <strong style="color:var(--gold)">このプロジェクトの本丸。</strong><br>
+        全ユーザーの集合データの分析結果を、限定チャンネルでリアルタイムに共有。ひとりの稼働が、みんなの知見になる。
+        <ul>
+          <li>設定別の実戦数値レポート</li>
+          <li>公開データからは見えない集計値</li>
+          <li>メンバー間の稼働報告・考察議論</li>
+          <li>製作者による解析コメント</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ====== COMPARISON ====== -->
+<section class="fade-in">
+  <div class="section-label">Free vs Pro</div>
+  <h2 class="section-title">無料版でもここまで使える</h2>
+  <p class="section-desc">RESONANCEは無料でも高機能。<br>Proは「量」と「コミュニティ」の拡張です。</p>
+
+  <table class="compare-table">
+    <thead><tr><th>機能</th><th>Free</th><th>👑 Pro</th></tr></thead>
+    <tbody>
+      <tr><td>周期記録・AT記録</td><td class="ck">✓</td><td class="gk">✓</td></tr>
+      <tr><td>モード推定（ベイズ）</td><td class="ck">✓</td><td class="gk">✓</td></tr>
+      <tr><td>差枚リアルタイム計算</td><td class="ck">✓</td><td class="gk">✓</td></tr>
+      <tr><td>SESSION RESULT</td><td class="ck">✓</td><td class="gk">✓</td></tr>
+      <tr><td>画像保存・X共有</td><td class="ck">✓</td><td class="gk">✓</td></tr>
+      <tr><td>セッション並べ替え</td><td class="ck">✓</td><td class="gk">✓</td></tr>
+      <tr class="hl"><td>セッション保存数</td><td class="cx">3件</td><td class="gk">無制限</td></tr>
+      <tr class="hl"><td>トータル数値分析</td><td class="cx">—</td><td class="gk">✓</td></tr>
+      <tr class="hl"><td>セッション選択集計</td><td class="cx">—</td><td class="gk">✓</td></tr>
+      <tr class="hl"><td>全ユーザー集合データ</td><td class="cx">—</td><td class="gk">✓</td></tr>
+      <tr class="hl"><td>限定Discordコミュニティ</td><td class="cx">—</td><td class="gk">✓</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ====== PRICING ====== -->
+<section class="fade-in" id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2 class="section-title">Pro プラン</h2>
+
+  <div class="cost-note">
+    月額ではありません。<br>
+    <span class="big mono"><span style="font-size:16px">¥</span>1,500</span>
+    一度きりのお支払いで、ずっと使えます。<br>
+    アプリの維持・開発への<strong>参加費</strong>だと思ってください。<br>
+    今後追加される機能も、すべてProに含まれます。
+  </div>
+
+  <div class="pricing-card">
+    <div class="pricing-header">
+      <div class="pricing-label">買い切り価格</div>
+      <div class="pricing-amount mono"><span class="yen">¥</span>1,500</div>
+      <div class="pricing-note">税込 ・ 永久利用</div>
+    </div>
+    <div class="pricing-body">
+      <ul class="pricing-includes">
+        <li><span class="li-icon">✓</span> 稼働ログ無制限</li>
+        <li><span class="li-icon">✓</span> トータル数値分析</li>
+        <li><span class="li-icon">✓</span> セッション選択集計</li>
+        <li><span class="li-icon">✓</span> 全ユーザー集合データ閲覧</li>
+        <li><span class="li-icon">✓</span> 限定Discordコミュニティ</li>
+        <li><span class="li-icon">✓</span> 今後の新機能もすべて含む</li>
+      </ul>
+      <a href="/pro" class="cta-primary">Pro プランに参加する →</a>
+    </div>
+  </div>
+
+  <div class="payment-alt">
+    <p>
+      💳 クレジットカード（Stripe）で即時反映<br>
+      📱 PayPayでの手動決済も受付中<br>
+      → <a href="https://x.com/puchun_dobadoba" target="_blank" rel="noopener">X（@puchun_dobadoba）</a>のDMへ
+    </p>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ====== DISCORD ====== -->
+<section class="fade-in">
+  <div class="discord-card">
+    <h3>📡 Pro 限定 Discord</h3>
+    <p>みんなのデータが集まるほど精度が上がる、<br>生きた解析の場</p>
+    <div class="discord-features">
+      <span class="discord-feat-tag">設定別実戦値</span>
+      <span class="discord-feat-tag">集合データレポート</span>
+      <span class="discord-feat-tag">考察・議論</span>
+      <span class="discord-feat-tag">稼働報告</span>
+      <span class="discord-feat-tag">製作者コメント</span>
+    </div>
+    <p style="font-size:10px;color:#6366f1">招待リンクはPro参加後に表示されます</p>
+  </div>
+</section>
+
+<div class="section-divider"><hr></div>
+
+<!-- ====== FAQ ====== -->
+<section class="fade-in">
+  <div class="section-label">FAQ</div>
+  <h2 class="section-title">よくある質問</h2>
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">買い切りとは？追加料金はかかりますか？</div>
+      <div class="faq-a"><p>一度のお支払い（¥1,500）で永久にご利用いただけます。月額課金ではなく、追加料金は一切発生しません。今後追加される新機能もすべてPro特典に含まれます。</p></div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">無料版との違いは？</div>
+      <div class="faq-a"><p>無料版でもセッション3件までの記録、モード推定、差枚計算など主要機能はすべて使えます。Proではセッション数が無制限になり、トータル分析と全ユーザー集合データの閲覧（Discord限定チャンネル）が追加されます。</p></div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">「全ユーザーの集合データ」って何ですか？</div>
+      <div class="faq-a"><p>RESONANCEを使っている全ユーザー（無料含む）の実戦データがクラウドに集まります。そのデータを設定別・項目別に集計した結果を、Proメンバー限定で共有しています。一般に公開されている解析データの構造上見えない部分が、ここでは見えます。そしてそれは使う人が増えるほど厚くなり、常に更新される生きた情報です。</p></div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">情報商材とは何が違うのですか？</div>
+      <div class="faq-a"><p>誰かの「独自解析」を一方的に売るものではありません。参加者全員がデータを持ち寄り、全員がその結果を受け取る仕組みです。一度買ったら終わりの止まった情報ではなく、使い続けるほど更新されていく、生きたコミュニティです。¥1,500はアプリの維持・開発とコミュニティの運営への参加費と思ってもらえると近いです。</p></div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">決済方法は？</div>
+      <div class="faq-a"><p>クレジットカード（Stripe経由）で即時反映されます。PayPayでの手動決済も受け付けていますので、X（@puchun_dobadoba）のDMよりお問い合わせください。</p></div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">軍団・グループ稼働ですが参加できますか？</div>
+      <div class="faq-a"><p>お断りしています。複数人での利益共有を前提とした稼働スタイルの方は、アプリ・Discord共にご利用をお控えください。発覚した場合は利用を停止させていただきます。ここはひとりで打つ人のための場所です。</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== FINAL CTA ====== -->
+<section class="fade-in" style="text-align:center;padding-bottom:120px;">
+  <div class="hero-eyebrow" style="animation:none;margin-bottom:10px">— 頼もしい孤独 —</div>
+  <h2 class="section-title" style="margin-bottom:12px;font-size:19px;line-height:1.7">
+    レバーを叩くのはひとり。<br>
+    でもそのレバーを<span class="em-gold">自信に変える仲間</span>がいる。<br>
+  </h2>
+  <p class="section-desc" style="margin-bottom:28px;font-size:12px">
+    この考え方に賛同いただける方、<br>お待ちしています。
+  </p>
+  <a href="/pro" class="cta-primary" style="max-width:320px;margin:0 auto;display:block;">Pro プランに参加する →</a>
+  <p style="font-size:10px;color:var(--text-muted);margin-top:12px">¥1,500 買い切り ・ 永久利用 ・ クレカ即時反映</p>
+</section>
+
+<!-- ====== FOOTER ====== -->
+<footer class="lp-footer">
+  <p>
+    TOKYO GHOUL RESONANCE — 実戦分析システム<br>
+    <a href="https://vvv2-resonance.vercel.app/terms">利用規約</a> ・
+    <a href="https://vvv2-resonance.vercel.app/privacy">プライバシーポリシー</a><br><br>
+    <a href="https://x.com/puchun_dobadoba" target="_blank" rel="noopener">X (@puchun_dobadoba)</a>
+  </p>
+</footer>
+
+<!-- ====== FLOATING CTA ====== -->
+<div class="floating-cta" id="floatingCta">
+  <div class="floating-cta-info">
+    <div class="floating-cta-price mono">¥1,500</div>
+    <div class="floating-cta-note">買い切り・永久利用</div>
+  </div>
+  <a href="#pricing" class="floating-cta-btn">参加する →</a>
+</div>
+
+<script>
+  const fc = document.getElementById('floatingCta');
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    const h = window.innerHeight;
+    const bottom = y + h > document.documentElement.scrollHeight - 200;
+    fc.classList.toggle('visible', y > h * 0.7 && !bottom);
+  }, { passive: true });
+
+  const obs = new IntersectionObserver(es => {
+    es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
