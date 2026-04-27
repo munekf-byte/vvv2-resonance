@@ -324,20 +324,26 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
         {/* 通常時タブ */}
         {activeTab === "normal" && (
           <>
-            <div className="flex justify-end gap-1.5 px-3 py-1.5 border-b border-gray-200">
-              <button
-                onClick={() => normalListRef.current && captureAndShare(normalListRef.current, `TG_Normal_${new Date().toISOString().slice(0, 10)}.png`, `#東京喰種レゾナンス #パチスロ`)}
-                className="text-[10px] font-mono px-3 py-1 rounded text-white active:scale-95 transition-transform"
-                style={{ backgroundColor: "#000000" }}
-              >
-                𝕏 共有
-              </button>
-              <button
-                onClick={() => normalListRef.current && captureAndDownload(normalListRef.current, `TG_Normal_${new Date().toISOString().slice(0, 10)}.png`)}
-                className="text-[10px] font-mono px-3 py-1 rounded bg-gray-700 text-white active:scale-95 transition-transform"
-              >
-                画像で保存
-              </button>
+            <div className="border-b border-gray-200">
+              <div className="flex justify-end gap-1.5 px-3 pt-1.5 pb-1">
+                <button
+                  onClick={() => normalListRef.current && captureAndShare(normalListRef.current, `TG_Normal_${new Date().toISOString().slice(0, 10)}.png`, `#東京喰種レゾナンス #パチスロ`)}
+                  className="text-[10px] font-mono font-bold px-3 py-3 rounded text-white active:scale-95 transition-transform"
+                  style={{ backgroundColor: "#000000" }}
+                >
+                  𝕏 共有
+                </button>
+                <button
+                  onClick={() => normalListRef.current && captureAndDownload(normalListRef.current, `TG_Normal_${new Date().toISOString().slice(0, 10)}.png`)}
+                  className="text-[10px] font-mono font-bold px-3 py-3 rounded active:scale-95 transition-transform"
+                  style={{ backgroundColor: "#facc15", color: "#1f2937", border: "2px solid #1f2937" }}
+                >
+                  画像で保存
+                </button>
+              </div>
+              <p className="text-[9px] font-mono text-gray-500 px-3 pb-1.5 leading-tight text-right">
+                ※ 稼働ホール名や台番などの特定情報は画像に掲載されませんのでご安心ください
+              </p>
             </div>
 
             {/* ── 打ち出し状態・収支 表示セクション ── */}
@@ -371,20 +377,26 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
         {/* AT記録タブ */}
         {activeTab === "at" && (
           <>
-            <div className="flex justify-end gap-1.5 px-3 py-1.5 border-b border-gray-200">
-              <button
-                onClick={() => atListRef.current && captureAndShare(atListRef.current, `TG_AT_${new Date().toISOString().slice(0, 10)}.png`, `#東京喰種レゾナンス #パチスロ`)}
-                className="text-[10px] font-mono px-3 py-1 rounded text-white active:scale-95 transition-transform"
-                style={{ backgroundColor: "#000000" }}
-              >
-                𝕏 共有
-              </button>
-              <button
-                onClick={() => atListRef.current && captureAndDownload(atListRef.current, `TG_AT_${new Date().toISOString().slice(0, 10)}.png`)}
-                className="text-[10px] font-mono px-3 py-1 rounded bg-gray-700 text-white active:scale-95 transition-transform"
-              >
-                画像で保存
-              </button>
+            <div className="border-b border-gray-200">
+              <div className="flex justify-end gap-1.5 px-3 pt-1.5 pb-1">
+                <button
+                  onClick={() => atListRef.current && captureAndShare(atListRef.current, `TG_AT_${new Date().toISOString().slice(0, 10)}.png`, `#東京喰種レゾナンス #パチスロ`)}
+                  className="text-[10px] font-mono font-bold px-3 py-3 rounded text-white active:scale-95 transition-transform"
+                  style={{ backgroundColor: "#000000" }}
+                >
+                  𝕏 共有
+                </button>
+                <button
+                  onClick={() => atListRef.current && captureAndDownload(atListRef.current, `TG_AT_${new Date().toISOString().slice(0, 10)}.png`)}
+                  className="text-[10px] font-mono font-bold px-3 py-3 rounded active:scale-95 transition-transform"
+                  style={{ backgroundColor: "#facc15", color: "#1f2937", border: "2px solid #1f2937" }}
+                >
+                  画像で保存
+                </button>
+              </div>
+              <p className="text-[9px] font-mono text-gray-500 px-3 pb-1.5 leading-tight text-right">
+                ※ 稼働ホール名や台番などの特定情報は画像に掲載されませんのでご安心ください
+              </p>
             </div>
             <div ref={atListRef}>
               <ATBlockList
