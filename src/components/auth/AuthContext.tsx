@@ -21,11 +21,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = createClient();
 
+    function ensureCacheOwnership(currentUserId: string | null) {
+      try {
+        const STORED_KEY = "tgr_owner_uid";
+        const stored = localStorage.getItem(STORED_KEY);
+        if (currentUserId && stored !== currentUserId) {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key?.startsWith("tgr_") && key !== STORED_KEY) keysToRemove.push(key);
+          }
+          keysToRemove.forEach((k) => localStorage.removeItem(k));
+          localStorage.setItem(STORED_KEY, currentUserId);
+        } else if (!currentUserId && stored) {
+          localStorage.removeItem(STORED_KEY);
+        }
+      } catch {}
+    }
+
     // 初回チェック
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
+        ensureCacheOwnership(user.id);
         fetchProfile(user);
       } else {
+        ensureCacheOwnership(null);
         setState({ user: null, profile: null, loading: false });
       }
     });
@@ -33,8 +53,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // リアルタイム変更リスナー
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
+        ensureCacheOwnership(session.user.id);
         fetchProfile(session.user);
       } else {
+        ensureCacheOwnership(null);
         setState({ user: null, profile: null, loading: false });
       }
     });

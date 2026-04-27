@@ -15,6 +15,14 @@ export function DashboardShell() {
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith("tgr_")) keysToRemove.push(key);
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+    } catch {}
     window.location.reload();
   }
 
