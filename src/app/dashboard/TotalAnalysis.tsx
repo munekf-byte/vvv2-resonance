@@ -122,6 +122,19 @@ function TRow({ cols, values, i, grade }: {
   );
 }
 
+function SelBadge({ label, value, bg, fg }: { label: string; value: string; bg: string; fg: string }) {
+  return (
+    <div style={{
+      backgroundColor: bg, color: fg,
+      borderRadius: "4px", padding: "2px 3px",
+      textAlign: "center", lineHeight: 1.4, overflow: "hidden",
+    }}>
+      <div style={{ opacity: 0.7, fontSize: "7px", fontWeight: 700 }}>{label}</div>
+      <div style={{ fontSize: "9px", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</div>
+    </div>
+  );
+}
+
 // ── メインコンポーネント ──────────────────────────────────────────────────
 
 export function TotalAnalysis() {
@@ -280,29 +293,70 @@ export function TotalAnalysis() {
         {/* セッション選択パネル */}
         {selectorOpen && (
           <div className="mt-2 bg-white border-2 border-gray-300 rounded-lg overflow-hidden">
-            <div className="flex gap-2 px-3 py-2 border-b border-gray-200 bg-gray-50">
+            <style>{`
+              .tgr-session-scroll::-webkit-scrollbar { width: 14px; }
+              .tgr-session-scroll::-webkit-scrollbar-track { background: #e5e7eb; border-left: 1px solid #d1d5db; }
+              .tgr-session-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 7px; border: 2px solid #e5e7eb; }
+              .tgr-session-scroll::-webkit-scrollbar-thumb:hover { background: #1f2937; }
+              .tgr-session-scroll { scrollbar-width: auto; scrollbar-color: #4b5563 #e5e7eb; }
+            `}</style>
+            <div className="flex gap-2 px-3 py-2 border-b border-gray-200 bg-gray-50 items-center">
               <button onClick={() => setSelectedIds(new Set(sessions.map((s) => s.id)))}
                 className="text-[9px] font-mono font-bold px-2 py-1 rounded bg-gray-700 text-white active:scale-95">全選択</button>
               <button onClick={() => setSelectedIds(new Set())}
                 className="text-[9px] font-mono font-bold px-2 py-1 rounded border border-gray-400 text-gray-600 active:scale-95">全解除</button>
+              <span className="text-[9px] font-mono text-gray-500 ml-auto">{selectedCount}/{sessionCount}件</span>
             </div>
-            <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
-              {sessions.map((s) => {
-                const checked = selectedIds.has(s.id);
-                const totalG = s.normalBlocks.reduce((sum, b) => sum + (b.jisshuG ?? 0), 0);
-                const atC = s.normalBlocks.filter((b) => b.atWin).length;
-                return (
-                  <button key={s.id} onClick={() => toggleSession(s.id)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors"
-                    style={{ backgroundColor: checked ? "#eff6ff" : "#ffffff" }}>
-                    <span className="text-[14px] shrink-0">{checked ? "☑" : "☐"}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-mono font-bold text-gray-800 truncate">{s.machineName}</p>
-                      <p className="text-[9px] font-mono text-gray-500">{totalG.toLocaleString()}G · AT{atC}回</p>
-                    </div>
-                  </button>
-                );
-              })}
+            <div className="relative">
+              <div className="tgr-session-scroll overflow-y-auto divide-y divide-gray-100" style={{ maxHeight: "580px" }}>
+                {sessions.map((s) => {
+                  const checked = selectedIds.has(s.id);
+                  const totalG = s.normalBlocks.reduce((sum, b) => sum + (b.jisshuG ?? 0), 0);
+                  const atC = s.normalBlocks.filter((b) => b.atWin).length;
+                  const czFail = s.normalBlocks.filter((b) => b.endingSuggestion?.startsWith?.("[cz失敗]")).map((b) => b.endingSuggestion);
+                  const allSets = s.atEntries.flatMap((e) => e.rows.filter((r): r is TGATSet => r.rowType === "set"));
+                  const endScreen = allSets.map((x) => x.endingSuggestion ?? "").filter((x) => x.startsWith("[終了画面]"));
+                  const settingHint = inferSetting(czFail, endScreen, s.normalBlocks, s.atEntries);
+                  const userGuess = s.userSettingGuess || "";
+                  const balance = s.shushi
+                    ? (s.shushi.exchangeCoins ?? 0) - ((s.shushi.handCoins ?? 0) + (s.shushi.cashInvestK ?? 0) * s.shushi.coinRate)
+                    : null;
+                  const balanceText = balance != null ? (balance >= 0 ? `+${Math.round(balance).toLocaleString()}` : Math.round(balance).toLocaleString()) : "—";
+                  const dateStr = new Date(s.createdAt).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
+
+                  return (
+                    <button key={s.id} onClick={() => toggleSession(s.id)}
+                      className="w-full px-3 py-2 text-left transition-colors"
+                      style={{ backgroundColor: checked ? "#eff6ff" : "#ffffff" }}>
+                      <div className="flex items-start gap-2">
+                        <span className="text-[14px] mt-0.5 shrink-0">{checked ? "☑" : "☐"}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline justify-between gap-2 mb-1">
+                            <p className="text-[11px] font-mono font-bold text-gray-800 truncate">{s.machineName}</p>
+                            <span className="text-[9px] font-mono text-gray-400 shrink-0">{dateStr}</span>
+                          </div>
+                          <div className="grid grid-cols-5 gap-1">
+                            <SelBadge label="確定" value={settingHint || "—"} bg="#dbeafe" fg="#1e40af" />
+                            <SelBadge label="推測" value={userGuess || "—"} bg="#fef3c7" fg="#92400e" />
+                            <SelBadge label="収支"
+                              value={balanceText}
+                              bg={balance != null ? (balance >= 0 ? "#d1fae5" : "#fecaca") : "#f3f4f6"}
+                              fg={balance != null ? (balance >= 0 ? "#065f46" : "#991b1b") : "#6b7280"} />
+                            <SelBadge label="総G" value={totalG > 0 ? totalG.toLocaleString() : "—"} bg="#e0e7ff" fg="#3730a3" />
+                            <SelBadge label="AT" value={atC > 0 ? `${atC}回` : "—"} bg="#f3e8ff" fg="#6b21a8" />
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {sessions.length > 10 && (
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-7 flex items-end justify-center pb-1"
+                  style={{ background: "linear-gradient(to top, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 100%)" }}>
+                  <span className="text-[9px] font-mono text-gray-700 font-bold">▼ さらに下へスクロール</span>
+                </div>
+              )}
             </div>
           </div>
         )}
