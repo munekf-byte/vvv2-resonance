@@ -275,22 +275,28 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
 
   return (
     <div className="pb-24">
-      <div className="sticky top-0 z-20 bg-gray-100 border-b border-gray-300 px-3 py-2 flex items-center justify-between">
-        <p className="text-[10px] font-mono font-bold text-red-600 leading-tight">
-          ※ 液晶メニューのTOTALゲーム数を下記に入力してください
-        </p>
-        <div className="flex gap-1.5 flex-shrink-0 ml-2">
-          <button
-            onClick={() => captureRef.current && captureAndShare(captureRef.current, `TG_Summary_${new Date().toISOString().slice(0, 10)}.png`, `#東京喰種レゾナンス #パチスロ`)}
-            className="text-[10px] font-mono font-bold px-3 py-2 rounded text-white active:scale-95 transition-transform"
-            style={{ backgroundColor: "#000000" }}>
-            𝕏 共有
-          </button>
-          <button onClick={handleCapture}
-            className="text-[10px] font-mono font-bold px-3 py-2 rounded bg-gray-800 text-white active:scale-95 transition-transform">
-            画像で保存
-          </button>
+      <div className="sticky top-0 z-20 bg-gray-100 border-b border-gray-300">
+        <div className="px-3 pt-2 pb-1.5 flex items-center justify-between">
+          <p className="text-[10px] font-mono font-bold text-red-600 leading-tight">
+            ※ 液晶メニューのTOTALゲーム数を下記に入力してください
+          </p>
+          <div className="flex gap-1.5 flex-shrink-0 ml-2">
+            <button
+              onClick={() => captureRef.current && captureAndShare(captureRef.current, `TG_Summary_${new Date().toISOString().slice(0, 10)}.png`, `#東京喰種レゾナンス #パチスロ`)}
+              className="text-[10px] font-mono font-bold px-3 py-3 rounded text-white active:scale-95 transition-transform"
+              style={{ backgroundColor: "#000000" }}>
+              𝕏 共有
+            </button>
+            <button onClick={handleCapture}
+              className="text-[10px] font-mono font-bold px-3 py-3 rounded active:scale-95 transition-transform"
+              style={{ backgroundColor: "#facc15", color: "#1f2937", border: "2px solid #1f2937" }}>
+              画像で保存
+            </button>
+          </div>
         </div>
+        <p className="text-[9px] font-mono text-gray-500 px-3 pb-1.5 leading-tight">
+          ※ 稼働ホール名や台番などの特定情報は画像に掲載されませんのでご安心ください
+        </p>
       </div>
 
       {/* ===== 液晶総消化G数 入力欄（テーブル外・トップ） ===== */}
