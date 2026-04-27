@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import type { PlaySession, NormalBlock, TGATEntry, TGATSet } from "@/types";
-import { lsGetSessionList, lsLoadSession } from "@/lib/tg/localStore";
+import { lsGetSessionList, lsLoadSession, dbGetSessionList, dbLoadSession } from "@/lib/tg/localStore";
 import { captureAndDownload } from "@/lib/tg/captureImage";
 import {
   TG_KAKUGAN, TG_SHINSEKAI,
@@ -132,16 +132,26 @@ export function TotalAnalysis() {
   const [selectorOpen, setSelectorOpen] = useState(false);
 
   useEffect(() => {
-    const list = lsGetSessionList();
-    const loaded: PlaySession[] = [];
-    for (const meta of list) {
-      const session = lsLoadSession(meta.id);
-      if (session) loaded.push(session);
-    }
-    setSessions(loaded);
-    // デフォルト: 全選択
-    setSelectedIds(new Set(loaded.map((s) => s.id)));
-    setLoading(false);
+    (async () => {
+      let list = lsGetSessionList();
+      if (list.length === 0) {
+        list = await dbGetSessionList();
+      }
+      const loaded: PlaySession[] = [];
+      for (const meta of list) {
+        let session = lsLoadSession(meta.id);
+        if (!session) {
+          session = await dbLoadSession(meta.id);
+          if (session) {
+            try { localStorage.setItem(`tgr_session_${meta.id}`, JSON.stringify(session)); } catch {}
+          }
+        }
+        if (session) loaded.push(session);
+      }
+      setSessions(loaded);
+      setSelectedIds(new Set(loaded.map((s) => s.id)));
+      setLoading(false);
+    })();
   }, []);
 
   function toggleSession(id: string) {
