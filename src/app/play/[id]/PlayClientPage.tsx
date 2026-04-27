@@ -432,8 +432,12 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           <LongPressHint hint="朝イチ台ではない時は入力してください。メニュー液晶からG数などを転記。スランプグラフからおおよその現在差枚数を入力（重要）。集計計算に反映されます。">
             <button
               onClick={() => setUchidashiOpen(true)}
-              className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
-              style={{ backgroundColor: "#1e40af", color: "#fff" }}
+              className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full active:scale-95 transition-transform"
+              style={{
+                backgroundColor: "#1e40af",
+                color: "#fff",
+                boxShadow: "0 0 0 2px #ffffff, 0 0 14px rgba(30,64,175,0.65), 0 4px 12px rgba(0,0,0,0.3)",
+              }}
             >
               打ち出し設定
             </button>
@@ -441,8 +445,12 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           <LongPressHint hint="投資額（手持ち消費・現金投資）と最終交換枚数を入力する欄。投資は上書き方式です。交換枚数は終了時に入力してください。">
             <button
               onClick={() => setShushiOpen(true)}
-              className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
-              style={{ backgroundColor: "#059669", color: "#fff" }}
+              className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full active:scale-95 transition-transform"
+              style={{
+                backgroundColor: "#059669",
+                color: "#fff",
+                boxShadow: "0 0 0 2px #ffffff, 0 0 14px rgba(5,150,105,0.65), 0 4px 12px rgba(0,0,0,0.3)",
+              }}
             >
               収支入力
             </button>
@@ -450,8 +458,12 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           <LongPressHint hint="確定演出などではなく、当日の状況や台の挙動などから、あなた自身が推測した設定結果を記録する欄です。">
             <button
               onClick={() => setSettingGuessOpen(true)}
-              className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full shadow-lg active:scale-95 transition-transform"
-              style={{ backgroundColor: "#92400e", color: "#fff" }}
+              className="flex items-center gap-1 font-mono font-bold text-[13px] px-5 py-3.5 rounded-full active:scale-95 transition-transform"
+              style={{
+                backgroundColor: "#92400e",
+                color: "#fff",
+                boxShadow: "0 0 0 2px #ffffff, 0 0 14px rgba(146,64,14,0.65), 0 4px 12px rgba(0,0,0,0.3)",
+              }}
             >
               推測設定
             </button>
@@ -459,7 +471,10 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           <LongPressHint hint="通常時の周期データを1件追加します。CZやAT当選のたびに、ゲーム数・ゾーン・契機・イベントなどを記録してください。">
             <button
               onClick={handleNormalOpenNew}
-              className="flex items-center gap-1 bg-v2-red text-white font-mono font-bold text-[15px] px-6 py-4 rounded-full shadow-lg active:scale-95 transition-transform"
+              className="flex items-center gap-1 bg-v2-red text-white font-mono font-bold text-[15px] px-6 py-4 rounded-full active:scale-95 transition-transform"
+              style={{
+                boxShadow: "0 0 0 2px #ffffff, 0 0 16px rgba(220,38,38,0.7), 0 4px 12px rgba(0,0,0,0.3)",
+              }}
             >
               ＋ 周期追加
             </button>
