@@ -30,25 +30,29 @@ export function DashboardShell() {
             {profile?.display_name ?? user?.email ?? ""}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {isPro ? (
             <span className="flex-shrink-0">
-              <img src="/images/pro_plan.png" alt="PRO" className="h-6 rounded" />
+              <img src="/images/pro_plan.png" alt="PRO" className="h-8 rounded" />
             </span>
           ) : (
             <>
-              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-gray-200 text-gray-500">無料版</span>
-              <a href="/pro" className="text-[9px] font-mono font-bold px-2 py-0.5 rounded active:scale-95 transition-transform inline-block"
+              <span className="text-[10px] font-mono font-bold px-2 py-1.5 rounded bg-gray-200 text-gray-500">無料版</span>
+              <a href="/pro" className="text-[10px] font-mono font-bold px-2.5 py-1.5 rounded active:scale-95 transition-transform inline-block"
                 style={{ backgroundColor: "#7c3aed", color: "#fff" }}>
                 Pro詳細
               </a>
             </>
           )}
           {isAdmin && (
-            <a href="/admin" className="text-[10px] font-mono text-gray-500 hover:text-gray-800">管理</a>
+            <a href="/admin" className="text-[10px] font-mono font-bold px-2 py-1.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">管理</a>
           )}
-          <a href="/tutorial" className="text-[9px] font-mono text-gray-400 hover:text-gray-600">使い方</a>
-          <button onClick={handleSignOut} className="text-[10px] font-mono font-bold px-2 py-1 rounded border border-gray-300 text-gray-500 hover:text-red-600 hover:border-red-300 transition-colors">ログアウト</button>
+          <a href="/tutorial"
+            className="text-[11px] font-mono font-black px-2.5 py-1.5 rounded active:scale-95 transition-transform inline-flex items-center gap-1 shadow-sm"
+            style={{ backgroundColor: "#06b6d4", color: "#ffffff", border: "2px solid #0e7490" }}>
+            📖 使い方
+          </a>
+          <button onClick={handleSignOut} className="text-[10px] font-mono font-bold px-2.5 py-1.5 rounded border border-gray-300 text-gray-500 hover:text-red-600 hover:border-red-300 transition-colors">ログアウト</button>
         </div>
       </div>
 
