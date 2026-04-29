@@ -349,12 +349,14 @@
   footer { text-align: center; padding: 28px 24px 56px; border-top: 1px solid var(--border-light); font-size: 11px; color: var(--text-muted); line-height: 2.2; }
   footer a { color: var(--text-sub); text-decoration: none; }
 
-  .f-cta { position: fixed; bottom: 0; left: 0; right: 0; padding: 10px 20px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); background: rgba(245,240,232,0.96); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid var(--border); z-index: 100; display: flex; align-items: center; gap: 12px; max-width: 520px; margin: 0 auto; transform: translateY(100%); transition: transform 0.3s; }
+  .f-cta { position: fixed; bottom: 0; left: 0; right: 0; padding: 14px 18px; padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(135deg, #d4a346 0%, #b8862e 50%, #a67c3d 100%); border-top: 2px solid #8a6428; box-shadow: 0 -6px 20px rgba(166, 124, 61, 0.35); z-index: 100; display: flex; align-items: center; gap: 14px; max-width: 520px; margin: 0 auto; transform: translateY(110%); transition: transform 0.3s ease; }
   .f-cta.show { transform: translateY(0); }
   .f-cta-info { flex: 1; }
-  .f-cta-price { font-size: 20px; font-weight: 800; color: var(--gold); }
-  .f-cta-sub { font-size: 10px; color: var(--text-muted); }
-  .f-cta-btn { padding: 10px 22px; background: var(--gold); color: #fff; font-family: inherit; font-weight: 700; font-size: 13px; border: none; border-radius: 8px; text-decoration: none; white-space: nowrap; }
+  .f-cta-price { font-size: 26px; font-weight: 800; color: #fff; line-height: 1.1; text-shadow: 0 1px 2px rgba(0,0,0,0.15); }
+  .f-cta-price .yen { font-size: 16px; margin-right: 1px; }
+  .f-cta-sub { font-size: 11px; color: rgba(255,255,255,0.92); font-weight: 700; margin-top: 2px; letter-spacing: 0.02em; }
+  .f-cta-btn { padding: 14px 26px; background: #fff; color: #8a6428; font-family: inherit; font-weight: 800; font-size: 15px; border: 2px solid #fff; border-radius: 10px; text-decoration: none; white-space: nowrap; box-shadow: 0 3px 10px rgba(0,0,0,0.18); transition: transform 0.15s ease; }
+  .f-cta-btn:active { transform: scale(0.96); }
 </style>
 </head>
 <body>
@@ -550,9 +552,9 @@
     </div>
   </div>
   <div class="pay-alt">
-    💳 クレジットカード（Stripe）で即時反映<br>
-    📱 PayPayでの手動決済も受付中<br>
-    → <a href="https://x.com/puchun_dobadoba" target="_blank" rel="noopener">X（@puchun_dobadoba）</a>のDMへ
+    📱 <span class="bold">PayPay</span> でのお支払いを受付中<br>
+    → <a href="/pro">/pro ページ</a>からPayPay IDを確認し、送金後にアプリ内の送金報告フォームへ<br>
+    💳 クレジットカード（Stripe）は現在準備中
   </div>
 </section>
 
@@ -565,7 +567,7 @@
     <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">無料版との違いは？</div><div class="faq-a"><p>無料版でもセッション3件までの記録、モード推定、差枚計算など主要機能はすべてお使いいただけます。Proではセッション数が無制限になり、トータル数値分析と限定Discordコミュニティが追加されます。</p></div></div>
     <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">「全ユーザーの集合データ」とは？</div><div class="faq-a"><p>RESONANCEをご利用の全ユーザー（無料版を含む）の実戦データがクラウドに集約されています。このデータを設定別・項目別に集計した結果を、Proメンバー限定で共有しています。一般に公開されている解析データの構造上見えない部分が、ここでは確認できます。</p></div></div>
     <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">情報商材とは何が違う？</div><div class="faq-a"><p>誰かの「独自解析」を一方的に販売するものではありません。ユーザーの皆さんが記録した実データを集約・分析し、その結果をメンバー全員で共有する仕組みです。情報は固定ではなく、データが増えるほど更新されていきます。¥1,500はアプリの維持・開発費とコミュニティ運営への参加費とお考えください。</p></div></div>
-    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">決済方法は？</div><div class="faq-a"><p>クレジットカード決済（Stripe経由）で即時反映されます。PayPayでの手動決済も受け付けておりますので、X（@puchun_dobadoba）のDMよりお問い合わせください。</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">決済方法は？</div><div class="faq-a"><p>PayPayでのお支払いを受け付けております。/pro ページからPayPay IDを確認し、送金後にアプリ内の送金報告フォームから報告するだけで完結します。クレジットカード決済（Stripe）は現在準備中です。</p></div></div>
     <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">グループ稼働ですが参加できますか？</div><div class="faq-a"><p>申し訳ございませんが、お断りしております。複数人での利益共有を前提とした稼働スタイルの方は、アプリ・Discordともにご利用をお控えください。</p></div></div>
   </div>
 </section>
@@ -573,7 +575,7 @@
 <section style="text-align:center;padding-bottom:100px">
   <p style="font-size:14px;color:var(--text-sub);margin-bottom:20px">ここまでお読みいただきありがとうございます。<br>ご興味をお持ちいただけましたら、ぜひご参加ください。</p>
   <a href="/pro" class="cta-btn" style="max-width:320px;margin:0 auto;display:block">Pro プランに参加する →</a>
-  <p style="font-size:11px;color:var(--text-muted);margin-top:10px">¥1,500 買い切り ・ 永久利用 ・ クレカ即時反映</p>
+  <p style="font-size:11px;color:var(--text-muted);margin-top:10px">¥1,500 買い切り ・ 永久利用 ・ PayPay決済対応</p>
 </section>
 
 <footer>
@@ -583,7 +585,7 @@
 </footer>
 
 <div class="f-cta" id="fc">
-  <div class="f-cta-info"><div class="f-cta-price">¥1,500</div><div class="f-cta-sub">買い切り・永久利用</div></div>
+  <div class="f-cta-info"><div class="f-cta-price"><span class="yen">¥</span>1,500</div><div class="f-cta-sub">買い切り・永久利用</div></div>
   <a href="#pricing" class="f-cta-btn">参加する →</a>
 </div>
 
