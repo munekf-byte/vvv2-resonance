@@ -355,19 +355,70 @@ function ProPageInner() {
                     >
                       <div className="px-4 py-3" style={{ backgroundColor: "#ef4444" }}>
                         <p className="font-mono font-black text-sm text-white">
-                          📱 PayPay でのお支払い（1,500円）
+                          📱 PayPay でのお支払い方法
                         </p>
                       </div>
                       <div className="px-4 py-4 text-left">
+                        {/* PayPay ID ハイライト */}
+                        <div
+                          className="rounded-lg px-3 py-3 mb-4 text-center"
+                          style={{ backgroundColor: "#fef2f2", border: "2px dashed #ef4444" }}
+                        >
+                          <p className="font-mono text-[10px] text-gray-600 mb-1">PayPay ID</p>
+                          <p className="font-mono font-black text-xl tracking-wider" style={{ color: "#b91c1c" }}>
+                            akp_studio
+                          </p>
+                          <p className="font-mono text-[10px] text-gray-500 mt-1">送金額: ¥1,500</p>
+                        </div>
+
                         <p className="font-mono font-bold text-xs text-gray-700 mb-2">
                           ご利用までの流れ
                         </p>
-                        <ol className="space-y-2 mb-4">
+                        <ol className="space-y-3 mb-4">
                           {[
-                            { n: "1", t: "X(@puchun_dobadoba) に DM を送信" },
-                            { n: "2", t: "折り返し PayPay 送金リンクをお送りします" },
-                            { n: "3", t: "PayPay で 1,500 円を送金（手数料無料）" },
-                            { n: "4", t: "送金完了後、数時間〜半日以内に Pro 化を反映" },
+                            {
+                              n: "1",
+                              t: (
+                                <>
+                                  PayPay アプリを開き、「<span className="font-bold">送る</span>」から
+                                  ID 検索で「<span className="font-bold" style={{ color: "#b91c1c" }}>akp_studio</span>」を検索
+                                </>
+                              ),
+                            },
+                            {
+                              n: "2",
+                              t: (
+                                <><span className="font-bold">¥1,500</span> を送金</>
+                              ),
+                            },
+                            {
+                              n: "3",
+                              t: (
+                                <>
+                                  送金完了後、X（
+                                  <a
+                                    href={LINK_X}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-bold underline"
+                                    style={{ color: "#b91c1c" }}
+                                  >
+                                    @puchun_dobadoba
+                                  </a>
+                                  ）の DM で以下を連絡:
+                                  <br />
+                                  ・アプリに登録しているメールアドレスまたはユーザー名
+                                  <br />
+                                  ・PayPay の送金日時
+                                </>
+                              ),
+                            },
+                            {
+                              n: "4",
+                              t: (
+                                <>確認後、Pro 化を反映します（<span className="font-bold">通常 24 時間以内</span>）</>
+                              ),
+                            },
                           ].map((step) => (
                             <li key={step.n} className="flex items-start gap-2">
                               <span
@@ -394,11 +445,25 @@ function ProPageInner() {
                             boxShadow: "0 4px 14px rgba(239, 68, 68, 0.4)",
                           }}
                         >
-                          X の DM で支払いを依頼する →
+                          X の DM を開く →
                         </a>
-                        <p className="font-mono text-[10px] text-gray-500 mt-2 text-center leading-relaxed">
-                          @puchun_dobadoba まで「Pro 加入希望」とお送りください
-                        </p>
+
+                        {/* プライバシー案内 */}
+                        <div
+                          className="mt-4 rounded-lg px-3 py-3"
+                          style={{ backgroundColor: "#fefce8", border: "1px solid #facc15" }}
+                        >
+                          <p className="font-mono font-bold text-[11px] mb-1" style={{ color: "#854d0e" }}>
+                            💡 プライバシーに関するご案内
+                          </p>
+                          <p className="font-mono text-[10px] leading-relaxed" style={{ color: "#713f12" }}>
+                            PayPay で送金すると、相手に PayPay の表示名が通知されます。
+                            本名での表示を避けたい場合は、送金前に PayPay アプリの「アカウント」→「プロフィール」→「表示名」からニックネームに変更できます。送金後に元に戻すことも可能です。
+                            <br />
+                            <br />
+                            こちらではお支払いの確認のみ行い、お名前等の個人情報は一切保存・公開いたしません。
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </>
