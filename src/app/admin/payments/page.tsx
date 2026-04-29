@@ -14,6 +14,7 @@ interface PaymentRow {
   admin_note: string | null;
   created_at: string;
   approved_at: string | null;
+  discord_id: string | null;
 }
 
 type StatusFilter = "pending" | "approved" | "rejected" | "all";
@@ -139,13 +140,22 @@ export default function AdminPaymentsPage() {
                     <p className="font-mono font-bold text-sm text-gray-900 truncate">{r.email}</p>
                     <p className="font-mono text-[10px] text-gray-400 truncate">user_id: {r.user_id}</p>
                   </div>
-                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded shrink-0 ${
-                    r.status === "pending" ? "bg-amber-100 text-amber-700" :
-                    r.status === "approved" ? "bg-green-100 text-green-700" :
-                    "bg-red-100 text-red-700"
-                  }`}>
-                    {r.status.toUpperCase()}
-                  </span>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                      r.status === "pending" ? "bg-amber-100 text-amber-700" :
+                      r.status === "approved" ? "bg-green-100 text-green-700" :
+                      "bg-red-100 text-red-700"
+                    }`}>
+                      {r.status.toUpperCase()}
+                    </span>
+                    <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                      r.discord_id
+                        ? "bg-green-100 text-green-700 border border-green-300"
+                        : "bg-gray-100 text-gray-500 border border-gray-300"
+                    }`}>
+                      {r.discord_id ? "Discord 連携済み ✅" : "Discord 未連携"}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-gray-700 mb-3">

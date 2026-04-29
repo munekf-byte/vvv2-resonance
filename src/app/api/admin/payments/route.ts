@@ -45,7 +45,30 @@ export async function GET(request: Request) {
       console.error("[admin/payments GET]", error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-    return NextResponse.json(data ?? []);
+    const rows = data ?? [];
+
+    // 各ユーザーの discord 連携状態をまとめて取得
+    const userIds = Array.from(new Set(rows.map((r) => r.user_id)));
+    let discordMap = new Map<string, string | null>();
+    if (userIds.length > 0) {
+      const { data: profs, error: profErr } = await supabase
+        .from("profiles")
+        .select("id, discord_id")
+        .in("id", userIds);
+      if (profErr) {
+        console.error("[admin/payments GET] profiles fetch:", profErr.message);
+      } else {
+        discordMap = new Map(
+          (profs ?? []).map((p) => [p.id as string, (p.discord_id as string | null) ?? null]),
+        );
+      }
+    }
+
+    const enriched = rows.map((r) => ({
+      ...r,
+      discord_id: discordMap.get(r.user_id) ?? null,
+    }));
+    return NextResponse.json(enriched);
   } catch (e) {
     console.error("[admin/payments GET] unexpected:", e);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
