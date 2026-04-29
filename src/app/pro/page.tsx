@@ -18,6 +18,8 @@ export default function ProPage() {
   );
 }
 
+const STRIPE_ENABLED = process.env.NEXT_PUBLIC_STRIPE_ENABLED === "true";
+
 function ProPageInner() {
   const { profile } = useAuth();
   const isPro = profile?.is_pro ?? false;
@@ -61,6 +63,10 @@ function ProPageInner() {
   }, [searchParams]);
 
   async function handleStripeCheckout() {
+    if (!STRIPE_ENABLED) {
+      alert("現在クレジットカード決済は準備中です。下記PayPayでのお支払いをご利用ください。");
+      return;
+    }
     if (checkoutLoading) return;
     setCheckoutLoading(true);
     try {
@@ -286,41 +292,117 @@ function ProPageInner() {
                 </p>
                 <p className="font-mono text-gray-500 text-xs mt-1">（税込・月額ではありません）</p>
 
-                {/* Stripe 決済ボタン */}
-                <button
-                  onClick={handleStripeCheckout}
-                  disabled={checkoutLoading}
-                  className="w-full mt-5 py-4 rounded-lg font-mono font-bold text-base active:scale-95 transition-transform disabled:opacity-60"
-                  style={{
-                    background: "linear-gradient(135deg, #635bff 0%, #7c3aed 100%)",
-                    color: "#ffffff",
-                  }}
-                >
-                  {checkoutLoading ? "決済画面を準備中..." : "クレジットカードで購入（1,500円）"}
-                </button>
+                {/* Stripe 決済ボタン（フラグ有効時のみ表示） */}
+                {STRIPE_ENABLED ? (
+                  <>
+                    <button
+                      onClick={handleStripeCheckout}
+                      disabled={checkoutLoading}
+                      className="w-full mt-5 py-4 rounded-lg font-mono font-bold text-base active:scale-95 transition-transform disabled:opacity-60"
+                      style={{
+                        background: "linear-gradient(135deg, #635bff 0%, #7c3aed 100%)",
+                        color: "#ffffff",
+                      }}
+                    >
+                      {checkoutLoading ? "決済画面を準備中..." : "クレジットカードで購入（1,500円）"}
+                    </button>
 
-                {/* PayPay 手動決済 */}
-                <div className="mt-4 bg-white/10 rounded-lg px-4 py-3">
-                  <p className="font-mono text-xs font-bold" style={{ color: "#fef3c7" }}>
-                    PayPay での手動決済も受付中
-                  </p>
-                  <p className="font-mono text-[10px] text-gray-400 mt-1 leading-relaxed">
-                    送金完了後、X のDMでユーザー名をお知らせください
-                  </p>
-                </div>
+                    {/* PayPay 手動決済（サブ） */}
+                    <div className="mt-4 bg-white/10 rounded-lg px-4 py-3">
+                      <p className="font-mono text-xs font-bold" style={{ color: "#fef3c7" }}>
+                        PayPay での手動決済も受付中
+                      </p>
+                      <p className="font-mono text-[10px] text-gray-400 mt-1 leading-relaxed">
+                        送金完了後、X のDMでユーザー名をお知らせください
+                      </p>
+                    </div>
 
-                <a
-                  href={LINK_X}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-3 px-8 py-2.5 rounded-lg font-mono font-bold text-xs active:scale-95 transition-transform"
-                  style={{
-                    background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-                    color: "#ffffff",
-                  }}
-                >
-                  お問い合わせ（X / Twitter）
-                </a>
+                    <a
+                      href={LINK_X}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block mt-3 px-8 py-2.5 rounded-lg font-mono font-bold text-xs active:scale-95 transition-transform"
+                      style={{
+                        background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                        color: "#ffffff",
+                      }}
+                    >
+                      お問い合わせ（X / Twitter）
+                    </a>
+                  </>
+                ) : (
+                  <>
+                    {/* クレカ決済 一時停止アナウンス */}
+                    <div
+                      className="mt-5 rounded-lg px-4 py-3"
+                      style={{
+                        backgroundColor: "rgba(248, 113, 113, 0.12)",
+                        border: "1px solid rgba(248, 113, 113, 0.45)",
+                      }}
+                    >
+                      <p className="font-mono font-bold text-xs" style={{ color: "#fecaca" }}>
+                        ⚠ クレジットカード決済は現在準備中です
+                      </p>
+                      <p className="font-mono text-[10px] text-gray-300 mt-1 leading-relaxed">
+                        下記の PayPay 決済をご利用ください。準備が整い次第、再開します。
+                      </p>
+                    </div>
+
+                    {/* PayPay メインCTAブロック */}
+                    <div
+                      className="mt-5 rounded-xl overflow-hidden"
+                      style={{ border: "2px solid #ef4444", backgroundColor: "#ffffff" }}
+                    >
+                      <div className="px-4 py-3" style={{ backgroundColor: "#ef4444" }}>
+                        <p className="font-mono font-black text-sm text-white">
+                          📱 PayPay でのお支払い（1,500円）
+                        </p>
+                      </div>
+                      <div className="px-4 py-4 text-left">
+                        <p className="font-mono font-bold text-xs text-gray-700 mb-2">
+                          ご利用までの流れ
+                        </p>
+                        <ol className="space-y-2 mb-4">
+                          {[
+                            { n: "1", t: "X(@puchun_dobadoba) に DM を送信" },
+                            { n: "2", t: "折り返し PayPay 送金リンクをお送りします" },
+                            { n: "3", t: "PayPay で 1,500 円を送金（手数料無料）" },
+                            { n: "4", t: "送金完了後、数時間〜半日以内に Pro 化を反映" },
+                          ].map((step) => (
+                            <li key={step.n} className="flex items-start gap-2">
+                              <span
+                                className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full font-mono font-bold text-[10px] text-white mt-0.5"
+                                style={{ backgroundColor: "#ef4444" }}
+                              >
+                                {step.n}
+                              </span>
+                              <span className="font-mono text-[11px] text-gray-700 leading-relaxed">
+                                {step.t}
+                              </span>
+                            </li>
+                          ))}
+                        </ol>
+
+                        <a
+                          href={LINK_X}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block w-full py-4 rounded-lg font-mono font-black text-sm active:scale-95 transition-transform text-center"
+                          style={{
+                            background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
+                            color: "#ffffff",
+                            boxShadow: "0 4px 14px rgba(239, 68, 68, 0.4)",
+                          }}
+                        >
+                          X の DM で支払いを依頼する →
+                        </a>
+                        <p className="font-mono text-[10px] text-gray-500 mt-2 text-center leading-relaxed">
+                          @puchun_dobadoba まで「Pro 加入希望」とお送りください
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -334,7 +416,10 @@ function ProPageInner() {
 
             {/* 補足 */}
             <p className="text-center text-gray-400 font-mono text-[10px] leading-relaxed">
-              ※ クレジットカード決済は Stripe を利用<br />
+              {STRIPE_ENABLED
+                ? "※ クレジットカード決済は Stripe を利用"
+                : "※ クレジットカード決済は現在準備中（PayPay手動決済をご利用ください）"}
+              <br />
               ※ 一度の購入で永久利用可能です
             </p>
           </div>
