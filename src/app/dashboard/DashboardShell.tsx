@@ -5,6 +5,7 @@ import { DashboardClient } from "./DashboardClient";
 import { TotalAnalysis } from "./TotalAnalysis";
 import { LINK_DISCORD } from "@/lib/config/links";
 import { createClient } from "@/lib/supabase/client";
+import { ProUpgradePopup } from "@/components/pro/ProUpgradePopup";
 
 export function DashboardShell() {
   const { profile, user } = useAuth();
@@ -28,6 +29,7 @@ export function DashboardShell() {
 
   return (
     <div>
+      <ProUpgradePopup />
       {/* ユーザー情報バー */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-white">
         <div className="flex items-center gap-2">

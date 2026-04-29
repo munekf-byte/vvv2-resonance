@@ -9,6 +9,7 @@ import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthContext";
 import { Suspense } from "react";
 import { LINK_X, LINK_DISCORD } from "@/lib/config/links";
+import { ProUpgradePopup } from "@/components/pro/ProUpgradePopup";
 
 export default function ProPage() {
   return (
@@ -20,6 +21,18 @@ export default function ProPage() {
 
 const STRIPE_ENABLED = process.env.NEXT_PUBLIC_STRIPE_ENABLED === "true";
 
+interface PendingPaymentInfo {
+  id: string;
+  payment_date: string;
+  created_at: string;
+  status: string;
+}
+
+function toLocalDatetimeInputValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function ProPageInner() {
   const { profile } = useAuth();
   const isPro = profile?.is_pro ?? false;
@@ -29,6 +42,11 @@ function ProPageInner() {
   const [discordMsg, setDiscordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [discordLoading, setDiscordLoading] = useState(false);
   const [paypayCopied, setPaypayCopied] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState<PendingPaymentInfo | null>(null);
+  const [pendingLoaded, setPendingLoaded] = useState(false);
+  const [paymentDateInput, setPaymentDateInput] = useState<string>(() => toLocalDatetimeInputValue(new Date()));
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   async function handleCopyPaypayId() {
     try {
@@ -37,6 +55,57 @@ function ProPageInner() {
       setTimeout(() => setPaypayCopied(false), 2000);
     } catch {
       alert("コピーに失敗しました。手動で『akp_studio』をコピーしてください。");
+    }
+  }
+
+  useEffect(() => {
+    if (isPro) {
+      setPendingLoaded(true);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/payment/status")
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancelled) return;
+        setPendingPayment(d?.pending ?? null);
+      })
+      .catch((e) => console.error("[pro] payment status load failed:", e))
+      .finally(() => { if (!cancelled) setPendingLoaded(true); });
+    return () => { cancelled = true; };
+  }, [isPro]);
+
+  async function handleSubmitPaymentReport() {
+    if (submitting) return;
+    setSubmitError(null);
+    if (!paymentDateInput) {
+      setSubmitError("送金日時を入力してください");
+      return;
+    }
+    const iso = new Date(paymentDateInput).toISOString();
+    if (isNaN(Date.parse(iso))) {
+      setSubmitError("送金日時の形式が不正です");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/payment/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paymentDate: iso }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setSubmitError(body?.error || `送信失敗 (${res.status})`);
+      } else {
+        // 即時反映
+        const status = await fetch("/api/payment/status").then((r) => r.json()).catch(() => null);
+        setPendingPayment(status?.pending ?? null);
+      }
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : "通信エラー");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -95,6 +164,7 @@ function ProPageInner() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f5f0e8" }}>
+      <ProUpgradePopup />
 
       {/* ヘッダー */}
       <header style={{ backgroundColor: "#1f2937", borderBottom: "3px solid #92400e" }}>
@@ -422,28 +492,15 @@ function ProPageInner() {
                               n: "3",
                               t: (
                                 <>
-                                  送金完了後、X（
-                                  <a
-                                    href={LINK_X}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-bold underline"
-                                    style={{ color: "#b91c1c" }}
-                                  >
-                                    @puchun_dobadoba
-                                  </a>
-                                  ）の DM で以下を連絡:
-                                  <br />
-                                  ・アプリに登録しているメールアドレスまたはユーザー名
-                                  <br />
-                                  ・PayPay の送金日時
+                                  下記フォームに <span className="font-bold">送金日時</span> を入力して
+                                  「<span className="font-bold">送金報告を送信</span>」を押す
                                 </>
                               ),
                             },
                             {
                               n: "4",
                               t: (
-                                <>確認後、Pro 化を反映します（<span className="font-bold">通常 24 時間以内</span>）</>
+                                <>確認後、Pro 化を自動反映（<span className="font-bold">通常 24 時間以内</span>）</>
                               ),
                             },
                           ].map((step) => (
@@ -461,19 +518,62 @@ function ProPageInner() {
                           ))}
                         </ol>
 
-                        <a
-                          href={LINK_X}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block w-full py-4 rounded-lg font-mono font-black text-sm active:scale-95 transition-transform text-center"
-                          style={{
-                            background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
-                            color: "#ffffff",
-                            boxShadow: "0 4px 14px rgba(239, 68, 68, 0.4)",
-                          }}
-                        >
-                          X の DM を開く →
-                        </a>
+                        {/* 送金報告フォーム / pending 表示 */}
+                        {!pendingLoaded ? (
+                          <div className="w-full py-4 rounded-lg font-mono text-xs text-gray-500 text-center bg-gray-50 border border-gray-200">
+                            読み込み中...
+                          </div>
+                        ) : pendingPayment ? (
+                          <div
+                            className="w-full rounded-lg px-4 py-4"
+                            style={{ backgroundColor: "#fef3c7", border: "2px solid #f59e0b" }}
+                          >
+                            <p className="font-mono font-black text-sm mb-2" style={{ color: "#854d0e" }}>
+                              ⏳ 送金報告を確認中です
+                            </p>
+                            <div className="font-mono text-[11px] leading-relaxed space-y-0.5" style={{ color: "#713f12" }}>
+                              <p>送金日時: {new Date(pendingPayment.payment_date).toLocaleString("ja-JP")}</p>
+                              <p>申請日時: {new Date(pendingPayment.created_at).toLocaleString("ja-JP")}</p>
+                            </div>
+                            <p className="font-mono text-[10px] mt-2 leading-relaxed" style={{ color: "#713f12" }}>
+                              管理者が PayPay 受領を確認次第、自動で Pro 化されます。
+                              ご登録メールアドレスへ昇格通知メールが届きます。
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="w-full rounded-lg px-4 py-4 bg-gray-50 border border-gray-300">
+                            <label className="block font-mono font-bold text-[11px] text-gray-700 mb-1">
+                              送金日時（PayPay で送金した日時）
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={paymentDateInput}
+                              onChange={(e) => setPaymentDateInput(e.target.value)}
+                              className="w-full px-3 py-2 rounded border border-gray-300 font-mono text-sm bg-white"
+                              max={toLocalDatetimeInputValue(new Date())}
+                            />
+                            {submitError && (
+                              <p className="font-mono text-[11px] text-red-600 mt-2">{submitError}</p>
+                            )}
+                            <button
+                              type="button"
+                              onClick={handleSubmitPaymentReport}
+                              disabled={submitting}
+                              className="block w-full mt-3 py-4 rounded-lg font-mono font-black text-sm active:scale-95 transition-transform text-center disabled:opacity-60"
+                              style={{
+                                background: "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)",
+                                color: "#ffffff",
+                                boxShadow: "0 4px 14px rgba(239, 68, 68, 0.4)",
+                              }}
+                            >
+                              {submitting ? "送信中..." : "送金報告を送信 →"}
+                            </button>
+                            <p className="font-mono text-[10px] text-gray-500 mt-2 leading-relaxed">
+                              送信後、管理者が PayPay の受領を確認した時点で
+                              自動的に Pro プランへ切替わります。
+                            </p>
+                          </div>
+                        )}
 
                         {/* プライバシー案内 */}
                         <div

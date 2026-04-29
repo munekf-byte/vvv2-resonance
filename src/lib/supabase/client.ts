@@ -24,6 +24,7 @@ export type Database = {
           is_pro: boolean;
           is_admin: boolean;
           discord_id: string | null;
+          show_pro_popup: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -35,6 +36,7 @@ export type Database = {
           is_pro?: boolean;
           is_admin?: boolean;
           discord_id?: string | null;
+          show_pro_popup?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -46,8 +48,48 @@ export type Database = {
           is_pro?: boolean;
           is_admin?: boolean;
           discord_id?: string | null;
+          show_pro_popup?: boolean;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      payment_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          email: string;
+          payment_method: string;
+          payment_date: string;
+          amount: number;
+          status: "pending" | "approved" | "rejected";
+          admin_note: string | null;
+          created_at: string;
+          approved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          email: string;
+          payment_method?: string;
+          payment_date: string;
+          amount?: number;
+          status?: "pending" | "approved" | "rejected";
+          admin_note?: string | null;
+          created_at?: string;
+          approved_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          email?: string;
+          payment_method?: string;
+          payment_date?: string;
+          amount?: number;
+          status?: "pending" | "approved" | "rejected";
+          admin_note?: string | null;
+          created_at?: string;
+          approved_at?: string | null;
         };
         Relationships: [];
       };
@@ -134,6 +176,10 @@ export type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 /** play_sessions テーブルの行型 */
 export type PlaySessionRow =
   Database["public"]["Tables"]["play_sessions"]["Row"];
+
+/** payment_requests テーブルの行型 */
+export type PaymentRequestRow =
+  Database["public"]["Tables"]["payment_requests"]["Row"];
 
 // -----------------------------------------------------------------------------
 // ブラウザ用 Supabase クライアント (シングルトンファクトリ)

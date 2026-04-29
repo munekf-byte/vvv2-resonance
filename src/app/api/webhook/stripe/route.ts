@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/server";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
+import { upgradeUserToPro } from "@/lib/pro/upgradeUser";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,87 +41,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No user ID" }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const supabaseAdmin = createClient(supabaseUrl, serviceKey);
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
 
-    // 直接 update（select不要）
-    const { data: updated, error: updateErr } = await supabaseAdmin
-      .from("profiles")
-      .update({ is_pro: true })
-      .eq("id", userId)
-      .select("id")
-      .maybeSingle();
-
-    if (updateErr) {
-      console.error("[Webhook] Update error:", updateErr.message);
-      return NextResponse.json({ error: "DB update failed" }, { status: 500 });
+    // 共通ヘルパーで Pro 昇格（is_pro + show_pro_popup + メール + Discord ロール）
+    const result = await upgradeUserToPro(supabaseAdmin, userId, email);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error || "upgrade failed" }, { status: 500 });
     }
-
-    if (updated) {
-      console.log("[Webhook] SUCCESS: is_pro=true for", userId);
-      await grantDiscordRoleForUser(supabaseAdmin, userId);
-    } else {
-      // プロフィール未作成 → insert で新規作成 + Pro付与
-      console.log("[Webhook] Profile not found, inserting new profile for", userId);
-      const { error: insertErr } = await supabaseAdmin
-        .from("profiles")
-        .insert({
-          id: userId,
-          email: email,
-          is_pro: true,
-        });
-
-      if (insertErr) {
-        console.error("[Webhook] Insert error:", insertErr.message);
-        return NextResponse.json({ error: "DB insert failed" }, { status: 500 });
-      }
-      console.log("[Webhook] SUCCESS: New profile created with is_pro=true for", userId);
-      await grantDiscordRoleForUser(supabaseAdmin, userId);
-    }
+    console.log("[Webhook] SUCCESS: upgraded", userId);
   }
 
   return NextResponse.json({ received: true });
-}
-
-// Discord ロール付与失敗は決済成功を妨げない（ログだけ）
-async function grantDiscordRoleForUser(
-  supabaseAdmin: SupabaseClient,
-  userId: string,
-) {
-  try {
-    const { data: profileData } = await supabaseAdmin
-      .from("profiles")
-      .select("discord_id")
-      .eq("id", userId)
-      .single();
-
-    const discordId = (profileData as { discord_id?: string | null } | null)?.discord_id;
-    if (!discordId) return;
-
-    const botApiUrl = process.env.DISCORD_BOT_API_URL;
-    const botApiSecret = process.env.DISCORD_BOT_API_SECRET;
-    if (!botApiUrl || !botApiSecret) {
-      console.warn("[Webhook] Bot API URL/Secret not configured, skipping role grant");
-      return;
-    }
-
-    const res = await fetch(`${botApiUrl}/api/discord/grant-role`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${botApiSecret}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ discord_id: discordId, role: "TGR-Pro" }),
-    });
-
-    if (!res.ok) {
-      const body = await res.text();
-      console.error("[Webhook] Bot API error:", res.status, body);
-    } else {
-      console.log("[Webhook] Discord role granted for", userId);
-    }
-  } catch (err) {
-    console.error("[Webhook] Discord role grant failed:", err);
-  }
 }
