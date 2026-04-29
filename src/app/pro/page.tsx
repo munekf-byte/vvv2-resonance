@@ -28,6 +28,17 @@ function ProPageInner() {
   const [successMsg, setSuccessMsg] = useState(false);
   const [discordMsg, setDiscordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [discordLoading, setDiscordLoading] = useState(false);
+  const [paypayCopied, setPaypayCopied] = useState(false);
+
+  async function handleCopyPaypayId() {
+    try {
+      await navigator.clipboard.writeText("akp_studio");
+      setPaypayCopied(true);
+      setTimeout(() => setPaypayCopied(false), 2000);
+    } catch {
+      alert("コピーに失敗しました。手動で『akp_studio』をコピーしてください。");
+    }
+  }
 
   const discordId = profile?.discord_id ?? "";
   const discordLinked = Boolean(profile?.discord_id);
@@ -359,17 +370,33 @@ function ProPageInner() {
                         </p>
                       </div>
                       <div className="px-4 py-4 text-left">
-                        {/* PayPay ID ハイライト */}
-                        <div
-                          className="rounded-lg px-3 py-3 mb-4 text-center"
-                          style={{ backgroundColor: "#fef2f2", border: "2px dashed #ef4444" }}
+                        {/* PayPay ID ハイライト（タップでコピー） */}
+                        <button
+                          type="button"
+                          onClick={handleCopyPaypayId}
+                          className="w-full rounded-lg px-3 py-3 mb-4 text-left active:scale-[0.98] transition-transform"
+                          style={{
+                            backgroundColor: paypayCopied ? "#dcfce7" : "#fef2f2",
+                            border: paypayCopied ? "2px dashed #16a34a" : "2px dashed #ef4444",
+                          }}
                         >
                           <p className="font-mono text-[10px] text-gray-600 mb-1">PayPay ID</p>
-                          <p className="font-mono font-black text-xl tracking-wider" style={{ color: "#b91c1c" }}>
-                            akp_studio
-                          </p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-mono font-black text-xl tracking-wider" style={{ color: paypayCopied ? "#15803d" : "#b91c1c" }}>
+                              akp_studio
+                            </p>
+                            <span
+                              className="flex items-center gap-1 px-2 py-1 rounded font-mono font-bold text-[10px] flex-shrink-0"
+                              style={{
+                                backgroundColor: paypayCopied ? "#16a34a" : "#ef4444",
+                                color: "#ffffff",
+                              }}
+                            >
+                              {paypayCopied ? <>✓ コピー完了</> : <>📋 コピー</>}
+                            </span>
+                          </div>
                           <p className="font-mono text-[10px] text-gray-500 mt-1">送金額: ¥1,500</p>
-                        </div>
+                        </button>
 
                         <p className="font-mono font-bold text-xs text-gray-700 mb-2">
                           ご利用までの流れ
