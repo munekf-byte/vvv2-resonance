@@ -6,6 +6,8 @@ export function ProUpgradePopup() {
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
   const [dismissing, setDismissing] = useState(false);
+  const [linking, setLinking] = useState(false);
+  const discordLinked = Boolean(profile?.discord_id);
 
   useEffect(() => {
     if (profile?.show_pro_popup) setOpen(true);
@@ -22,6 +24,19 @@ export function ProUpgradePopup() {
       setOpen(false);
       setDismissing(false);
     }
+  }
+
+  async function handleConnectDiscord() {
+    if (linking) return;
+    setLinking(true);
+    // 表示フラグを下ろしてからOAuthへ。OAuth成功で /pro?discord=success に戻り、
+    // そこで Discord 連携完了モーダルが出る。
+    try {
+      await fetch("/api/profile/dismiss-pro-popup", { method: "POST" });
+    } catch (e) {
+      console.error("[ProUpgradePopup] dismiss before OAuth failed:", e);
+    }
+    window.location.href = "/api/discord-oauth/start";
   }
 
   if (!open) return null;
@@ -78,18 +93,35 @@ export function ProUpgradePopup() {
           </p>
         </div>
 
-        <div className="px-6 py-5">
+        <div className="px-6 py-5 space-y-2">
+          {!discordLinked && (
+            <button
+              onClick={handleConnectDiscord}
+              disabled={linking || dismissing}
+              className="w-full py-4 rounded-lg font-mono font-black text-base text-white active:scale-95 transition-transform disabled:opacity-60"
+              style={{
+                backgroundColor: "#5865F2",
+                boxShadow: "0 4px 14px rgba(88, 101, 242, 0.45)",
+              }}
+            >
+              {linking ? "Discord に接続中..." : "Discord を連携する"}
+            </button>
+          )}
           <button
             onClick={handleDismiss}
-            disabled={dismissing}
-            className="w-full py-4 rounded-lg font-mono font-black text-base active:scale-95 transition-transform disabled:opacity-60"
-            style={{
-              background: "linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)",
-              color: "#ffffff",
-              boxShadow: "0 4px 14px rgba(245, 158, 11, 0.45)",
-            }}
+            disabled={dismissing || linking}
+            className="w-full py-3 rounded-lg font-mono font-bold text-sm active:scale-95 transition-transform disabled:opacity-60"
+            style={
+              discordLinked
+                ? {
+                    background: "linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%)",
+                    color: "#ffffff",
+                    boxShadow: "0 4px 14px rgba(245, 158, 11, 0.45)",
+                  }
+                : { backgroundColor: "transparent", color: "#fef3c7", border: "1px solid rgba(254, 243, 199, 0.35)" }
+            }
           >
-            {dismissing ? "閉じています..." : "OK"}
+            {dismissing ? "閉じています..." : discordLinked ? "OK" : "あとで"}
           </button>
         </div>
       </div>

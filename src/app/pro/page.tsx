@@ -10,6 +10,7 @@ import { useAuth } from "@/components/auth/AuthContext";
 import { Suspense } from "react";
 import { LINK_X, LINK_DISCORD } from "@/lib/config/links";
 import { ProUpgradePopup } from "@/components/pro/ProUpgradePopup";
+import { DiscordLinkSuccessModal } from "@/components/pro/DiscordLinkSuccessModal";
 
 export default function ProPage() {
   return (
@@ -40,6 +41,7 @@ function ProPageInner() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
   const [discordMsg, setDiscordMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [discordSuccessOpen, setDiscordSuccessOpen] = useState(false);
   const [discordLoading, setDiscordLoading] = useState(false);
   const [paypayCopied, setPaypayCopied] = useState(false);
   const [pendingPayment, setPendingPayment] = useState<PendingPaymentInfo | null>(null);
@@ -137,6 +139,7 @@ function ProPageInner() {
     };
     if (status === "success") {
       setDiscordMsg({ type: "success", text: "Discord 連携が完了しました" });
+      setDiscordSuccessOpen(true);
     } else if (errorMap[status]) {
       setDiscordMsg({ type: "error", text: errorMap[status] });
     }
@@ -165,6 +168,9 @@ function ProPageInner() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f5f0e8" }}>
       <ProUpgradePopup />
+      {discordSuccessOpen && (
+        <DiscordLinkSuccessModal onClose={() => setDiscordSuccessOpen(false)} />
+      )}
 
       {/* ヘッダー */}
       <header style={{ backgroundColor: "#1f2937", borderBottom: "3px solid #92400e" }}>

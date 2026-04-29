@@ -92,6 +92,12 @@ export async function GET(request: Request) {
     return back("db_failed");
   }
 
+  // サーバー自動参加（access_token 取得直後・ロール付与より先に実行）
+  // 失敗してもロール付与は試みる（既に手動参加済みのケースもあるため）
+  await joinGuild(discordId, tokenData.access_token).catch((err) =>
+    console.error("[discord-oauth/callback] joinGuild failed:", err),
+  );
+
   // is_pro なら即ロール付与
   const { data: profile } = await supabase
     .from("profiles")
@@ -106,6 +112,30 @@ export async function GET(request: Request) {
   const response = back("success");
   response.cookies.delete("discord_oauth_state");
   return response;
+}
+
+async function joinGuild(discordId: string, accessToken: string) {
+  const botApiUrl = process.env.DISCORD_BOT_API_URL;
+  const botApiSecret = process.env.DISCORD_BOT_API_SECRET;
+  if (!botApiUrl || !botApiSecret) {
+    console.warn("[discord-oauth/callback] Bot API not configured for joinGuild");
+    return;
+  }
+  const res = await fetch(`${botApiUrl}/api/discord/join-guild`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${botApiSecret}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ discord_id: discordId, access_token: accessToken }),
+  });
+  // 201=新規参加 / 204=既参加 どちらも成功扱い
+  if (res.status !== 201 && res.status !== 204) {
+    const body = await res.text();
+    console.error("[discord-oauth/callback] join-guild error:", res.status, body);
+  } else {
+    console.log("[discord-oauth/callback] joined guild (status=", res.status, ")");
+  }
 }
 
 async function grantDiscordRole(discordId: string, role: string) {

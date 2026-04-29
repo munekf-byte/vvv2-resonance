@@ -34,7 +34,7 @@ export async function GET(request: Request) {
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("redirect_uri", redirectUri);
   authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("scope", "identify");
+  authUrl.searchParams.set("scope", "identify guilds.join");
   authUrl.searchParams.set("state", state);
   authUrl.searchParams.set("prompt", "none");
 
