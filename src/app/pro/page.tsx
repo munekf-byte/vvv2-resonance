@@ -453,16 +453,45 @@ function ProPageInner() {
                           className="mt-4 rounded-lg px-3 py-3"
                           style={{ backgroundColor: "#fefce8", border: "1px solid #facc15" }}
                         >
-                          <p className="font-mono font-bold text-[11px] mb-1" style={{ color: "#854d0e" }}>
-                            💡 プライバシーに関するご案内
+                          <p className="font-mono font-bold text-[12px] mb-2" style={{ color: "#854d0e" }}>
+                            🔒 プライバシーについて
                           </p>
                           <p className="font-mono text-[10px] leading-relaxed" style={{ color: "#713f12" }}>
-                            PayPay で送金すると、相手に PayPay の表示名が通知されます。
-                            本名での表示を避けたい場合は、送金前に PayPay アプリの「アカウント」→「プロフィール」→「表示名」からニックネームに変更できます。送金後に元に戻すことも可能です。
+                            PayPay で送金すると、あなたの PayPay「<span className="font-bold">表示名</span>」が送金先に表示されます。
                             <br />
-                            <br />
-                            こちらではお支払いの確認のみ行い、お名前等の個人情報は一切保存・公開いたしません。
+                            <span className="font-bold">本名が設定されている方は、送金前にニックネームへの変更をおすすめします。</span>
                           </p>
+
+                          <div
+                            className="mt-3 rounded px-3 py-2"
+                            style={{ backgroundColor: "#fff7c2", border: "1px dashed #d4a300" }}
+                          >
+                            <p className="font-mono font-bold text-[10px] mb-1" style={{ color: "#854d0e" }}>
+                              【変更方法（10秒で完了）】
+                            </p>
+                            <p className="font-mono text-[10px] leading-relaxed" style={{ color: "#713f12" }}>
+                              PayPay アプリ →「アカウント」→「プロフィール」→「表示名」
+                              <br />
+                              → 任意のニックネームを入力して保存
+                            </p>
+                          </div>
+
+                          <ul className="mt-3 space-y-1">
+                            {[
+                              "送金後にいつでも元の表示名に戻せます",
+                              "変更しても過去の取引相手に通知は届きません",
+                              "こちらでは送金の確認のみ行い、個人情報は一切保存・公開しません",
+                            ].map((line) => (
+                              <li
+                                key={line}
+                                className="font-mono text-[10px] leading-relaxed flex items-start gap-1"
+                                style={{ color: "#713f12" }}
+                              >
+                                <span className="flex-shrink-0">※</span>
+                                <span>{line}</span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
                       </div>
                     </div>
