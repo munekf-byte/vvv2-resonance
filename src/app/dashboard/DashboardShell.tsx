@@ -48,7 +48,7 @@ export function DashboardShell() {
           ) : (
             <>
               <span className="text-[10px] font-mono font-bold px-2 py-1.5 rounded bg-gray-200 text-gray-500">無料版</span>
-              <a href="/pro" className="text-[10px] font-mono font-bold px-2.5 py-1.5 rounded active:scale-95 transition-transform inline-block"
+              <a href="/lp" className="text-[10px] font-mono font-bold px-2.5 py-1.5 rounded active:scale-95 transition-transform inline-block"
                 style={{ backgroundColor: "#7c3aed", color: "#fff" }}>
                 Pro詳細
               </a>
@@ -108,7 +108,7 @@ export function DashboardShell() {
             <p className="font-mono text-purple-600 text-sm">
               トータル数値分析は Pro版 で利用できます。
             </p>
-            <a href="/pro"
+            <a href="/lp"
               className="mt-2 px-6 py-3 rounded-lg font-mono font-bold text-sm text-white active:scale-95 transition-transform inline-block"
               style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)" }}>
               👑 Proプランの詳細を見る

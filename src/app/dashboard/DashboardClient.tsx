@@ -246,7 +246,7 @@ export function DashboardClient() {
                   style={{ backgroundColor: "rgba(255,255,255,0.3)" }}>
                   OK
                 </button>
-                <a href="/pro"
+                <a href="/lp"
                   className="flex-1 py-3 rounded-lg text-white font-mono text-sm font-bold text-center transition-colors inline-flex items-center justify-center"
                   style={{ backgroundColor: "#7c3aed" }}>
                   プロプランの詳細

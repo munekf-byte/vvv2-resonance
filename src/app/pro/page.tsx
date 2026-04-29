@@ -177,7 +177,7 @@ function ProPageInner() {
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <a href="/dashboard" className="text-gray-300 hover:text-white text-sm font-mono">← ダッシュボード</a>
           <span className="text-sm font-mono font-bold" style={{ color: "#fef3c7" }}>
-            {isPro ? "VIP ROOM" : "Pro Plan"}
+            {isPro ? "VIP ROOM" : "決済ページ"}
           </span>
         </div>
       </header>
@@ -314,55 +314,8 @@ function ProPageInner() {
             </div>
           </div>
         ) : (
-          /* ===== パターンA: 無課金ユーザー向け ===== */
+          /* ===== パターンA: 決済ページ（無課金ユーザー向け） ===== */
           <div className="space-y-6">
-
-            {/* ヒーローセクション */}
-            <div className="text-center py-4">
-              <p className="text-3xl mb-2">👑</p>
-              <h1 className="font-mono font-black text-xl text-gray-900">Pro プラン</h1>
-              <p className="font-mono text-gray-500 text-sm mt-1">
-                本気で設定を追うあなたへ
-              </p>
-            </div>
-
-            {/* 3大特典カード */}
-            <div className="space-y-3">
-              {[
-                {
-                  icon: "📊",
-                  title: "稼働ログ無制限",
-                  desc: "無料版は3件まで。Proなら何件でも記録・保存できます。過去の稼働を全て残し、長期的な設定判別に活用。",
-                  color: "#2563eb",
-                },
-                {
-                  icon: "📈",
-                  title: "トータル数値分析",
-                  desc: "全セッションを横断した合算集計。CZ確率・AT確率・ゾーン分布を長期データで分析し、設定の傾向を可視化。",
-                  color: "#7c3aed",
-                },
-                {
-                  icon: "💬",
-                  title: "専用Discordコミュニティ",
-                  desc: "Proメンバー限定の情報交換コミュニティ。攻略情報の共有、設定判別の議論、稼働報告をリアルタイムで。",
-                  color: "#5865F2",
-                },
-              ].map((item) => (
-                <div
-                  key={item.title}
-                  className="bg-white rounded-xl overflow-hidden"
-                  style={{ border: `2px solid ${item.color}20` }}
-                >
-                  <div className="flex items-start gap-3 px-4 py-4">
-                    <span className="text-2xl mt-0.5">{item.icon}</span>
-                    <div>
-                      <p className="font-mono font-bold text-sm" style={{ color: item.color }}>{item.title}</p>
-                      <p className="font-mono text-xs text-gray-600 mt-1 leading-relaxed">{item.desc}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
 
             {/* 価格カード */}
             <div
