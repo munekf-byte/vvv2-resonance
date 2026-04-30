@@ -7,7 +7,7 @@
 // 終了画面示唆: [終了画面] prefix のみ表示
 // =============================================================================
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { TGATRow, TGATSet, TGArimaJudgment, TGDirectAdd, TGBattle, TGEndingCard } from "@/types";
 import {
   TG_AT_TYPES, TG_AT_CHARACTERS, TG_BATTLE_TRIGGERS,
@@ -89,6 +89,14 @@ function getBitesDesc(bt: string): string {
 }
 
 // =============================================================================
+// 横モード（ソフトウェア回転）— 著しい不具合が出た場合は LANDSCAPE_ENABLED を
+// false にデプロイすればトグル機能ごと無効化できる（UI ・ ストレージ・transform
+// すべて停止）。完全撤去したい場合は本ファイル単体の git revert で戻る。
+// =============================================================================
+const LANDSCAPE_ENABLED = true;
+const LANDSCAPE_STORAGE_KEY = "tgr_at_dashboard_landscape";
+
+// =============================================================================
 // メインコンポーネント
 // =============================================================================
 
@@ -96,31 +104,84 @@ export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", defau
   const isNew    = row === null;
   const rowType  = row?.rowType ?? defaultRowType;
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-gray-100">
-      <div
-        className="sticky top-0 flex-shrink-0 border-b-2 border-gray-500 safe-area-top shadow-sm"
-        style={{ backgroundColor: "#1f2937" }}
-      >
-        <div className="flex items-center px-3 h-14 gap-2">
-          <button
-            onClick={onClose}
-            className="text-[12px] font-mono text-gray-300 border border-gray-500 rounded px-3 py-1.5 flex-shrink-0 whitespace-nowrap hover:bg-gray-700"
-          >
-            一覧へ戻る
-          </button>
-          <p className="flex-1 text-[12px] font-mono font-bold text-white text-center truncate px-1">
-            {atKey} — {isNew ? "新規追加" : "編集"} {rowType === "arima" ? "（有馬ジャッジメント）" : ""}
-          </p>
-        </div>
-      </div>
+  const [landscape, setLandscape] = useState(false);
+  const [vp, setVp] = useState<{ w: number; h: number } | null>(null);
 
-      {rowType === "set" ? (
-        <SetForm initial={row?.rowType === "set" ? row : null} defaultAtType={defaultAtType} onSave={onSave} onTempSave={onTempSave} />
-      ) : (
-        <ArimaForm initial={row?.rowType === "arima" ? row : null} onSave={onSave} onTempSave={onTempSave} />
-      )}
-    </div>
+  useEffect(() => {
+    if (!LANDSCAPE_ENABLED) return;
+    try {
+      setLandscape(localStorage.getItem(LANDSCAPE_STORAGE_KEY) === "1");
+    } catch {}
+    const update = () => setVp({ w: window.innerWidth, h: window.innerHeight });
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  function toggleLandscape() {
+    setLandscape((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(LANDSCAPE_STORAGE_KEY, next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+  }
+
+  const useLandscape = LANDSCAPE_ENABLED && landscape && vp !== null;
+  const stageStyle: React.CSSProperties | undefined = useLandscape
+    ? {
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        width: `${vp.h}px`,
+        height: `${vp.w}px`,
+        transform: "translate(-50%, -50%) rotate(90deg)",
+        transformOrigin: "center center",
+      }
+    : undefined;
+  const stageClass = useLandscape
+    ? "z-50 flex flex-col bg-gray-100 overflow-hidden"
+    : "fixed inset-0 z-50 flex flex-col bg-gray-100";
+
+  return (
+    <>
+      {useLandscape && <div className="fixed inset-0 z-40" style={{ backgroundColor: "#f3f4f6" }} />}
+      <div className={stageClass} style={stageStyle}>
+        <div
+          className="sticky top-0 flex-shrink-0 border-b-2 border-gray-500 safe-area-top shadow-sm"
+          style={{ backgroundColor: "#1f2937" }}
+        >
+          <div className="flex items-center px-3 h-14 gap-2">
+            <button
+              onClick={onClose}
+              className="text-[12px] font-mono text-gray-300 border border-gray-500 rounded px-3 py-1.5 flex-shrink-0 whitespace-nowrap hover:bg-gray-700"
+            >
+              一覧へ戻る
+            </button>
+            <p className="flex-1 text-[12px] font-mono font-bold text-white text-center truncate px-1">
+              {atKey} — {isNew ? "新規追加" : "編集"} {rowType === "arima" ? "（有馬ジャッジメント）" : ""}
+            </p>
+            {LANDSCAPE_ENABLED && (
+              <button
+                onClick={toggleLandscape}
+                aria-label={landscape ? "縦モードに戻す" : "横モードに切替"}
+                title={landscape ? "縦モードに戻す" : "横モードに切替"}
+                className="text-[12px] font-mono text-gray-300 border border-gray-500 rounded px-3 py-1.5 flex-shrink-0 whitespace-nowrap hover:bg-gray-700 active:scale-95 transition-transform"
+              >
+                {landscape ? "縦" : "横"}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {rowType === "set" ? (
+          <SetForm initial={row?.rowType === "set" ? row : null} defaultAtType={defaultAtType} onSave={onSave} onTempSave={onTempSave} />
+        ) : (
+          <ArimaForm initial={row?.rowType === "arima" ? row : null} onSave={onSave} onTempSave={onTempSave} />
+        )}
+      </div>
+    </>
   );
 }
 
