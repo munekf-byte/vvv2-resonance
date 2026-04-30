@@ -6,7 +6,7 @@
 // nd-10/12/14: 5スロット独立プルダウン方式（最大5回入力）
 // =============================================================================
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { NormalBlock } from "@/types";
 import {
   TG_ZONES, TG_MODES, TG_WIN_TRIGGERS, TG_EVENTS,
@@ -69,6 +69,14 @@ function emptyForm(): FormState {
 
 const MAX_SLOTS = 5;
 
+// =============================================================================
+// 横モード（ソフトウェア回転）— 著しい不具合が出た場合は LANDSCAPE_ENABLED を
+// false にデプロイすればトグル機能ごと無効化できる（UI・ストレージ・transform
+// すべて停止）。完全撤去したい場合は本ファイル単体の git revert で戻る。
+// =============================================================================
+const LANDSCAPE_ENABLED = true;
+const LANDSCAPE_STORAGE_KEY = "tgr_normal_dashboard_landscape";
+
 // ─── メインコンポーネント ──────────────────────────────────────────────────────
 
 export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave, onTempSave, onClose, onYame }: Props) {
@@ -78,6 +86,46 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
   );
   const [yamePopup, setYamePopup] = useState(false);
   const [yameG, setYameG] = useState<string>("");
+
+  const [landscape, setLandscape] = useState(false);
+  const [vp, setVp] = useState<{ w: number; h: number } | null>(null);
+
+  useEffect(() => {
+    if (!LANDSCAPE_ENABLED) return;
+    try {
+      setLandscape(localStorage.getItem(LANDSCAPE_STORAGE_KEY) === "1");
+    } catch {}
+    const update = () => setVp({ w: window.innerWidth, h: window.innerHeight });
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  function toggleLandscape() {
+    setLandscape((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(LANDSCAPE_STORAGE_KEY, next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+  }
+
+  const useLandscape = LANDSCAPE_ENABLED && landscape && vp !== null;
+  const stageStyle: React.CSSProperties | undefined = useLandscape
+    ? {
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        width: `${vp.h}px`,
+        height: `${vp.w}px`,
+        transform: "translate(-50%, -50%) rotate(90deg)",
+        transformOrigin: "center center",
+      }
+    : undefined;
+  const stageClass = useLandscape
+    ? "z-50 flex flex-col bg-gray-100 overflow-hidden"
+    : "fixed inset-0 z-50 flex flex-col bg-gray-100";
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -140,7 +188,9 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
   function handleTempSave() { onTempSave(buildBlock()); }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-gray-100">
+    <>
+      {useLandscape && <div className="fixed inset-0 z-40" style={{ backgroundColor: "#f3f4f6" }} />}
+      <div className={stageClass} style={stageStyle}>
 
       {/* ===== ヘッダー ===== */}
       <div
@@ -157,6 +207,17 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
           <p className="flex-1 text-[12px] font-mono font-bold text-white text-center truncate px-1">
             {isNew ? "新規追加" : `[通常時] 行No.${blockIndex} 編集`}
           </p>
+          {LANDSCAPE_ENABLED && (
+            <button
+              onClick={toggleLandscape}
+              aria-label={landscape ? "縦画面にする" : "横画面にする"}
+              title={landscape ? "縦画面にする" : "横画面にする"}
+              className="text-[11px] font-mono font-bold rounded px-2.5 py-1.5 flex-shrink-0 whitespace-nowrap active:scale-95 transition-transform shadow-sm"
+              style={{ backgroundColor: "#fbbf24", color: "#1f2937", border: "1.5px solid #f59e0b" }}
+            >
+              {landscape ? "縦画面にする" : "横画面にする"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -525,7 +586,8 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 

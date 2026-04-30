@@ -165,11 +165,12 @@ export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", defau
             {LANDSCAPE_ENABLED && (
               <button
                 onClick={toggleLandscape}
-                aria-label={landscape ? "縦モードに戻す" : "横モードに切替"}
-                title={landscape ? "縦モードに戻す" : "横モードに切替"}
-                className="text-[12px] font-mono text-gray-300 border border-gray-500 rounded px-3 py-1.5 flex-shrink-0 whitespace-nowrap hover:bg-gray-700 active:scale-95 transition-transform"
+                aria-label={landscape ? "縦画面にする" : "横画面にする"}
+                title={landscape ? "縦画面にする" : "横画面にする"}
+                className="text-[11px] font-mono font-bold rounded px-2.5 py-1.5 flex-shrink-0 whitespace-nowrap active:scale-95 transition-transform shadow-sm"
+                style={{ backgroundColor: "#fbbf24", color: "#1f2937", border: "1.5px solid #f59e0b" }}
               >
-                {landscape ? "縦" : "横"}
+                {landscape ? "縦画面にする" : "横画面にする"}
               </button>
             )}
           </div>
