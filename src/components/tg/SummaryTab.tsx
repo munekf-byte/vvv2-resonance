@@ -78,9 +78,14 @@ function Cat({ color, title, children, mb }: {
 }
 
 /** テーブルヘッダー行 */
-function THead({ cols, color }: { cols: { label: string; width: string }[]; color: string }) {
+function THead({ cols, color, align = "right" }: {
+  cols: { label: string; width: string }[];
+  color: string;
+  align?: "right" | "center";
+}) {
   // 色を薄くする（カテゴリ色のライト版）
   const lightBg = `${color}18`;
+  const dataAlign = align === "center" ? "center" : "right";
   return (
     <div style={{
       display: "grid",
@@ -91,7 +96,7 @@ function THead({ cols, color }: { cols: { label: string; width: string }[]; colo
       {cols.map((c, i) => (
         <span key={i} style={{
           fontSize: "10px", fontWeight: 700, color: "#374151",
-          textAlign: i === 0 ? "left" : "right",
+          textAlign: i === 0 ? "left" : dataAlign,
           padding: "5px 6px", lineHeight: 1.5,
           borderRight: i < cols.length - 1 ? "1px solid #d1d5db" : "none",
         }}>
@@ -103,16 +108,18 @@ function THead({ cols, color }: { cols: { label: string; width: string }[]; colo
 }
 
 /** テーブルデータ行 */
-function TRow({ cols, values, i, grade, bg, fg }: {
+function TRow({ cols, values, i, grade, bg, fg, align = "right" }: {
   cols: { width: string }[];
   values: React.ReactNode[];
   i: number;
   grade?: SettingGrade;
   bg?: string;
   fg?: string;
+  align?: "right" | "center";
 }) {
   const sc = grade ? SETTING_COLORS[grade] : null;
   const baseBg = bg ? bg : (i % 2 === 0 ? "#ffffff" : "#f7f7f7");
+  const dataJustify = align === "center" ? "center" : "flex-end";
   return (
     <div style={{
       display: "grid",
@@ -125,7 +132,7 @@ function TRow({ cols, values, i, grade, bg, fg }: {
       {values.map((v, ci) => (
         <div key={ci} style={{
           display: "flex", alignItems: "center",
-          justifyContent: ci === 0 ? "flex-start" : "flex-end",
+          justifyContent: ci === 0 ? "flex-start" : dataJustify,
           padding: "6px 6px",
           fontSize: ci === 0 ? "12px" : "13px",
           fontWeight: ci === 0 ? 600 : 800,
@@ -380,22 +387,72 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
         )}
 
         {/* ===== 1. 通常時 ===== */}
-        <Cat color="#1565c0" title="通常時" mb>
-          <THead cols={COLS3} color="#1565c0" />
-          <TRow cols={COLS3} i={0} values={[<b key="l">実稼働G数</b>, `${sum1.toLocaleString()}G`, "—"]} />
-          <TRow cols={COLS3} i={1} values={[<b key="l">通常時G</b>, `${sum2.toLocaleString()}G`, "—"]} />
-          <TRow cols={COLS3} i={2} values={[<b key="l">CZ合計</b>, `${czCount}回`, prob(czCount, sum2)]} grade={gradeByProb(czCount, sum2, [...CZ_PROB])} />
-          <TRow cols={COLS3_PCT} i={3} values={[<span key="l" style={{ paddingLeft: "12px" }}>└ レミニ 出現</span>, `${reminiCount}回`, czCount > 0 ? pct(reminiCount, czCount) : "—"]} />
-          <TRow cols={COLS3_PCT} i={4} values={[<span key="l" style={{ paddingLeft: "20px", color: "#0f913c" }}>└ レミニ 成功率</span>, `${reminiWin}/${reminiCount}`, reminiCount > 0 ? pct(reminiWin, reminiCount) : "—"]} />
-          <TRow cols={COLS3_PCT} i={5} values={[<span key="l" style={{ paddingLeft: "12px" }}>└ 大喰い 出現</span>, `${ooguiCount}回`, czCount > 0 ? pct(ooguiCount, czCount) : "—"]} />
-          <TRow cols={COLS3_PCT} i={6} values={[<span key="l" style={{ paddingLeft: "20px", color: "#cf5858" }}>└ 大喰い 成功率</span>, `${ooguiWin}/${ooguiCount}`, ooguiCount > 0 ? pct(ooguiWin, ooguiCount) : "—"]} />
-          <TRow cols={COLS3_PCT} i={7} values={[<b key="l" style={{ color: "#7b1fa2" }}>CZ合計成功率</b>, `${czWin}/${czCount}`, czCount > 0 ? pct(czWin, czCount) : "—"]} />
-          <TRow cols={COLS3} i={8} values={[<b key="l">エピボ</b>, `${epiCount}回`, prob(epiCount, sum2)]} grade={gradeByProb(epiCount, sum2, [...EPI_PROB])} />
-          <TRow cols={COLS3} i={9} values={[<b key="l">AT直撃</b>, `${directATCount}回`, prob(directATCount, sum2)]} grade={gradeByProb(directATCount, sum2, [...DIRECT_AT_PROB])} />
-          <TRow cols={COLS3} i={10} values={[<b key="l">AT初当たり</b>, `${atWinCount}回`, prob(atWinCount, sum2)]} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])} />
-        </Cat>
+        {(() => {
+          const COLS_NORMAL = [
+            { label: "項目",  width: "1fr" },
+            { label: "回数",  width: "92px" },
+            { label: "確率",  width: "96px" },
+          ];
+          return (
+            <Cat color="#1565c0" title="通常時" mb>
+              <THead cols={COLS_NORMAL} color="#1565c0" align="center" />
+              <TRow cols={COLS_NORMAL} i={0} align="center" values={[<b key="l">実稼働G数</b>, `${sum1.toLocaleString()}G`, "—"]} />
+              <TRow cols={COLS_NORMAL} i={1} align="center" values={[<b key="l">通常時G</b>, `${sum2.toLocaleString()}G`, "—"]} />
+              <TRow cols={COLS_NORMAL} i={2} align="center" values={[<b key="l">CZ合計</b>, `${czCount}回`, prob(czCount, sum2)]} grade={gradeByProb(czCount, sum2, [...CZ_PROB])} />
+              <TRow cols={COLS_NORMAL} i={3} align="center" values={[<span key="l" style={{ paddingLeft: "12px" }}>└ レミニ 出現</span>, `${reminiCount}回`, czCount > 0 ? pct(reminiCount, czCount) : "—"]} />
+              <TRow cols={COLS_NORMAL} i={4} align="center" values={[<span key="l" style={{ paddingLeft: "20px", color: "#0f913c" }}>└ レミニ 成功率</span>, `${reminiWin}/${reminiCount}`, reminiCount > 0 ? pct(reminiWin, reminiCount) : "—"]} />
+              <TRow cols={COLS_NORMAL} i={5} align="center" values={[<span key="l" style={{ paddingLeft: "12px" }}>└ 大喰い 出現</span>, `${ooguiCount}回`, czCount > 0 ? pct(ooguiCount, czCount) : "—"]} />
+              <TRow cols={COLS_NORMAL} i={6} align="center" values={[<span key="l" style={{ paddingLeft: "20px", color: "#cf5858" }}>└ 大喰い 成功率</span>, `${ooguiWin}/${ooguiCount}`, ooguiCount > 0 ? pct(ooguiWin, ooguiCount) : "—"]} />
+              <TRow cols={COLS_NORMAL} i={7} align="center" values={[<b key="l" style={{ color: "#7b1fa2" }}>CZ合計成功率</b>, `${czWin}/${czCount}`, czCount > 0 ? pct(czWin, czCount) : "—"]} />
+              <TRow cols={COLS_NORMAL} i={8} align="center" values={[<b key="l">エピボ</b>, `${epiCount}回`, prob(epiCount, sum2)]} grade={gradeByProb(epiCount, sum2, [...EPI_PROB])} />
+              <TRow cols={COLS_NORMAL} i={9} align="center" values={[<b key="l">AT直撃</b>, `${directATCount}回`, prob(directATCount, sum2)]} grade={gradeByProb(directATCount, sum2, [...DIRECT_AT_PROB])} />
+              <TRow cols={COLS_NORMAL} i={10} align="center" values={[<b key="l">AT初当たり</b>, `${atWinCount}回`, prob(atWinCount, sum2)]} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])} />
+            </Cat>
+          );
+        })()}
 
-        {/* ===== 1b. CZ内容（役別当選率） ===== */}
+        {/* ===== 1b. AT当選要因（円グラフ）— CZ内容より上 ===== */}
+        {(reminiWin + ooguiWin + epiCount + directATCount + hikimodoCount) > 0 && (() => {
+          // AT当選要因 専用配色（肉眼での判別性を優先。直撃=濃紫 / 引き戻し=青）
+          const AT_TRIGGER_COLORS = {
+            remini:   "#0f913c", // レミニセンス: 緑
+            oogui:    "#cf5858", // 大喰いの利世: 赤
+            epi:      "#fdff00", // エピボ: 黄
+            direct:   "#581c87", // AT直撃: 濃い紫
+            hikimodo: "#1d4ed8", // 引き戻し: 青
+          };
+          const totalTrig = reminiWin + ooguiWin + epiCount + directATCount + hikimodoCount;
+          return (
+            <Cat color="#0f913c" title="AT当選要因 内訳" mb>
+              <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "12px", padding: "10px 12px", alignItems: "center" }}>
+                <PieChart
+                  size={120}
+                  donut
+                  centerLabel={`${totalTrig}回`}
+                  slices={[
+                    { value: reminiWin,    color: AT_TRIGGER_COLORS.remini,   label: "レミニ" },
+                    { value: ooguiWin,     color: AT_TRIGGER_COLORS.oogui,    label: "大喰い" },
+                    { value: epiCount,     color: AT_TRIGGER_COLORS.epi,      label: "エピボ" },
+                    { value: directATCount,color: AT_TRIGGER_COLORS.direct,   label: "直撃" },
+                    { value: hikimodoCount,color: AT_TRIGGER_COLORS.hikimodo, label: "引戻" },
+                  ]}
+                />
+                <PieLegend
+                  total={totalTrig}
+                  items={[
+                    { label: "レミニ成功", value: reminiWin,     color: AT_TRIGGER_COLORS.remini },
+                    { label: "大喰い成功", value: ooguiWin,      color: AT_TRIGGER_COLORS.oogui },
+                    { label: "エピボ",     value: epiCount,      color: AT_TRIGGER_COLORS.epi },
+                    { label: "AT直撃",    value: directATCount, color: AT_TRIGGER_COLORS.direct },
+                    { label: "引き戻し",  value: hikimodoCount, color: AT_TRIGGER_COLORS.hikimodo },
+                  ]}
+                />
+              </div>
+            </Cat>
+          );
+        })()}
+
+        {/* ===== 1c. CZ内容（役別当選率） ===== */}
         <Cat color="#7b1fa2" title="CZ内容（役別 当選率）" mb>
           <div style={{
             display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
@@ -431,36 +488,6 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           ))}
         </Cat>
 
-        {/* ===== 1c. AT当選要因（円グラフ） ===== */}
-        {(reminiWin + ooguiWin + epiCount + directATCount + hikimodoCount) > 0 && (
-          <Cat color="#0f913c" title="AT当選要因 内訳" mb>
-            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "12px", padding: "10px 12px", alignItems: "center" }}>
-              <PieChart
-                size={120}
-                donut
-                centerLabel={`${reminiWin + ooguiWin + epiCount + directATCount + hikimodoCount}回`}
-                slices={[
-                  { value: reminiWin,    color: getEventCellColor("レミニセンス").backgroundColor,       label: "レミニ" },
-                  { value: ooguiWin,     color: getEventCellColor("大喰いの利世").backgroundColor,       label: "大喰い" },
-                  { value: epiCount,     color: getEventCellColor("エピソードボーナス").backgroundColor, label: "エピボ" },
-                  { value: directATCount,color: getEventCellColor("直撃AT").backgroundColor,             label: "直撃" },
-                  { value: hikimodoCount,color: getEventCellColor("引き戻し").backgroundColor,           label: "引戻" },
-                ]}
-              />
-              <PieLegend
-                total={reminiWin + ooguiWin + epiCount + directATCount + hikimodoCount}
-                items={[
-                  { label: "レミニ成功", value: reminiWin,     color: getEventCellColor("レミニセンス").backgroundColor },
-                  { label: "大喰い成功", value: ooguiWin,      color: getEventCellColor("大喰いの利世").backgroundColor },
-                  { label: "エピボ",     value: epiCount,      color: getEventCellColor("エピソードボーナス").backgroundColor },
-                  { label: "AT直撃",    value: directATCount, color: getEventCellColor("直撃AT").backgroundColor },
-                  { label: "引き戻し",  value: hikimodoCount, color: getEventCellColor("引き戻し").backgroundColor },
-                ]}
-              />
-            </div>
-          </Cat>
-        )}
-
         {/* ===== 2. AT初当たり | 設定示唆（並列半幅） ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <Cat color="#2e7d32" title="AT">
@@ -482,11 +509,16 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
         {/* ===== 2b. 有馬set（AT+設定示唆の直下） ===== */}
         {arimaByPos.some((a) => a.total > 0) && (
           <Cat color="#f59e0b" title="有馬set（1,3,5セット目）" mb>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2px", padding: "4px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px", padding: "8px" }}>
               {arimaByPos.map(({ pos, count, total }) => (
-                <div key={pos} style={{ textAlign: "center", backgroundColor: "#f9fafb", borderRadius: "2px", padding: "3px 0", border: "1px solid #e5e7eb" }}>
-                  <div style={{ fontSize: "7px", color: "#6b7280", lineHeight: 1.4 }}>{pos}set目</div>
-                  <div style={{ fontSize: "9px", fontWeight: 700, lineHeight: 1.4 }}>{count}回 [{pct(count, total)}]</div>
+                <div key={pos} style={{ textAlign: "center", backgroundColor: "#fffbeb", borderRadius: "4px", padding: "8px 4px", border: "1.5px solid #f59e0b" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#92400e", lineHeight: 1.4 }}>{pos}set目</div>
+                  <div style={{ fontSize: "16px", fontWeight: 900, color: "#1f2937", lineHeight: 1.3, marginTop: "2px", fontVariantNumeric: "tabular-nums" }}>
+                    {count}<span style={{ fontSize: "11px", fontWeight: 700, color: "#6b7280" }}>回</span>
+                  </div>
+                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#b45309", lineHeight: 1.3, fontVariantNumeric: "tabular-nums" }}>
+                    {pct(count, total)}
+                  </div>
                 </div>
               ))}
             </div>
@@ -679,19 +711,66 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
                 { key: "confirmed4",  label: "虹[6濃厚]",    color: "#9333ea" },
               ];
               const items = ALL.map((it) => ({ ...it, value: ecSum(it.key) })).filter((it) => it.value > 0);
+              const redTotal  = ecSum("redWeak") + ecSum("redStrong");
+              const blueTotal = ecSum("blueWeak") + ecSum("blueStrong");
+              const grayTotal = ecSum("whiteWeak") + ecSum("whiteStrong");
               return (
-                <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "12px", padding: "10px 12px", alignItems: "center" }}>
-                  <PieChart
-                    size={140}
-                    donut
-                    centerLabel={`${ecTotal}枚`}
-                    slices={items.map((it) => ({ value: it.value, color: it.color, label: it.label }))}
-                  />
-                  <PieLegend
-                    total={ecTotal}
-                    items={items.map((it) => ({ label: it.label, value: it.value, color: it.color }))}
-                  />
-                </div>
+                <>
+                  {/* カテゴリ別比率バナー */}
+                  <div style={{
+                    display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px",
+                    padding: "8px 10px", borderBottom: "1px solid #e5e7eb", backgroundColor: "#fafaf9",
+                  }}>
+                    <div style={{
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      backgroundColor: "#fee2e2", border: "1.5px solid #b91c1c", borderRadius: "4px", padding: "6px 4px",
+                    }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#7f1d1d", lineHeight: 1.4 }}>赤カード率</span>
+                      <span style={{ fontSize: "18px", fontWeight: 900, color: "#b91c1c", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>
+                        {ecTotal > 0 ? pct(redTotal, ecTotal) : "—"}
+                      </span>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#7f1d1d", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>
+                        {redTotal}/{ecTotal}枚
+                      </span>
+                    </div>
+                    <div style={{
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      backgroundColor: "#dbeafe", border: "1.5px solid #1d4ed8", borderRadius: "4px", padding: "6px 4px",
+                    }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#1e3a8a", lineHeight: 1.4 }}>青カード率</span>
+                      <span style={{ fontSize: "18px", fontWeight: 900, color: "#1d4ed8", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>
+                        {ecTotal > 0 ? pct(blueTotal, ecTotal) : "—"}
+                      </span>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#1e3a8a", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>
+                        {blueTotal}/{ecTotal}枚
+                      </span>
+                    </div>
+                    <div style={{
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      backgroundColor: "#f3f4f6", border: "1.5px solid #6b7280", borderRadius: "4px", padding: "6px 4px",
+                    }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#374151", lineHeight: 1.4 }}>白カード率</span>
+                      <span style={{ fontSize: "18px", fontWeight: 900, color: "#4b5563", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>
+                        {ecTotal > 0 ? pct(grayTotal, ecTotal) : "—"}
+                      </span>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#374151", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>
+                        {grayTotal}/{ecTotal}枚
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "12px", padding: "10px 12px", alignItems: "center" }}>
+                    <PieChart
+                      size={140}
+                      donut
+                      centerLabel={`${ecTotal}枚`}
+                      slices={items.map((it) => ({ value: it.value, color: it.color, label: it.label }))}
+                    />
+                    <PieLegend
+                      total={ecTotal}
+                      items={items.map((it) => ({ label: it.label, value: it.value, color: it.color }))}
+                    />
+                  </div>
+                </>
               );
             })()}
           </Cat>
