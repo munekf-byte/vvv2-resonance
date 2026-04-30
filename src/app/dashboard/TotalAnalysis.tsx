@@ -1,11 +1,11 @@
 "use client";
 // =============================================================================
-// TOKYO GHOUL RESONANCE: トータル数値分析 v3.0
-// 統一テーブルグリッド化（SummaryTab v3.0準拠）
+// TOKYO GHOUL RESONANCE: トータル数値分析 v3.1
+// SummaryTab v3.1 と同じ書式（円グラフ・ゲージ・大型化）に統一
 // =============================================================================
 
 import { useState, useEffect, useRef } from "react";
-import type { PlaySession, NormalBlock, TGATEntry, TGATSet } from "@/types";
+import type { PlaySession, NormalBlock, TGATEntry, TGATSet, TGEndingCard } from "@/types";
 import { lsGetSessionList, lsLoadSession, dbGetSessionList, dbLoadSession } from "@/lib/tg/localStore";
 import { captureAndDownload } from "@/lib/tg/captureImage";
 import {
@@ -25,6 +25,9 @@ import {
   multiSessionZoneExact, multiSessionZoneProrate,
   type ZoneData,
 } from "@/lib/tg/analytics";
+import {
+  getATCharColor, getBitesTypeCellColor,
+} from "@/lib/tg/cellColors";
 
 // ── ユーティリティ ──────────────────────────────────────────────────────────
 
@@ -54,17 +57,22 @@ function Cat({ color, title, children, mb }: {
   color: string; title: string; children: React.ReactNode; mb?: boolean;
 }) {
   return (
-    <div style={{ border: `2px solid ${color}`, borderRadius: "3px", overflow: "hidden", marginBottom: mb ? "4px" : 0 }}>
-      <div style={{ backgroundColor: color, padding: "2px 6px" }}>
-        <span style={{ fontSize: "9px", fontWeight: 700, color: "#fff", lineHeight: 1.6 }}>{title}</span>
+    <div style={{ border: `2px solid ${color}`, borderRadius: "4px", overflow: "hidden", marginBottom: mb ? "6px" : 0 }}>
+      <div style={{ backgroundColor: color, padding: "6px 8px", display: "flex", alignItems: "center" }}>
+        <span style={{ fontSize: "13px", fontWeight: 900, color: "#fff", lineHeight: 1.4, letterSpacing: "0.5px" }}>{title}</span>
       </div>
       {children}
     </div>
   );
 }
 
-function THead({ cols, color }: { cols: { label: string; width: string }[]; color: string }) {
+function THead({ cols, color, align = "right" }: {
+  cols: { label: string; width: string }[];
+  color: string;
+  align?: "right" | "center";
+}) {
   const lightBg = `${color}18`;
+  const dataAlign = align === "center" ? "center" : "right";
   return (
     <div style={{
       display: "grid",
@@ -74,9 +82,9 @@ function THead({ cols, color }: { cols: { label: string; width: string }[]; colo
     }}>
       {cols.map((c, i) => (
         <span key={i} style={{
-          fontSize: "7px", fontWeight: 700, color: "#6b7280",
-          textAlign: i === 0 ? "left" : "right",
-          padding: "2px 4px", lineHeight: 1.5,
+          fontSize: "10px", fontWeight: 700, color: "#374151",
+          textAlign: i === 0 ? "left" : dataAlign,
+          padding: "5px 6px", lineHeight: 1.5,
           borderRight: i < cols.length - 1 ? "1px solid #d1d5db" : "none",
         }}>
           {c.label}
@@ -86,32 +94,37 @@ function THead({ cols, color }: { cols: { label: string; width: string }[]; colo
   );
 }
 
-function TRow({ cols, values, i, grade }: {
+function TRow({ cols, values, i, grade, bg, fg, align = "right" }: {
   cols: { width: string }[];
   values: React.ReactNode[];
   i: number;
   grade?: SettingGrade;
+  bg?: string;
+  fg?: string;
+  align?: "right" | "center";
 }) {
   const sc = grade ? SETTING_COLORS[grade] : null;
-  const baseBg = i % 2 === 0 ? "#ffffff" : "#f7f7f7";
+  const baseBg = bg ? bg : (i % 2 === 0 ? "#ffffff" : "#f7f7f7");
+  const dataJustify = align === "center" ? "center" : "flex-end";
   return (
     <div style={{
       display: "grid",
       gridTemplateColumns: cols.map((c) => c.width).join(" "),
       backgroundColor: sc && grade !== "neutral" ? sc.bg : baseBg,
-      color: sc && grade !== "neutral" ? sc.color : undefined,
+      color: fg ? fg : (sc && grade !== "neutral" ? sc.color : undefined),
       borderBottom: "1px solid #e5e7eb",
       ...(grade === "vhigh" ? { fontWeight: 700 } : {}),
     }}>
       {values.map((v, ci) => (
         <div key={ci} style={{
           display: "flex", alignItems: "center",
-          justifyContent: ci === 0 ? "flex-start" : "flex-end",
-          padding: "3px 4px",
-          fontSize: ci === 0 ? "8px" : "9px",
-          fontWeight: ci === 0 ? 400 : 700,
-          color: ci === 0 ? (sc && grade !== "neutral" ? undefined : "#4b5563") : undefined,
-          lineHeight: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          justifyContent: ci === 0 ? "flex-start" : dataJustify,
+          padding: "6px 6px",
+          fontSize: ci === 0 ? "12px" : "13px",
+          fontWeight: ci === 0 ? 600 : 800,
+          color: ci === 0 ? (sc && grade !== "neutral" ? undefined : "#1f2937") : undefined,
+          lineHeight: 1.4,
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           borderRight: ci < values.length - 1 ? "1px solid #e5e7eb" : "none",
           fontVariantNumeric: ci > 0 ? "tabular-nums" : undefined,
         }}>
@@ -192,12 +205,23 @@ export function TotalAnalysis() {
 
   // ── 計算 ──
   const sum2 = allBlocks.reduce((s, b) => s + (b.jisshuG ?? 0), 0);
-  const czCount = allBlocks.filter((b) => b.event === "レミニセンス" || b.event === "大喰いの利世").length;
+
+  // CZ別カウント
+  const reminiBlocks = allBlocks.filter((b) => b.event === "レミニセンス");
+  const ooguiBlocks  = allBlocks.filter((b) => b.event === "大喰いの利世");
+  const reminiCount  = reminiBlocks.length;
+  const ooguiCount   = ooguiBlocks.length;
+  const reminiWin    = reminiBlocks.filter((b) => b.atWin).length;
+  const ooguiWin     = ooguiBlocks.filter((b) => b.atWin).length;
+  const czCount      = reminiCount + ooguiCount;
+  const czWin        = reminiWin + ooguiWin;
+
   const epiCount = allBlocks.filter((b) => b.event === "エピソードボーナス").length;
   const directATCount = allBlocks.filter((b) => b.event === "直撃AT").length;
   const atWinCount = allBlocks.filter((b) => b.atWin).length;
   const hikimodoCount = allBlocks.filter((b) => b.event === "引き戻し").length;
 
+  // CZ内容集計
   const czBlocks = allBlocks.filter((b) => b.czCounter && (b.czCounter.bell > 0 || b.czCounter.replay > 0 || b.czCounter.weakRare > 0 || b.czCounter.strongRare > 0));
   const czTotalBell = czBlocks.reduce((s, b) => s + (b.czCounter?.bell ?? 0), 0);
   const czTotalReplay = czBlocks.reduce((s, b) => s + (b.czCounter?.replay ?? 0), 0);
@@ -234,7 +258,6 @@ export function TotalAnalysis() {
     return { char, wins: battles.filter((b) => b.result === "○").length, total: battles.length };
   });
 
-  const bitesStats = [...TG_BITES_TYPES].map((bt) => ({ label: getBitesShort(bt), count: allSets.filter((s) => s.bitesType === bt).length }));
   const bitesTotal = allSets.filter((s) => s.bitesType).length;
 
   const arimaByPos = [1, 3, 5].map((pos) => {
@@ -251,18 +274,26 @@ export function TotalAnalysis() {
     inv.includes("偶数") || inv.includes("設定") || inv.includes("存分に") || inv.includes("特別な夜")
   );
 
-  const zoneAllExact     = multiSessionZoneExact(sessions, "all");
-  const zoneAllProrate   = multiSessionZoneProrate(sessions, "all");
-  const zoneATExact      = multiSessionZoneExact(sessions, "afterAT");
-  const zoneATProrate    = multiSessionZoneProrate(sessions, "afterAT");
+  // エンディングカード集計
+  const allEndingCards = allSets.map((s) => s.endingCard).filter(Boolean) as TGEndingCard[];
+  const ecSum = (key: keyof TGEndingCard) => allEndingCards.reduce((s, ec) => s + (ec[key] ?? 0), 0);
+  const ecTotal =
+    ecSum("whiteWeak") + ecSum("whiteStrong") + ecSum("blueWeak") + ecSum("blueStrong") +
+    ecSum("redWeak") + ecSum("redStrong") + ecSum("copper1") + ecSum("copper2") +
+    ecSum("copper3") + ecSum("copper4") + ecSum("confirmed1") + ecSum("confirmed2") +
+    ecSum("confirmed3") + ecSum("confirmed4");
+
+  const zoneAllExact     = multiSessionZoneExact(activeSessions, "all");
+  const zoneAllProrate   = multiSessionZoneProrate(activeSessions, "all");
+  const zoneATExact      = multiSessionZoneExact(activeSessions, "afterAT");
+  const zoneATProrate    = multiSessionZoneProrate(activeSessions, "afterAT");
 
   const settingHints = inferSetting(czFailSuggestions, allEndScreenFromAT, allBlocks, allATEntries);
 
   // 共通列定義
-  const COLS3 = [{ label: "項目", width: "1fr" }, { label: "回数", width: "52px" }, { label: "確率", width: "64px" }];
+  const COLS3 = [{ label: "項目", width: "1fr" }, { label: "回数", width: "92px" }, { label: "確率", width: "96px" }];
   const COLS3_PCT = [{ label: "項目", width: "1fr" }, { label: "回数", width: "44px" }, { label: "割合", width: "52px" }];
   const COLS_CZ = [{ label: "役", width: "1fr" }, { label: "発生", width: "40px" }, { label: "当選", width: "40px" }, { label: "当選率", width: "48px" }];
-  const COLS_CHAR = [{ label: "キャラ", width: "1fr" }, { label: "成績", width: "52px" }, { label: "勝率", width: "48px" }];
   const COLS_SUGG = [{ label: "キャラ名", width: "1fr" }, { label: "回数", width: "40px" }, { label: "割合", width: "48px" }];
   const COLS_INV = [{ label: "招待状", width: "1fr" }, { label: "回数", width: "40px" }, { label: "示唆", width: "1fr" }];
 
@@ -364,45 +395,143 @@ export function TotalAnalysis() {
 
       <div ref={captureRef} style={{ padding: "8px 6px", backgroundColor: "#ffffff", fontFamily: "monospace" }}>
 
-        {/* 通常時 | CZ内容 */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <Cat color="#1565c0" title={`通常時 (${selectedCount}稼働)`}>
-            <THead cols={COLS3} color="#1565c0" />
-            <TRow cols={COLS3} i={0} values={[<b key="l">通常時G</b>, `${sum2.toLocaleString()}G`, "—"]} />
-            <TRow cols={COLS3} i={1} values={[<b key="l">CZ</b>, `${czCount}回`, prob(czCount, sum2)]} grade={gradeByProb(czCount, sum2, [...CZ_PROB])} />
-            <TRow cols={COLS3} i={2} values={[<b key="l">エピボ</b>, `${epiCount}回`, prob(epiCount, sum2)]} grade={gradeByProb(epiCount, sum2, [...EPI_PROB])} />
-            <TRow cols={COLS3} i={3} values={[<b key="l">AT直撃</b>, `${directATCount}回`, prob(directATCount, sum2)]} grade={gradeByProb(directATCount, sum2, [...DIRECT_AT_PROB])} />
-            <TRow cols={COLS3} i={4} values={[<b key="l">AT初当たり</b>, `${atWinCount}回`, prob(atWinCount, sum2)]} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])} />
-          </Cat>
-          <Cat color="#7b1fa2" title="CZ内容">
-            <div style={{
-              display: "grid", gridTemplateColumns: "1fr 52px 64px",
-              borderBottom: "2px solid #7b1fa2", backgroundColor: "#7b1fa218", padding: "3px 4px",
-            }}>
-              <span style={{ fontSize: "8px", fontWeight: 700, color: "#4b5563" }}>CZ記録数</span>
-              <span style={{ fontSize: "9px", fontWeight: 700, textAlign: "right", borderLeft: "1px solid #d1d5db", paddingLeft: "4px" }}>{czBlocks.length}回</span>
-              <span style={{ fontSize: "8px", fontWeight: 700, textAlign: "right", color: "#7b1fa2", borderLeft: "1px solid #d1d5db", paddingLeft: "4px" }}>
-                成功{czSuccessCount} ({czBlocks.length > 0 ? pct(czSuccessCount, czBlocks.length) : "—"})
+        {/* ===== 1. 通常時（全幅・CZ内訳付き） ===== */}
+        {(() => {
+          const COLS_NORMAL = [
+            { label: "項目",  width: "1fr" },
+            { label: "回数",  width: "92px" },
+            { label: "確率",  width: "96px" },
+          ];
+          return (
+            <Cat color="#1565c0" title={`通常時 (${selectedCount}稼働)`} mb>
+              <THead cols={COLS_NORMAL} color="#1565c0" align="center" />
+              <TRow cols={COLS_NORMAL} i={0} align="center" values={[<b key="l">通常時G</b>, `${sum2.toLocaleString()}G`, "—"]} />
+              <TRow cols={COLS_NORMAL} i={1} align="center" values={[<b key="l">CZ合計</b>, `${czCount}回`, prob(czCount, sum2)]} grade={gradeByProb(czCount, sum2, [...CZ_PROB])} />
+              <TRow cols={COLS_NORMAL} i={2} align="center" values={[<span key="l" style={{ paddingLeft: "12px" }}>└ レミニ 出現</span>, `${reminiCount}回`, czCount > 0 ? pct(reminiCount, czCount) : "—"]} />
+              <TRow cols={COLS_NORMAL} i={3} align="center" values={[<span key="l" style={{ paddingLeft: "20px", color: "#0f913c" }}>└ レミニ 成功率</span>, `${reminiWin}/${reminiCount}`, reminiCount > 0 ? pct(reminiWin, reminiCount) : "—"]} />
+              <TRow cols={COLS_NORMAL} i={4} align="center" values={[<span key="l" style={{ paddingLeft: "12px" }}>└ 大喰い 出現</span>, `${ooguiCount}回`, czCount > 0 ? pct(ooguiCount, czCount) : "—"]} />
+              <TRow cols={COLS_NORMAL} i={5} align="center" values={[<span key="l" style={{ paddingLeft: "20px", color: "#cf5858" }}>└ 大喰い 成功率</span>, `${ooguiWin}/${ooguiCount}`, ooguiCount > 0 ? pct(ooguiWin, ooguiCount) : "—"]} />
+              <TRow cols={COLS_NORMAL} i={6} align="center" values={[<b key="l" style={{ color: "#7b1fa2" }}>CZ合計成功率</b>, `${czWin}/${czCount}`, czCount > 0 ? pct(czWin, czCount) : "—"]} />
+              <TRow cols={COLS_NORMAL} i={7} align="center" values={[<b key="l">エピボ</b>, `${epiCount}回`, prob(epiCount, sum2)]} grade={gradeByProb(epiCount, sum2, [...EPI_PROB])} />
+              <TRow cols={COLS_NORMAL} i={8} align="center" values={[<b key="l">AT直撃</b>, `${directATCount}回`, prob(directATCount, sum2)]} grade={gradeByProb(directATCount, sum2, [...DIRECT_AT_PROB])} />
+              <TRow cols={COLS_NORMAL} i={9} align="center" values={[<b key="l">AT初当たり</b>, `${atWinCount}回`, prob(atWinCount, sum2)]} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])} />
+            </Cat>
+          );
+        })()}
+
+        {/* ===== 1b. AT当選要因（円グラフ）— CZ内容より上 ===== */}
+        {(reminiWin + ooguiWin + epiCount + directATCount + hikimodoCount) > 0 && (() => {
+          const AT_TRIGGER_COLORS = {
+            remini:   "#0f913c",
+            oogui:    "#cf5858",
+            epi:      "#fdff00",
+            direct:   "#581c87",
+            hikimodo: "#1d4ed8",
+          };
+          const totalTrig = reminiWin + ooguiWin + epiCount + directATCount + hikimodoCount;
+          return (
+            <Cat color="#0f913c" title="AT当選要因 内訳" mb>
+              <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "12px", padding: "10px 12px", alignItems: "center" }}>
+                <PieChart
+                  size={120}
+                  donut
+                  centerLabel={`${totalTrig}回`}
+                  slices={[
+                    { value: reminiWin,    color: AT_TRIGGER_COLORS.remini,   label: "レミニ" },
+                    { value: ooguiWin,     color: AT_TRIGGER_COLORS.oogui,    label: "大喰い" },
+                    { value: epiCount,     color: AT_TRIGGER_COLORS.epi,      label: "エピボ" },
+                    { value: directATCount,color: AT_TRIGGER_COLORS.direct,   label: "直撃" },
+                    { value: hikimodoCount,color: AT_TRIGGER_COLORS.hikimodo, label: "引戻" },
+                  ]}
+                />
+                <PieLegend
+                  total={totalTrig}
+                  items={[
+                    { label: "レミニ成功", value: reminiWin,     color: AT_TRIGGER_COLORS.remini },
+                    { label: "大喰い成功", value: ooguiWin,      color: AT_TRIGGER_COLORS.oogui },
+                    { label: "エピボ",     value: epiCount,      color: AT_TRIGGER_COLORS.epi },
+                    { label: "AT直撃",    value: directATCount, color: AT_TRIGGER_COLORS.direct },
+                    { label: "引き戻し",  value: hikimodoCount, color: AT_TRIGGER_COLORS.hikimodo },
+                  ]}
+                />
+              </div>
+            </Cat>
+          );
+        })()}
+
+        {/* ===== 1c. CZ内容（役別当選率） ===== */}
+        <Cat color="#7b1fa2" title="CZ内容（役別 当選率）" mb>
+          <div style={{
+            display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+            borderBottom: "2px solid #7b1fa2", backgroundColor: "#f3e8ff", padding: "6px 8px", gap: "8px",
+          }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#6b21a8", lineHeight: 1.4 }}>CZ記録</span>
+              <span style={{ fontSize: "16px", fontWeight: 900, color: "#1f2937", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>{czBlocks.length}回</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#6b21a8", lineHeight: 1.4 }}>成功</span>
+              <span style={{ fontSize: "16px", fontWeight: 900, color: "#16a34a", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>{czSuccessCount}回</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span style={{ fontSize: "10px", fontWeight: 700, color: "#6b21a8", lineHeight: 1.4 }}>成功率</span>
+              <span style={{ fontSize: "16px", fontWeight: 900, color: "#7b1fa2", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>
+                {czBlocks.length > 0 ? pct(czSuccessCount, czBlocks.length) : "—"}
               </span>
             </div>
-            <THead cols={COLS_CZ} color="#7b1fa2" />
-            {([
-              { label: "押/斜🔔", total: czTotalBell, hit: czHitBell },
-              { label: "リプ", total: czTotalReplay, hit: czHitReplay },
-              { label: "弱レア", total: czTotalWeakRare, hit: czHitWeakRare },
-              { label: "強レア", total: czTotalStrongRare, hit: czHitStrongRare },
-            ] as const).map((r, i) => (
-              <TRow key={r.label} cols={COLS_CZ} i={i} values={[
-                r.label,
-                `${r.total}回`,
-                r.hit > 0 ? <span key="h" style={{ color: "#b91c1c" }}>★{r.hit}</span> : "—",
-                r.total > 0 ? pct(r.hit, r.total) : "—",
-              ]} />
-            ))}
+          </div>
+          <THead cols={COLS_CZ} color="#7b1fa2" />
+          {([
+            { label: "押/斜🔔", total: czTotalBell, hit: czHitBell },
+            { label: "リプ", total: czTotalReplay, hit: czHitReplay },
+            { label: "弱レア", total: czTotalWeakRare, hit: czHitWeakRare },
+            { label: "強レア", total: czTotalStrongRare, hit: czHitStrongRare },
+          ] as const).map((r, i) => (
+            <TRow key={r.label} cols={COLS_CZ} i={i} values={[
+              r.label, `${r.total}回`,
+              r.hit > 0 ? <span key="h" style={{ color: "#b91c1c" }}>★{r.hit}</span> : "—",
+              r.total > 0 ? pct(r.hit, r.total) : "—",
+            ]} />
+          ))}
+        </Cat>
+
+        {/* ===== 2. AT | 設定示唆（並列半幅） ===== */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
+          <Cat color="#2e7d32" title="AT">
+            <THead cols={COLS3} color="#2e7d32" />
+            <TRow cols={COLS3} i={0} values={[<b key="l">AT初当たり</b>, `${atWinCount}回`, prob(atWinCount, sum2)]} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])} />
+            <TRow cols={COLS3} i={1} values={[<b key="l">引き戻し率</b>, `${hikimodoCount}回`, atWinCount > 0 ? pct(hikimodoCount, atWinCount) : "—"]}
+              grade={gradeByRate(hikimodoCount, atWinCount, HIKIMODOHI_RATE[0], HIKIMODOHI_RATE[5])} />
+            <TRow cols={COLS3} i={2} values={[<b key="l">裏AT突入率</b>, `${uraATEntryCount}回`, atWinCount > 0 ? pct(uraATEntryCount, atWinCount) : "—"]}
+              grade={gradeByRate(uraATEntryCount, atWinCount, URA_AT_RATE[0], URA_AT_RATE[5])} />
+          </Cat>
+          <Cat color="#e65100" title="設定示唆">
+            <THead cols={[{ label: "項目", width: "1fr" }, { label: "内容", width: "1fr" }]} color="#e65100" />
+            <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={0} values={[<b key="l">確定設定</b>, <b key="v">{settingHints || "情報不足"}</b>]} />
+            <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={1} values={[<b key="l">トロフィー</b>, `${trophyCount}回`]} />
           </Cat>
         </div>
 
-        {/* 赫眼 / 精神世界 */}
+        {/* ===== 2b. 有馬set（AT+設定示唆の直下） ===== */}
+        {arimaByPos.some((a) => a.total > 0) && (
+          <Cat color="#f59e0b" title="有馬set（1,3,5セット目）" mb>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px", padding: "8px" }}>
+              {arimaByPos.map(({ pos, count, total }) => (
+                <div key={pos} style={{ textAlign: "center", backgroundColor: "#fffbeb", borderRadius: "4px", padding: "8px 4px", border: "1.5px solid #f59e0b" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#92400e", lineHeight: 1.4 }}>{pos}set目</div>
+                  <div style={{ fontSize: "16px", fontWeight: 900, color: "#1f2937", lineHeight: 1.3, marginTop: "2px", fontVariantNumeric: "tabular-nums" }}>
+                    {count}<span style={{ fontSize: "11px", fontWeight: 700, color: "#6b7280" }}>回</span>
+                  </div>
+                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#b45309", lineHeight: 1.3, fontVariantNumeric: "tabular-nums" }}>
+                    {pct(count, total)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Cat>
+        )}
+
+        {/* ===== 3. 赫眼 / 精神世界 ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <Cat color="#b71c1c" title="赫眼">
             <THead cols={COLS3_PCT} color="#b71c1c" />
@@ -421,30 +550,13 @@ export function TotalAnalysis() {
           </Cat>
         </div>
 
-        {/* ゲーム数ゾーン集計 */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <ZoneBlock label="全体[確定]" data={zoneAllExact} />
-          <ZoneBlock label="AT後[確定]" data={zoneATExact} />
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <ZoneBlock label="全体[按分]" data={zoneAllProrate} prorated />
-          <ZoneBlock label="AT後[按分]" data={zoneATProrate} prorated />
-        </div>
-
-        {/* 設定示唆 */}
-        <Cat color="#e65100" title="設定示唆" mb>
-          <THead cols={[{ label: "項目", width: "1fr" }, { label: "内容", width: "1fr" }]} color="#e65100" />
-          <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={0} values={[<b key="l">推定設定</b>, <b key="v">{settingHints || "情報不足"}</b>]} />
-          <TRow cols={[{ width: "1fr" }, { width: "1fr" }]} i={1} values={[<b key="l">トロフィー</b>, `${trophyCount}回`]} />
-        </Cat>
-
-        {/* CZ失敗 / 終了画面 */}
+        {/* ===== 4. CZ失敗 / 終了画面 ===== */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
           <Cat color="#bf360c" title="[cz失敗] 終了画面">
             <THead cols={[{ label: "キャラ名", width: "1fr" }, { label: "回数", width: "44px" }]} color="#bf360c" />
             {TG_ENDING_SUGGESTIONS.filter((s) => s.startsWith("[cz失敗]")).map((s, i) => {
               const c = czFailSuggestions.filter((v) => v === s).length;
-              return <TRow key={s} cols={[{ width: "1fr" }, { width: "44px" }]} i={i} values={[extractName(s), `${c}回`]} />;
+              return <TRow key={s} cols={[{ width: "1fr" }, { width: "44px" }]} i={i} bg={suggBg(s)} fg={suggTextColor(s)} values={[extractName(s), `${c}回`]} />;
             })}
           </Cat>
           <Cat color="#4e342e" title="[終了画面] 示唆">
@@ -452,52 +564,177 @@ export function TotalAnalysis() {
             {endScreenItems.map((s, i) => {
               const c = allEndScreenFromAT.filter((v) => v === s).length;
               const t = allEndScreenFromAT.length;
-              return <TRow key={s} cols={COLS_SUGG} i={i} values={[extractName(s), `${c}回`, pct(c, t)]} />;
+              return <TRow key={s} cols={COLS_SUGG} i={i} bg={suggBg(s)} fg={suggTextColor(s)} values={[extractName(s), `${c}回`, pct(c, t)]} />;
             })}
           </Cat>
         </div>
 
-        {/* AT */}
-        <Cat color="#2e7d32" title="AT" mb>
-          <THead cols={COLS3} color="#2e7d32" />
-          <TRow cols={COLS3} i={0} values={[<b key="l">AT初当たり</b>, `${atWinCount}回`, prob(atWinCount, sum2)]} grade={gradeByProb(atWinCount, sum2, [...AT_COMBINED_PROB])} />
-          <TRow cols={COLS3} i={1} values={[<b key="l">引き戻し率</b>, `${hikimodoCount}回`, atWinCount > 0 ? pct(hikimodoCount, atWinCount) : "—"]}
-            grade={gradeByRate(hikimodoCount, atWinCount, HIKIMODOHI_RATE[0], HIKIMODOHI_RATE[5])} />
-          <TRow cols={COLS3} i={2} values={[<b key="l">裏AT突入率</b>, `${uraATEntryCount}回`, atWinCount > 0 ? pct(uraATEntryCount, atWinCount) : "—"]}
-            grade={gradeByRate(uraATEntryCount, atWinCount, URA_AT_RATE[0], URA_AT_RATE[5])} />
+        {/* ===== 5. ゲーム数ゾーン集計（確定） ===== */}
+        <ZoneBlock label="全体[確定]" data={zoneAllExact} headerColor="#1565c0" />
+        <div style={{ height: "6px" }} />
+        <ZoneBlock label="AT後[確定]" data={zoneATExact} headerColor="#e65100" />
+        <div style={{ height: "6px" }} />
+
+        {/* ===== 6. ゲーム数ゾーン集計（按分） ===== */}
+        <ZoneBlock label="全体[按分]" data={zoneAllProrate} prorated headerColor="#1565c0" showDesc />
+        <div style={{ height: "6px" }} />
+        <ZoneBlock label="AT後[按分]" data={zoneATProrate} prorated headerColor="#e65100" showDesc />
+        <div style={{ height: "6px" }} />
+
+        {/* ===== 7. キャラ対決（ゲージバー） ===== */}
+        <Cat color="#1b5e20" title="キャラ対決成績" mb>
+          <THead cols={[
+            { label: "キャラ", width: "1fr" },
+            { label: "成績", width: "60px" },
+            { label: "勝率", width: "52px" },
+          ]} color="#1b5e20" />
+          {charStats.map(({ char, wins, total }, i) => {
+            const charColor = getATCharColor(char).backgroundColor;
+            const bg = i % 2 === 0 ? "#ffffff" : "#f7f7f7";
+            return (
+              <div key={char} style={{ borderBottom: "1px solid #e5e7eb", backgroundColor: bg, padding: "6px 6px 8px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 60px 52px", alignItems: "center", gap: "6px", marginBottom: "5px" }}>
+                  <span style={{
+                    fontSize: 13, fontWeight: 800, color: charColor, lineHeight: 1.4, paddingLeft: "4px",
+                  }}>{char}</span>
+                  <span style={{
+                    fontSize: 13, fontWeight: 800, color: "#1f2937", textAlign: "right",
+                    fontVariantNumeric: "tabular-nums", lineHeight: 1.4,
+                  }}>{total > 0 ? `${wins}/${total}` : "—"}</span>
+                  <span style={{
+                    fontSize: 13, fontWeight: 800, color: "#1f2937", textAlign: "right",
+                    fontVariantNumeric: "tabular-nums", lineHeight: 1.4,
+                  }}>{total > 0 ? pct(wins, total) : "—"}</span>
+                </div>
+                <WinGauge wins={wins} total={total} color={charColor} />
+              </div>
+            );
+          })}
         </Cat>
 
-        {/* キャラ / BITES */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginBottom: "4px" }}>
-          <Cat color="#1b5e20" title="キャラ対決成績">
-            <THead cols={COLS_CHAR} color="#1b5e20" />
-            {charStats.map(({ char, wins, total }, i) => (
-              <TRow key={char} cols={COLS_CHAR} i={i} values={[char, total > 0 ? `${wins}/${total}` : "—", total > 0 ? pct(wins, total) : "—"]} />
-            ))}
+        {/* ===== 7b. BITESテーブル（円グラフ + 凡例） ===== */}
+        {bitesTotal > 0 && (
+          <Cat color="#33691e" title={`BITESテーブル (${bitesTotal}回)`} mb>
+            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "10px", padding: "8px 10px", alignItems: "center" }}>
+              <PieChart
+                size={108}
+                donut
+                centerLabel={`${bitesTotal}`}
+                slices={[...TG_BITES_TYPES].map((bt) => ({
+                  value: allSets.filter((s) => s.bitesType === bt).length,
+                  color: getBitesTypeCellColor(bt).backgroundColor,
+                  label: getBitesShort(bt),
+                }))}
+              />
+              <PieLegend
+                total={bitesTotal}
+                items={[...TG_BITES_TYPES]
+                  .map((bt) => ({
+                    label: getBitesShort(bt),
+                    value: allSets.filter((s) => s.bitesType === bt).length,
+                    color: getBitesTypeCellColor(bt).backgroundColor,
+                  }))
+                  .filter((it) => it.value > 0)
+                }
+              />
+            </div>
           </Cat>
-          <Cat color="#33691e" title="BITESテーブル">
-            <THead cols={COLS3_PCT} color="#33691e" />
-            {bitesStats.map(({ label, count }, i) => (
-              <TRow key={label} cols={COLS3_PCT} i={i} values={[label, `${count}回`, pct(count, bitesTotal)]} />
-            ))}
-          </Cat>
-        </div>
-
-        {/* 有馬 */}
-        {arimaByPos.some((a) => a.total > 0) && (
-          <Cat color="#f59e0b" title="有馬set（1,3,5セット目）" mb>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2px", padding: "4px" }}>
-              {arimaByPos.map(({ pos, count, total }) => (
-                <div key={pos} style={{ textAlign: "center", backgroundColor: "#f9fafb", borderRadius: "2px", padding: "3px 0", border: "1px solid #e5e7eb" }}>
-                  <div style={{ fontSize: "7px", color: "#6b7280", lineHeight: 1.4 }}>{pos}set目</div>
-                  <div style={{ fontSize: "9px", fontWeight: 700, lineHeight: 1.4 }}>{count}回 [{pct(count, total)}]</div>
-                </div>
-              ))}
+        )}
+        {bitesTotal === 0 && (
+          <Cat color="#33691e" title="BITESテーブル" mb>
+            <div style={{ padding: "12px", textAlign: "center", fontSize: 12, fontWeight: 700, color: "#9ca3af" }}>
+              データなし
             </div>
           </Cat>
         )}
 
-        {/* 招待状 */}
+        {/* ===== 8. エンディングカード集計（円グラフ） ===== */}
+        {ecTotal > 0 && (
+          <Cat color="#6d4c41" title={`エンディングカード (${ecTotal}枚)`} mb>
+            {(() => {
+              type ECKey = keyof TGEndingCard;
+              const ALL: { key: ECKey; label: string; color: string }[] = [
+                { key: "whiteWeak",   label: "白[奇数弱]",   color: "#d1d5db" },
+                { key: "whiteStrong", label: "白[奇数強]",   color: "#6b7280" },
+                { key: "blueWeak",    label: "青[偶数弱]",   color: "#93c5fd" },
+                { key: "blueStrong",  label: "青[偶数強]",   color: "#1d4ed8" },
+                { key: "redWeak",     label: "赤[高設定弱]", color: "#fca5a5" },
+                { key: "redStrong",   label: "赤[高設定強]", color: "#b91c1c" },
+                { key: "copper1",     label: "銅[1否定]",    color: "#fcd34d" },
+                { key: "copper2",     label: "銅[2否定]",    color: "#a16207" },
+                { key: "copper3",     label: "銅[3否定]",    color: "#7c2d12" },
+                { key: "copper4",     label: "銅[4否定]",    color: "#451a03" },
+                { key: "confirmed1",  label: "銀[3↑濃厚]",   color: "#14b8a6" },
+                { key: "confirmed2",  label: "金[4↑濃厚]",   color: "#f59e0b" },
+                { key: "confirmed3",  label: "金[5↑濃厚]",   color: "#ea580c" },
+                { key: "confirmed4",  label: "虹[6濃厚]",    color: "#9333ea" },
+              ];
+              const items = ALL.map((it) => ({ ...it, value: ecSum(it.key) })).filter((it) => it.value > 0);
+              const redTotal  = ecSum("redWeak") + ecSum("redStrong");
+              const blueTotal = ecSum("blueWeak") + ecSum("blueStrong");
+              const grayTotal = ecSum("whiteWeak") + ecSum("whiteStrong");
+              return (
+                <>
+                  <div style={{
+                    display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "6px",
+                    padding: "8px 10px", borderBottom: "1px solid #e5e7eb", backgroundColor: "#fafaf9",
+                  }}>
+                    <div style={{
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      backgroundColor: "#fee2e2", border: "1.5px solid #b91c1c", borderRadius: "4px", padding: "6px 4px",
+                    }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#7f1d1d", lineHeight: 1.4 }}>赤カード率</span>
+                      <span style={{ fontSize: "18px", fontWeight: 900, color: "#b91c1c", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>
+                        {ecTotal > 0 ? pct(redTotal, ecTotal) : "—"}
+                      </span>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#7f1d1d", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>
+                        {redTotal}/{ecTotal}枚
+                      </span>
+                    </div>
+                    <div style={{
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      backgroundColor: "#dbeafe", border: "1.5px solid #1d4ed8", borderRadius: "4px", padding: "6px 4px",
+                    }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#1e3a8a", lineHeight: 1.4 }}>青カード率</span>
+                      <span style={{ fontSize: "18px", fontWeight: 900, color: "#1d4ed8", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>
+                        {ecTotal > 0 ? pct(blueTotal, ecTotal) : "—"}
+                      </span>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#1e3a8a", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>
+                        {blueTotal}/{ecTotal}枚
+                      </span>
+                    </div>
+                    <div style={{
+                      display: "flex", flexDirection: "column", alignItems: "center",
+                      backgroundColor: "#f3f4f6", border: "1.5px solid #6b7280", borderRadius: "4px", padding: "6px 4px",
+                    }}>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#374151", lineHeight: 1.4 }}>白カード率</span>
+                      <span style={{ fontSize: "18px", fontWeight: 900, color: "#4b5563", fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}>
+                        {ecTotal > 0 ? pct(grayTotal, ecTotal) : "—"}
+                      </span>
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#374151", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>
+                        {grayTotal}/{ecTotal}枚
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "12px", padding: "10px 12px", alignItems: "center" }}>
+                    <PieChart
+                      size={140}
+                      donut
+                      centerLabel={`${ecTotal}枚`}
+                      slices={items.map((it) => ({ value: it.value, color: it.color, label: it.label }))}
+                    />
+                    <PieLegend
+                      total={ecTotal}
+                      items={items.map((it) => ({ label: it.label, value: it.value, color: it.color }))}
+                    />
+                  </div>
+                </>
+              );
+            })()}
+          </Cat>
+        )}
+
+        {/* ===== 9. 招待状（設定示唆・色分け） ===== */}
         {invSettingItems.length > 0 && (
           <Cat color="#4a148c" title="招待状（設定示唆）" mb>
             <THead cols={COLS_INV} color="#4a148c" />
@@ -506,7 +743,7 @@ export function TotalAnalysis() {
               const name = sep !== -1 ? inv.slice(0, sep) : inv;
               const hint = sep !== -1 ? inv.slice(sep + 3) : "";
               const c = allInvitations.filter((v) => v === inv).length;
-              return <TRow key={inv} cols={COLS_INV} i={i} values={[name, `${c}回`, hint]} />;
+              return <TRow key={inv} cols={COLS_INV} i={i} bg={invBg(inv)} values={[name, `${c}回`, hint]} />;
             })}
           </Cat>
         )}
@@ -518,29 +755,56 @@ export function TotalAnalysis() {
 
 // ── ゾーンブロック ──────────────────────────────────────────────────────────
 
-function ZoneBlock({ label, data, prorated }: { label: string; data: { zone: string; count: number }[]; prorated?: boolean }) {
+function ZoneBlock({ label, data, prorated, headerColor, showDesc }: { label: string; data: { zone: string; count: number }[]; prorated?: boolean; headerColor?: string; showDesc?: boolean }) {
   const total = data.reduce((s, d) => s + d.count, 0);
   const filtered = data.filter((d) => d.count > 0);
-  const cols = [{ label: "ゾーン", width: "1fr" }, { label: "回数", width: "50px" }, { label: "割合", width: "48px" }];
   const fmt = (n: number) => prorated ? n.toFixed(1) : String(n);
   const totalLabel = prorated ? total.toFixed(1) : String(total);
+  const c = headerColor ?? "#6a1b9a";
+
   return (
-    <Cat color="#6a1b9a" title={`ゲーム数ゾーン集計 ${label} (${totalLabel})`}>
-      {total > 0 && (
-        <div style={{ display: "flex", height: "16px" }}>
-          {filtered.map((d) => (
-            <div key={d.zone} style={{ width: `${(d.count / total) * 100}%`, minWidth: "16px", backgroundColor: zoneColor(d.zone), color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "6px", fontWeight: 700, lineHeight: 1.5 }}>{d.zone}</div>
-          ))}
+    <Cat color={c} title={`ゾーン ${label} (${totalLabel})`}>
+      {showDesc && (
+        <div style={{ backgroundColor: "#f5f3ff", padding: "5px 8px", borderBottom: "1px solid #e5e7eb", fontSize: "10px", color: "#4b5563", lineHeight: 1.5 }}>
+          ※ 300or400等のゾーン跨ぎを按分配分した集計
         </div>
       )}
-      <THead cols={cols} color="#6a1b9a" />
-      {data.map((d, i) => (
-        <TRow key={d.zone} cols={cols} i={i} values={[
-          `${d.zone}G`,
-          d.count > 0 ? `${fmt(d.count)}回` : "—",
-          d.count > 0 && total > 0 ? `${Math.round((d.count / total) * 100)}%` : "—",
-        ]} />
-      ))}
+      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "10px", padding: "8px 10px", alignItems: "center" }}>
+        <PieChart
+          size={108}
+          donut
+          centerLabel={totalLabel}
+          slices={filtered.map((d) => ({
+            value: d.count, color: zoneColor(d.zone), label: `${d.zone}G`,
+          }))}
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: "3px", width: "100%" }}>
+          {filtered.length === 0 ? (
+            <span style={{ fontSize: "11px", color: "#9ca3af", fontWeight: 700, textAlign: "center" }}>データなし</span>
+          ) : (
+            filtered.map((d) => {
+              const p = total > 0 ? Math.round((d.count / total) * 100) : 0;
+              return (
+                <div key={d.zone} style={{
+                  display: "grid", gridTemplateColumns: "12px 1fr 50px 38px",
+                  alignItems: "center", gap: "5px",
+                }}>
+                  <span style={{ width: 12, height: 12, backgroundColor: zoneColor(d.zone), borderRadius: "2px", border: "1px solid #1f2937" }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#1f2937", lineHeight: 1.4 }}>
+                    {d.zone}G
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#1f2937", textAlign: "right", fontVariantNumeric: "tabular-nums", lineHeight: 1.4 }}>
+                    {fmt(d.count)}回
+                  </span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textAlign: "right", fontVariantNumeric: "tabular-nums", lineHeight: 1.4 }}>
+                    {p}%
+                  </span>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
     </Cat>
   );
 }
@@ -549,6 +813,174 @@ function zoneColor(z: string): string {
   const n = parseInt(z); if (isNaN(n)) return "#757575";
   if (n <= 100) return "#1565c0"; if (n <= 200) return "#2e7d32"; if (n <= 300) return "#e65100";
   if (n <= 400) return "#ad1457"; if (n <= 500) return "#6a1b9a"; return "#b71c1c";
+}
+
+// ── 円グラフ / ゲージ ヘルパー ──────────────────────────────────────────────
+
+interface PieSlice { value: number; color: string; label?: string }
+
+function PieChart({ slices, size = 96, donut = true, centerLabel }: {
+  slices: PieSlice[];
+  size?: number;
+  donut?: boolean;
+  centerLabel?: string;
+}) {
+  const filtered = slices.filter((s) => s.value > 0);
+  const total = filtered.reduce((s, sl) => s + sl.value, 0);
+  const cx = size / 2, cy = size / 2;
+  const r = size / 2 - 1;
+  const innerR = donut ? r * 0.55 : 0;
+
+  if (total <= 0) {
+    return (
+      <div style={{ width: size, height: size, borderRadius: "50%", border: "2px dashed #d1d5db", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 700 }}>—</span>
+      </div>
+    );
+  }
+
+  if (filtered.length === 1) {
+    const s = filtered[0];
+    return (
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+        <circle cx={cx} cy={cy} r={r} fill={s.color} />
+        {donut && <circle cx={cx} cy={cy} r={innerR} fill="#ffffff" />}
+        {centerLabel && (
+          <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontSize: 11, fontWeight: 800, fill: "#1f2937", fontFamily: "monospace" }}>
+            {centerLabel}
+          </text>
+        )}
+      </svg>
+    );
+  }
+
+  let cum = 0;
+  const paths = filtered.map((s, i) => {
+    const start = (cum / total) * 2 * Math.PI;
+    cum += s.value;
+    const end = (cum / total) * 2 * Math.PI;
+    const large = end - start > Math.PI ? 1 : 0;
+    const x1 = cx + r * Math.sin(start);
+    const y1 = cy - r * Math.cos(start);
+    const x2 = cx + r * Math.sin(end);
+    const y2 = cy - r * Math.cos(end);
+    if (donut) {
+      const ix1 = cx + innerR * Math.sin(start);
+      const iy1 = cy - innerR * Math.cos(start);
+      const ix2 = cx + innerR * Math.sin(end);
+      const iy2 = cy - innerR * Math.cos(end);
+      const d = `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerR} ${innerR} 0 ${large} 0 ${ix1} ${iy1} Z`;
+      return <path key={i} d={d} fill={s.color} stroke="#ffffff" strokeWidth={1} />;
+    }
+    const d = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`;
+    return <path key={i} d={d} fill={s.color} stroke="#ffffff" strokeWidth={1} />;
+  });
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ display: "block" }}>
+      {paths}
+      {donut && centerLabel && (
+        <text x={cx} y={cy + 4} textAnchor="middle" style={{ fontSize: 11, fontWeight: 800, fill: "#1f2937", fontFamily: "monospace" }}>
+          {centerLabel}
+        </text>
+      )}
+    </svg>
+  );
+}
+
+function WinGauge({ wins, total, color }: { wins: number; total: number; color: string }) {
+  if (total <= 0) {
+    return (
+      <div style={{
+        width: "100%", height: "12px", borderRadius: "3px",
+        backgroundColor: "#f3f4f6", border: "1px solid #d1d5db",
+      }} />
+    );
+  }
+  const winPct = (wins / total) * 100;
+  const losePct = 100 - winPct;
+  return (
+    <div style={{
+      width: "100%", height: "14px", borderRadius: "3px", overflow: "hidden",
+      display: "flex", border: `1.5px solid ${color}`, position: "relative",
+    }}>
+      <div style={{ width: `${winPct}%`, backgroundColor: color }} />
+      <div style={{ width: `${losePct}%`, backgroundColor: "#f3f4f6" }} />
+      <span style={{
+        position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 9, fontWeight: 800, color: winPct > 50 ? "#ffffff" : "#1f2937",
+        fontFamily: "monospace", lineHeight: 1, letterSpacing: "0.5px",
+        textShadow: winPct > 50 ? "0 0 2px rgba(0,0,0,0.5)" : "none",
+      }}>
+        {Math.round(winPct)}%
+      </span>
+    </div>
+  );
+}
+
+function PieLegend({ items, total }: {
+  items: { label: string; value: number; color: string }[];
+  total: number;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "4px", width: "100%" }}>
+      {items.map((it, i) => {
+        const p = total > 0 ? Math.round((it.value / total) * 100) : 0;
+        return (
+          <div key={i} style={{ display: "grid", gridTemplateColumns: "12px 1fr 36px 36px", alignItems: "center", gap: "4px" }}>
+            <span style={{ width: 12, height: 12, backgroundColor: it.color, borderRadius: "2px", border: "1px solid #1f2937" }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#1f2937", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1.4 }}>
+              {it.label}
+            </span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "#1f2937", textAlign: "right", fontVariantNumeric: "tabular-nums", lineHeight: 1.4 }}>
+              {it.value}
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", textAlign: "right", fontVariantNumeric: "tabular-nums", lineHeight: 1.4 }}>
+              {p}%
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── 色分けヘルパー（設定期待度） ─────────────────────────────────────────────
+
+function suggBg(s: string): string | undefined {
+  if (s.includes("設定6濃厚")) return "#facc15";
+  if (s.includes("設定5以上")) return "#fcd34d";
+  if (s.includes("設定4以上")) return "#f87171";
+  if (s.includes("設定3以上")) return "#fecaca";
+  if (s.includes("設定2以上")) return "#ffe4e6";
+  if (s.includes("設定1否定")) return "#fff1f2";
+  if (s.includes("偶数")) return "#dbeafe";
+  if (s.includes("高設定示唆［強］") || s.includes("高設定示唆[強]")) return "#fef3c7";
+  if (s.includes("高設定示唆［弱］") || s.includes("高設定示唆[弱]")) return "#fffbeb";
+  if (s.includes("天国濃厚")) return "#fed7aa";
+  if (s.includes("天国準備")) return "#ffedd5";
+  if (s.includes("チャンス以上")) return "#fef3c7";
+  if (s.includes("通常C以上")) return "#fffbeb";
+  if (s.includes("通常B以上濃厚")) return "#fefce8";
+  if (s.includes("通常B以上示唆")) return "#f9fafb";
+  if (s.includes("奇数")) return "#fce7f3";
+  return undefined;
+}
+
+function suggTextColor(s: string): string | undefined {
+  if (s.includes("設定4以上")) return "#ffffff";
+  return undefined;
+}
+
+function invBg(inv: string): string | undefined {
+  if (inv.includes("設定6")) return "#fde68a";
+  if (inv.includes("設定4以上")) return "#fed7aa";
+  if (inv.includes("設定4否定")) return "#fef3c7";
+  if (inv.includes("設定3否定")) return "#fffbeb";
+  if (inv.includes("設定2否定")) return "#fefce8";
+  if (inv.includes("設定1否定")) return "#fff1f2";
+  if (inv.includes("偶")) return "#dbeafe";
+  return undefined;
 }
 
 // ゾーン集計ロジックは src/lib/tg/analytics.ts に集約
