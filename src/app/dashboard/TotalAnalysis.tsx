@@ -306,10 +306,47 @@ export function TotalAnalysis() {
 
   const settingHints = inferSetting(czFailSuggestions, allEndScreenFromAT, allBlocks, allATEntries);
 
+  // 設定示唆 出現回数カウント（各確定レベルが何回現れたか）
+  const settingCounts: Record<string, number> = {
+    "6確定濃厚": 0,
+    "5以上濃厚": 0,
+    "4以上濃厚": 0,
+    "3以上濃厚": 0,
+    "2以上濃厚": 0,
+    "1否定":     0,
+  };
+  for (const s of [...czFailSuggestions, ...allEndScreenFromAT]) {
+    if (s.includes("設定6濃厚"))      settingCounts["6確定濃厚"]++;
+    else if (s.includes("設定5以上濃厚")) settingCounts["5以上濃厚"]++;
+    else if (s.includes("設定4以上濃厚")) settingCounts["4以上濃厚"]++;
+    else if (s.includes("設定3以上濃厚")) settingCounts["3以上濃厚"]++;
+    else if (s.includes("設定2以上濃厚")) settingCounts["2以上濃厚"]++;
+    else if (s.includes("設定1否定"))   settingCounts["1否定"]++;
+  }
+  const allTrophies = [...allBlocks.map((b) => b.trophy), ...allSets.map((s) => s.trophy ?? "")].filter(Boolean) as string[];
+  for (const t of allTrophies) {
+    if (t.includes("虹"))           settingCounts["6確定濃厚"]++;
+    else if (t.includes("喰種柄"))  settingCounts["5以上濃厚"]++;
+    else if (t.includes("金"))      settingCounts["4以上濃厚"]++;
+    else if (t.includes("銀"))      settingCounts["3以上濃厚"]++;
+    else if (t.includes("銅"))      settingCounts["2以上濃厚"]++;
+  }
+  for (const ec of allEndingCards) {
+    if (ec.confirmed4 > 0) settingCounts["6確定濃厚"] += ec.confirmed4;
+    if (ec.confirmed3 > 0) settingCounts["5以上濃厚"] += ec.confirmed3;
+    if (ec.confirmed2 > 0) settingCounts["4以上濃厚"] += ec.confirmed2;
+    if (ec.confirmed1 > 0) settingCounts["3以上濃厚"] += ec.confirmed1;
+  }
+  for (const entry of allATEntries) for (const row of entry.rows) {
+    if (row.rowType !== "set") continue;
+    if (row.coinsHint === "666OVER" || row.coinsHint === "1000-7OVER") settingCounts["6確定濃厚"]++;
+    else if (row.coinsHint === "456OVER")                              settingCounts["4以上濃厚"]++;
+  }
+
   // 共通列定義
   const COLS3 = [{ label: "項目", width: "1fr" }, { label: "回数", width: "92px" }, { label: "確率", width: "96px" }];
   const COLS3_PCT = [{ label: "項目", width: "1fr" }, { label: "回数", width: "44px" }, { label: "割合", width: "52px" }];
-  const COLS_CZ = [{ label: "役", width: "1fr" }, { label: "発生", width: "40px" }, { label: "当選", width: "40px" }, { label: "当選率", width: "48px" }];
+  const COLS_CZ = [{ label: "役", width: "1fr" }, { label: "発生", width: "78px" }, { label: "当選", width: "78px" }, { label: "当選率", width: "82px" }];
   const COLS_INV = [{ label: "招待状", width: "1fr" }, { label: "回数", width: "40px" }, { label: "示唆", width: "1fr" }];
 
   return (
@@ -539,14 +576,14 @@ export function TotalAnalysis() {
               </span>
             </div>
           </div>
-          <THead cols={COLS_CZ} color="#7b1fa2" />
+          <THead cols={COLS_CZ} color="#7b1fa2" align="center" />
           {([
             { label: "押/斜🔔", total: czTotalBell, hit: czHitBell },
             { label: "リプ", total: czTotalReplay, hit: czHitReplay },
             { label: "弱レア", total: czTotalWeakRare, hit: czHitWeakRare },
             { label: "強レア", total: czTotalStrongRare, hit: czHitStrongRare },
           ] as const).map((r, i) => (
-            <TRow key={r.label} cols={COLS_CZ} i={i} values={[
+            <TRow key={r.label} cols={COLS_CZ} i={i} align="center" values={[
               r.label, `${r.total}回`,
               r.hit > 0 ? <span key="h" style={{ color: "#b91c1c" }}>★{r.hit}</span> : "—",
               r.total > 0 ? pct(r.hit, r.total) : "—",
@@ -564,35 +601,58 @@ export function TotalAnalysis() {
             grade={gradeByRate(uraATEntryCount, atWinCount, URA_AT_RATE[0], URA_AT_RATE[5])} />
         </Cat>
 
-        {/* ===== 2a. 設定示唆（全幅・2段カード） ===== */}
-        <Cat color="#e65100" title="設定示唆" mb>
-          <div style={{ padding: "8px", display: "flex", flexDirection: "column", gap: "6px" }}>
-            <div style={{
-              border: "1.5px solid #fdba74", borderRadius: "4px", backgroundColor: "#fffbeb",
-              padding: "8px 10px",
-            }}>
-              <div style={{ fontSize: "11px", fontWeight: 700, color: "#9a3412", letterSpacing: "0.5px", marginBottom: "4px" }}>
-                確定設定
+        {/* ===== 2a. 設定示唆（出現回数）======================== */}
+        <Cat color="#e65100" title="設定示唆 出現回数" mb>
+          {(() => {
+            const SETTING_ROWS: { key: string; label: string; bg: string; border: string; fg: string }[] = [
+              { key: "6確定濃厚", label: "設定6 確定濃厚",   bg: "#fef3c7", border: "#facc15", fg: "#78350f" },
+              { key: "5以上濃厚", label: "設定5以上 濃厚",   bg: "#fde68a", border: "#fcd34d", fg: "#7c2d12" },
+              { key: "4以上濃厚", label: "設定4以上 濃厚",   bg: "#fee2e2", border: "#f87171", fg: "#7f1d1d" },
+              { key: "3以上濃厚", label: "設定3以上 濃厚",   bg: "#fecaca", border: "#fca5a5", fg: "#7f1d1d" },
+              { key: "2以上濃厚", label: "設定2以上 濃厚",   bg: "#ffe4e6", border: "#fca5a5", fg: "#9f1239" },
+              { key: "1否定",     label: "設定1 否定",       bg: "#fff1f2", border: "#fecdd3", fg: "#9f1239" },
+            ];
+            return (
+              <div style={{ padding: "8px", display: "flex", flexDirection: "column", gap: "5px" }}>
+                {SETTING_ROWS.map(({ key, label, bg, border, fg }) => {
+                  const c = settingCounts[key] ?? 0;
+                  const dim = c === 0;
+                  return (
+                    <div key={key} style={{
+                      border: `1.5px solid ${dim ? "#e5e7eb" : border}`,
+                      borderRadius: "4px",
+                      backgroundColor: dim ? "#f9fafb" : bg,
+                      padding: "8px 12px",
+                      display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px",
+                    }}>
+                      <span style={{
+                        fontSize: "13px", fontWeight: 800, letterSpacing: "0.3px",
+                        color: dim ? "#9ca3af" : fg, lineHeight: 1.3,
+                      }}>{label}</span>
+                      <span style={{
+                        fontSize: "18px", fontWeight: 900, fontVariantNumeric: "tabular-nums",
+                        color: dim ? "#9ca3af" : "#1f2937", lineHeight: 1.1,
+                      }}>
+                        {c}<span style={{ fontSize: "11px", fontWeight: 700, marginLeft: "3px", color: dim ? "#9ca3af" : "#6b7280" }}>回</span>
+                      </span>
+                    </div>
+                  );
+                })}
+                <div style={{
+                  marginTop: "2px", border: "1.5px solid #d4d4d4", borderRadius: "4px",
+                  backgroundColor: "#fafafa", padding: "8px 12px",
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px",
+                }}>
+                  <span style={{ fontSize: "13px", fontWeight: 800, color: "#374151", letterSpacing: "0.3px" }}>
+                    トロフィー獲得
+                  </span>
+                  <span style={{ fontSize: "18px", fontWeight: 900, color: "#1f2937", fontVariantNumeric: "tabular-nums" }}>
+                    {trophyCount}<span style={{ fontSize: "11px", fontWeight: 700, color: "#6b7280", marginLeft: "3px" }}>回</span>
+                  </span>
+                </div>
               </div>
-              <div style={{
-                fontSize: "15px", fontWeight: 900, color: "#1f2937", lineHeight: 1.4,
-                wordBreak: "break-all",
-              }}>
-                {settingHints || <span style={{ color: "#9ca3af", fontWeight: 700 }}>情報不足</span>}
-              </div>
-            </div>
-            <div style={{
-              border: "1.5px solid #fdba74", borderRadius: "4px", backgroundColor: "#fffbeb",
-              padding: "8px 10px", display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "10px",
-            }}>
-              <span style={{ fontSize: "11px", fontWeight: 700, color: "#9a3412", letterSpacing: "0.5px" }}>
-                トロフィー
-              </span>
-              <span style={{ fontSize: "16px", fontWeight: 900, color: "#1f2937", fontVariantNumeric: "tabular-nums" }}>
-                {trophyCount}<span style={{ fontSize: "11px", fontWeight: 700, color: "#6b7280", marginLeft: "2px" }}>回</span>
-              </span>
-            </div>
-          </div>
+            );
+          })()}
         </Cat>
 
         {/* ===== 2b. 有馬set（AT+設定示唆の直下） ===== */}
@@ -602,10 +662,13 @@ export function TotalAnalysis() {
               {arimaByPos.map(({ pos, count, total }) => (
                 <div key={pos} style={{ textAlign: "center", backgroundColor: "#fffbeb", borderRadius: "4px", padding: "8px 4px", border: "1.5px solid #f59e0b" }}>
                   <div style={{ fontSize: "12px", fontWeight: 700, color: "#92400e", lineHeight: 1.4 }}>{pos}set目</div>
-                  <div style={{ fontSize: "16px", fontWeight: 900, color: "#1f2937", lineHeight: 1.3, marginTop: "2px", fontVariantNumeric: "tabular-nums" }}>
-                    {count}<span style={{ fontSize: "11px", fontWeight: 700, color: "#6b7280" }}>回</span>
+                  <div style={{ fontSize: "18px", fontWeight: 900, color: "#1f2937", lineHeight: 1.2, marginTop: "3px", fontVariantNumeric: "tabular-nums" }}>
+                    {count}<span style={{ fontSize: "12px", fontWeight: 700, color: "#9ca3af", margin: "0 2px" }}>/</span>{total}
                   </div>
-                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#b45309", lineHeight: 1.3, fontVariantNumeric: "tabular-nums" }}>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#92400e", lineHeight: 1.3, marginTop: "1px" }}>
+                    {pos === 1 ? "AT初当たり中" : `${pos}set到達中`}
+                  </div>
+                  <div style={{ fontSize: "14px", fontWeight: 900, color: "#b45309", lineHeight: 1.3, marginTop: "2px", fontVariantNumeric: "tabular-nums" }}>
                     {pct(count, total)}
                   </div>
                 </div>

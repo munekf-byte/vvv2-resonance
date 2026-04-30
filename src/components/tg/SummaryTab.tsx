@@ -513,10 +513,13 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
               {arimaByPos.map(({ pos, count, total }) => (
                 <div key={pos} style={{ textAlign: "center", backgroundColor: "#fffbeb", borderRadius: "4px", padding: "8px 4px", border: "1.5px solid #f59e0b" }}>
                   <div style={{ fontSize: "12px", fontWeight: 700, color: "#92400e", lineHeight: 1.4 }}>{pos}set目</div>
-                  <div style={{ fontSize: "16px", fontWeight: 900, color: "#1f2937", lineHeight: 1.3, marginTop: "2px", fontVariantNumeric: "tabular-nums" }}>
-                    {count}<span style={{ fontSize: "11px", fontWeight: 700, color: "#6b7280" }}>回</span>
+                  <div style={{ fontSize: "18px", fontWeight: 900, color: "#1f2937", lineHeight: 1.2, marginTop: "3px", fontVariantNumeric: "tabular-nums" }}>
+                    {count}<span style={{ fontSize: "12px", fontWeight: 700, color: "#9ca3af", margin: "0 2px" }}>/</span>{total}
                   </div>
-                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#b45309", lineHeight: 1.3, fontVariantNumeric: "tabular-nums" }}>
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#92400e", lineHeight: 1.3, marginTop: "1px" }}>
+                    {pos === 1 ? "AT初当たり中" : `${pos}set到達中`}
+                  </div>
+                  <div style={{ fontSize: "14px", fontWeight: 900, color: "#b45309", lineHeight: 1.3, marginTop: "2px", fontVariantNumeric: "tabular-nums" }}>
                     {pct(count, total)}
                   </div>
                 </div>
