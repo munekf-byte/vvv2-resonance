@@ -255,6 +255,14 @@ export function TotalAnalysis() {
   const allShinsekai = allBlocks.flatMap((b) => b.shinsekai);
   const shinsekaiTotal = allShinsekai.length;
   const shinsekaiBS = [...TG_SHINSEKAI].map((s) => ({ label: s, count: allShinsekai.filter((v) => v === s).length }));
+  // 精神世界中の弱レア役 — 全ブロックのシンセカイカウンター集計
+  const shinsekaiWeakRareMiss = allBlocks
+    .flatMap((b) => b.shinsekaiCounters ?? [])
+    .reduce((s, c) => s + (c?.miss ?? 0), 0);
+  const shinsekaiWeakRareWin = allBlocks
+    .flatMap((b) => b.shinsekaiCounters ?? [])
+    .reduce((s, c) => s + (c?.win ?? 0), 0);
+  const shinsekaiWeakRareTotal = shinsekaiWeakRareMiss + shinsekaiWeakRareWin;
 
   const czFailSuggestions = allBlocks.filter((b) => b.endingSuggestion.startsWith("[cz失敗]")).map((b) => b.endingSuggestion);
   const endScreenItems = TG_ENDING_SUGGESTIONS.filter((s) => s.startsWith("[終了画面]"));
@@ -693,6 +701,14 @@ export function TotalAnalysis() {
               <TRow key={s.label} cols={COLS3_PCT} i={i + 1} values={[`　${s.label}`, `${s.count}回`, pct(s.count, shinsekaiTotal)]}
                 grade={s.label === "精神33G" && s.count > 0 ? gradeByRate(s.count, shinsekaiTotal, 25, 60) : undefined} />
             ))}
+            <TRow cols={COLS3_PCT} i={shinsekaiBS.length + 1}
+              values={[<b key="l">弱レア役 発生</b>, `${shinsekaiWeakRareTotal}回`, "—"]} />
+            <TRow cols={COLS3_PCT} i={shinsekaiBS.length + 2}
+              values={[`　ハズレ`, `${shinsekaiWeakRareMiss}回`, pct(shinsekaiWeakRareMiss, shinsekaiWeakRareTotal)]} />
+            <TRow cols={COLS3_PCT} i={shinsekaiBS.length + 3}
+              values={[`　当選`, `${shinsekaiWeakRareWin}回`, pct(shinsekaiWeakRareWin, shinsekaiWeakRareTotal)]} />
+            <TRow cols={COLS3_PCT} i={shinsekaiBS.length + 4}
+              values={[<b key="l">弱レア役 当選率</b>, `${shinsekaiWeakRareWin}/${shinsekaiWeakRareTotal}`, prob(shinsekaiWeakRareWin, shinsekaiWeakRareTotal)]} />
           </Cat>
         </div>
 

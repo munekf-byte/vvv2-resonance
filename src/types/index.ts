@@ -18,6 +18,14 @@ export interface TGCZCounter {
   hitRole: string;
 }
 
+/** 精神世界中の弱レア役カウンター（精神世界スロットごと、index-aligned with shinsekai[]） */
+export interface TGShinsekaiCounter {
+  /** 弱レア役ハズレ回数（当選しなかった発生数） */
+  miss: number;
+  /** 弱レア役当選回数 */
+  win: number;
+}
+
 export interface TGNormalBlock {
   id: string;
   /** 実G数 */
@@ -40,6 +48,8 @@ export interface TGNormalBlock {
   kakugan: string[];
   /** 精神世界 — 複数記録可 (TG_SHINSEKAI values) */
   shinsekai: string[];
+  /** 精神世界中の弱レア役カウンター — shinsekai[] と index-aligned */
+  shinsekaiCounters?: TGShinsekaiCounter[];
   /** 招待状 — 複数記録可 (TG_INVITATIONS values) */
   invitation: string[];
   /** 前兆履歴 — 複数記録可 (TG_ZENCHO values) */

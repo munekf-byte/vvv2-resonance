@@ -58,6 +58,7 @@ function emptyForm(): FormState {
     trophy: "",
     kakugan:    [],
     shinsekai:  [],
+    shinsekaiCounters: [],
     invitation: [],
     zencho:     [],
     eyecatch: [],
@@ -134,6 +135,24 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
   function setCZCounter(key: "bell" | "replay" | "weakRare" | "strongRare", delta: number) {
     const cz = form.czCounter ?? { bell: 0, replay: 0, weakRare: 0, strongRare: 0, hitRole: "" };
     setField("czCounter", { ...cz, [key]: Math.max(0, (cz[key as keyof typeof cz] as number) + delta) });
+  }
+
+  /** 精神世界スロットを更新し、カウンター配列も同期させる */
+  function setShinsekaiSlots(vals: string[]) {
+    const prev = form.shinsekaiCounters ?? [];
+    const next = vals.map((label, i) =>
+      label ? (prev[i] ?? { miss: 0, win: 0 }) : { miss: 0, win: 0 }
+    );
+    setForm((p) => ({ ...p, shinsekai: vals, shinsekaiCounters: next }));
+  }
+
+  /** 精神世界カウンター個別更新 */
+  function setShinsekaiCounter(slotIndex: number, key: "miss" | "win", delta: number) {
+    const arr = [...(form.shinsekaiCounters ?? [])];
+    while (arr.length <= slotIndex) arr.push({ miss: 0, win: 0 });
+    const cur = arr[slotIndex] ?? { miss: 0, win: 0 };
+    arr[slotIndex] = { ...cur, [key]: Math.max(0, cur[key] + delta) };
+    setField("shinsekaiCounters", arr);
   }
   const [czOverlay, setCZOverlay] = useState(false);
   const [czOverlayPhase, setCZOverlayPhase] = useState<1 | 2>(1);
@@ -487,15 +506,58 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
           />
         </Section>
 
-        {/* ── 精神世界 (nd-14) — 5スロット独立プルダウン ── */}
+        {/* ── 精神世界 (nd-14) — 5スロット独立プルダウン + 弱レア役カウンター ── */}
         <Section title="精神世界（最大5回）">
           <MultiSlotPicker
             values={form.shinsekai}
             options={[...TG_SHINSEKAI]}
-            onChange={(vals) => setField("shinsekai", vals)}
+            onChange={setShinsekaiSlots}
             accentColor="#1e40af"
             borderActive="#1d4ed8"
           />
+          {form.shinsekai.some((v) => !!v) && (
+            <div className="mt-3 space-y-2">
+              <p className="text-[9px] font-mono text-gray-500 leading-tight">
+                精神世界中の弱レア役を記録（ハズレ／当選はセパレート）
+              </p>
+              {form.shinsekai.map((label, i) => {
+                if (!label) return null;
+                const c = form.shinsekaiCounters?.[i] ?? { miss: 0, win: 0 };
+                return (
+                  <div
+                    key={`shinc-${i}`}
+                    className="rounded border-2 overflow-hidden"
+                    style={{ borderColor: "#1d4ed8" }}
+                  >
+                    <div
+                      className="flex items-center justify-between px-2 py-1"
+                      style={{ backgroundColor: "#1e40af", color: "#ffffff" }}
+                    >
+                      <span className="text-[10px] font-mono font-bold tracking-wide">
+                        {i + 1}. {label} <span className="opacity-70">/ 弱レア役</span>
+                      </span>
+                    </div>
+                    <ShinsekaiCounterRow
+                      label="ハズレ"
+                      bg="#fce4ec"
+                      color="#880e4f"
+                      value={c.miss}
+                      onPlus={() => setShinsekaiCounter(i, "miss", 1)}
+                      onMinus={() => setShinsekaiCounter(i, "miss", -1)}
+                    />
+                    <ShinsekaiCounterRow
+                      label="当選"
+                      bg="#c8e6c9"
+                      color="#1b5e20"
+                      value={c.win}
+                      onPlus={() => setShinsekaiCounter(i, "win", 1)}
+                      onMinus={() => setShinsekaiCounter(i, "win", -1)}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </Section>
 
         {/* ── フリーメモ (nd-16) ── */}
@@ -659,6 +721,59 @@ function MultiSlotPicker({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// ─── ShinsekaiCounterRow (精神世界 弱レア役 ハズレ/当選 +/- カウンター) ────────
+
+function ShinsekaiCounterRow({
+  label, bg, color, value, onPlus, onMinus,
+}: {
+  label: string;
+  bg: string;
+  color: string;
+  value: number;
+  onPlus: () => void;
+  onMinus: () => void;
+}) {
+  return (
+    <div
+      className="flex items-center"
+      style={{ minHeight: "44px", borderTop: "2px solid #374151" }}
+    >
+      <div
+        className="flex items-center justify-center font-mono font-bold text-[12px] shrink-0"
+        style={{ width: "68px", height: "44px", backgroundColor: bg, color, borderRight: "2px solid #374151" }}
+      >
+        {label}
+      </div>
+      <div className="flex items-center gap-1.5 flex-1 justify-center px-1">
+        <button
+          onClick={onPlus}
+          className="w-9 h-9 rounded-full font-mono font-black text-[8px] active:scale-95 transition-transform"
+          style={{ backgroundColor: "#c8e6c9", color: "#1b5e20" }}
+        >
+          PUSH
+        </button>
+        <button
+          onClick={onMinus}
+          className="w-9 h-9 rounded-full font-mono font-black text-sm active:scale-95 transition-transform"
+          style={{ backgroundColor: "#fce4ec", color: "#880e4f" }}
+        >
+          -1
+        </button>
+      </div>
+      <div
+        className="flex items-center justify-center font-mono font-black text-xl shrink-0"
+        style={{
+          width: "48px", height: "44px", border: "2px solid #374151", borderRadius: "4px", marginRight: "4px",
+          backgroundColor: value > 0 ? "#1f2937" : "#f9fafb",
+          color: value > 0 ? "#ffffff" : "#9ca3af",
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }
