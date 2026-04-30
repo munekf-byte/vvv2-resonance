@@ -1,25 +1,34 @@
 "use client";
 // =============================================================================
-// 前任者履歴写真: 集計画面用 表示 + 添付/差し替えボタン
+// セッション写真スロット表示 + 添付/差し替えボタン
+//
+// kind="prev"   : 前任者履歴
+// kind="result" : 稼働結果
 //
 // 動作:
-//   - 写真あり: フル画像（タップで拡大モーダル）+ 「差し替え」ボタン（Pro時のみ）
-//   - 写真なし: 「前任者の履歴写真を添付」ボタン（Pro時のみ）
+//   - 写真あり: フル画像（タップで拡大モーダル）+ 「写真を差し替え」（Pro時）
+//   - 写真なし: 「写真を追加」ボタン（Pro時のみ）
 //   - 無料ユーザー: 写真なしの場合 Pro 訴求バナー
 // =============================================================================
 
 import { useEffect, useState } from "react";
-import { getPhotoSignedUrl, uploadPrevPhoto } from "@/lib/photo/upload";
+import { getPhotoSignedUrl, uploadSessionPhoto, type PhotoKind } from "@/lib/photo/upload";
 
 interface Props {
   userId: string;
   sessionId: string;
+  kind: PhotoKind;
+  label: string;
+  emptyButtonLabel: string;
   uploadedAt: string | null;
   isPro: boolean;
   onUploaded: (newUploadedAt: string) => void;
 }
 
-export function PrevPhotoBlock({ userId, sessionId, uploadedAt, isPro, onUploaded }: Props) {
+export function PhotoSlotBlock({
+  userId, sessionId, kind, label, emptyButtonLabel,
+  uploadedAt, isPro, onUploaded,
+}: Props) {
   const [url, setUrl] = useState<string | null>(null);
   const [zoomed, setZoomed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -28,16 +37,16 @@ export function PrevPhotoBlock({ userId, sessionId, uploadedAt, isPro, onUploade
   useEffect(() => {
     if (!uploadedAt) { setUrl(null); return; }
     let active = true;
-    getPhotoSignedUrl(userId, sessionId, "full", uploadedAt).then((u) => {
+    getPhotoSignedUrl(userId, sessionId, "full", uploadedAt, 3600, kind).then((u) => {
       if (active) setUrl(u);
     });
     return () => { active = false; };
-  }, [userId, sessionId, uploadedAt]);
+  }, [userId, sessionId, kind, uploadedAt]);
 
   async function handlePick(file: File) {
     setBusy(true);
     setErrMsg(null);
-    const res = await uploadPrevPhoto({ userId, sessionId, file });
+    const res = await uploadSessionPhoto({ userId, sessionId, file, kind });
     setBusy(false);
     if (res.ok) {
       onUploaded(res.uploadedAt);
@@ -62,7 +71,7 @@ export function PrevPhotoBlock({ userId, sessionId, uploadedAt, isPro, onUploade
       return (
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 text-center">
           <p className="text-[11px] font-mono text-purple-700">
-            前任者の履歴写真添付は <span className="font-bold">Pro限定機能</span> です
+            {label}添付は <span className="font-bold">Pro限定機能</span> です
           </p>
         </div>
       );
@@ -75,7 +84,7 @@ export function PrevPhotoBlock({ userId, sessionId, uploadedAt, isPro, onUploade
           className="w-full py-3 rounded-lg font-mono text-[12px] font-bold text-white active:scale-95 transition-transform disabled:opacity-60"
           style={{ backgroundColor: "#1f2937" }}
         >
-          {busy ? "アップロード中..." : "前任者の履歴写真を添付"}
+          {busy ? "アップロード中..." : emptyButtonLabel}
         </button>
         {errMsg && <p className="text-[10px] font-mono text-red-600">{errMsg}</p>}
       </div>
@@ -85,12 +94,12 @@ export function PrevPhotoBlock({ userId, sessionId, uploadedAt, isPro, onUploade
   return (
     <>
       <div className="bg-white border border-gray-300 rounded-lg p-2 space-y-2">
-        <p className="text-[10px] font-mono text-gray-500">前任者履歴写真</p>
+        <p className="text-[10px] font-mono text-gray-500">{label}</p>
         {url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={url}
-            alt="前任者履歴"
+            alt={label}
             className="w-full rounded cursor-zoom-in"
             onClick={() => setZoomed(true)}
           />
@@ -117,7 +126,7 @@ export function PrevPhotoBlock({ userId, sessionId, uploadedAt, isPro, onUploade
           onClick={() => setZoomed(false)}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={url} alt="前任者履歴（拡大）" className="max-w-full max-h-full object-contain" />
+          <img src={url} alt={`${label}（拡大）`} className="max-w-full max-h-full object-contain" />
         </div>
       )}
     </>

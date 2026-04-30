@@ -67,6 +67,9 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const [prevPhotoAt, setPrevPhotoAt] = useState<string | null>(
     initialSession.prevPhotoUploadedAt ?? null
   );
+  const [resultPhotoAt, setResultPhotoAt] = useState<string | null>(
+    initialSession.resultPhotoUploadedAt ?? null
+  );
 
   const loadSession        = useSessionStore((s) => s.loadSession);
   const clearSession       = useSessionStore((s) => s.clearSession);
@@ -433,6 +436,12 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               isPro,
               uploadedAt: prevPhotoAt,
               onUploaded: (newAt) => setPrevPhotoAt(newAt),
+            }}
+            resultPhoto={{
+              userId: initialSession.userId,
+              isPro,
+              uploadedAt: resultPhotoAt,
+              onUploaded: (newAt) => setResultPhotoAt(newAt),
             }}
           />
         )}

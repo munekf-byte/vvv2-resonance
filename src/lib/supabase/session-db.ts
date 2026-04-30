@@ -33,6 +33,7 @@ function rowToSession(row: Record<string, unknown>): PlaySession {
     shushi: castJson<ShushiData | null>(row.shushi ?? null),
     userSettingGuess: (row.user_setting_guess as string | null) ?? null,
     prevPhotoUploadedAt: (row.prev_photo_uploaded_at as string | null) ?? null,
+    resultPhotoUploadedAt: (row.result_photo_uploaded_at as string | null) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };

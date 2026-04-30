@@ -28,7 +28,7 @@ import {
 import {
   getEventCellColor, getATCharColor, getBitesTypeCellColor,
 } from "@/lib/tg/cellColors";
-import { PrevPhotoBlock } from "@/components/photo/PrevPhotoBlock";
+import { PhotoSlotBlock } from "@/components/photo/PhotoSlotBlock";
 
 interface Props {
   blocks: NormalBlock[];
@@ -38,8 +38,15 @@ interface Props {
   uchidashi?: import("@/types").UchidashiState | null;
   finalResult?: number;
   userBalance?: number | null;
-  /** 前任者履歴写真ブロック表示用 */
+  /** 前任者履歴写真（1枚目） */
   prevPhoto?: {
+    userId: string;
+    isPro: boolean;
+    uploadedAt: string | null;
+    onUploaded: (newUploadedAt: string) => void;
+  };
+  /** 稼働結果写真（2枚目） */
+  resultPhoto?: {
     userId: string;
     isPro: boolean;
     uploadedAt: string | null;
@@ -170,7 +177,7 @@ function SqIcon({ top, bottom, bg }: { top: string; bottom: string; bg: string }
 
 // ── メインコンポーネント ─────────────────────────────────────────────────
 
-export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi, finalResult, userBalance, prevPhoto }: Props) {
+export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi, finalResult, userBalance, prevPhoto, resultPhoto }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
 
   const lsKey = `tgr_totalG_${sessionId}`;
@@ -358,16 +365,33 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
         )}
       </div>
 
-      {/* ===== 前任者履歴写真（キャプチャ範囲外: X共有・画像保存に含めない） ===== */}
-      {prevPhoto && (
-        <div style={{ padding: "8px 6px 0", backgroundColor: "#ffffff" }}>
-          <PrevPhotoBlock
-            userId={prevPhoto.userId}
-            sessionId={sessionId}
-            uploadedAt={prevPhoto.uploadedAt}
-            isPro={prevPhoto.isPro}
-            onUploaded={prevPhoto.onUploaded}
-          />
+      {/* ===== セッション写真（キャプチャ範囲外: X共有・画像保存に含めない） ===== */}
+      {(prevPhoto || resultPhoto) && (
+        <div style={{ padding: "8px 6px 0", backgroundColor: "#ffffff", display: "flex", flexDirection: "column", gap: "8px" }}>
+          {prevPhoto && (
+            <PhotoSlotBlock
+              userId={prevPhoto.userId}
+              sessionId={sessionId}
+              kind="prev"
+              label="前任者履歴写真"
+              emptyButtonLabel="前任者の履歴写真を添付"
+              uploadedAt={prevPhoto.uploadedAt}
+              isPro={prevPhoto.isPro}
+              onUploaded={prevPhoto.onUploaded}
+            />
+          )}
+          {resultPhoto && (
+            <PhotoSlotBlock
+              userId={resultPhoto.userId}
+              sessionId={sessionId}
+              kind="result"
+              label="稼働結果写真"
+              emptyButtonLabel="稼働結果の写真を追加"
+              uploadedAt={resultPhoto.uploadedAt}
+              isPro={resultPhoto.isPro}
+              onUploaded={resultPhoto.onUploaded}
+            />
+          )}
         </div>
       )}
 

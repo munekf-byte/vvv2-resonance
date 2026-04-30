@@ -1,20 +1,20 @@
 // =============================================================================
-// 前任者履歴写真: アップロード + アトミックなフラグ更新
+// セッション写真: アップロード + アトミックなフラグ更新（2 スロット対応）
+//
+// スロット:
+//   - prev   : 前任者履歴（パス互換のため既存のまま {sid}/full.jpg / thumb.jpg）
+//   - result : 稼働結果グラフ（新規 {sid}/result_full.jpg / result_thumb.jpg）
 //
 // 流れ:
 //   1) フル + サムネ を並列 upload (各 x3 リトライ)
-//   2) 両方成功 → play_sessions.prev_photo_uploaded_at = NOW() を 1 回だけ UPDATE
-//   3) 片方でも失敗 → 成功した方を Storage から削除してロールバック、
-//      prev_photo_uploaded_at は NULL のまま（写真なし扱い）
-//
-// 注意:
-//   - セッション保存とは別トランザクション。失敗してもセッション本体は影響を受けない。
-//   - 既存写真がある場合は upsert で上書きされる（同一パス）。
+//   2) 両方成功 → 該当カラムに NOW() を 1 回だけ UPDATE
+//   3) 片方でも失敗 → 成功した方を Storage から削除してロールバック
 // =============================================================================
 
 import { createClient } from "@/lib/supabase/client";
 import { compressForUpload } from "./compress";
 
+export type PhotoKind = "prev" | "result";
 export type PhotoUploadResult =
   | { ok: true; uploadedAt: string }
   | { ok: false; reason: "compress" | "upload" | "update"; message: string };
@@ -22,8 +22,18 @@ export type PhotoUploadResult =
 const BUCKET = "session-photos";
 const MAX_ATTEMPTS = 3;
 
-function pathFor(userId: string, sessionId: string, kind: "full" | "thumb"): string {
-  return `${userId}/${sessionId}/${kind}.jpg`;
+function fileName(kind: PhotoKind, type: "full" | "thumb"): string {
+  // prev は既存互換のため "full.jpg" / "thumb.jpg"
+  // result は "result_full.jpg" / "result_thumb.jpg"
+  return kind === "prev" ? `${type}.jpg` : `result_${type}.jpg`;
+}
+
+function pathFor(userId: string, sessionId: string, kind: PhotoKind, type: "full" | "thumb"): string {
+  return `${userId}/${sessionId}/${fileName(kind, type)}`;
+}
+
+function dbColumn(kind: PhotoKind): "prev_photo_uploaded_at" | "result_photo_uploaded_at" {
+  return kind === "prev" ? "prev_photo_uploaded_at" : "result_photo_uploaded_at";
 }
 
 async function uploadWithRetry(
@@ -60,15 +70,15 @@ async function safeRemove(path: string): Promise<void> {
 }
 
 /**
- * 写真をアップロードし、両方成功時にのみ prev_photo_uploaded_at を更新する。
- * 失敗時はロールバックを実施。セッション保存自体は呼び出し側で別途行う前提。
+ * 指定スロットに写真をアップロードし、両方成功時にのみ該当カラムを更新する。
  */
-export async function uploadPrevPhoto(params: {
+export async function uploadSessionPhoto(params: {
   userId: string;
   sessionId: string;
   file: File;
+  kind: PhotoKind;
 }): Promise<PhotoUploadResult> {
-  const { userId, sessionId, file } = params;
+  const { userId, sessionId, file, kind } = params;
 
   // 1) 圧縮
   let compressed;
@@ -82,15 +92,15 @@ export async function uploadPrevPhoto(params: {
     };
   }
 
-  // 2) 並列アップロード（各 x3 リトライ）
-  const fullPath = pathFor(userId, sessionId, "full");
-  const thumbPath = pathFor(userId, sessionId, "thumb");
+  // 2) 並列アップロード
+  const fullPath = pathFor(userId, sessionId, kind, "full");
+  const thumbPath = pathFor(userId, sessionId, kind, "thumb");
   const [fullRes, thumbRes] = await Promise.all([
     uploadWithRetry(fullPath, compressed.full),
     uploadWithRetry(thumbPath, compressed.thumb),
   ]);
 
-  // 3) 片方でも失敗 → 成功した方を削除してロールバック
+  // 3) 片方でも失敗 → 成功した方を削除
   if (!fullRes.ok || !thumbRes.ok) {
     if (fullRes.ok) await safeRemove(fullPath);
     if (thumbRes.ok) await safeRemove(thumbPath);
@@ -103,12 +113,11 @@ export async function uploadPrevPhoto(params: {
   const now = new Date().toISOString();
   const { error } = await supabase
     .from("play_sessions")
-    .update({ prev_photo_uploaded_at: now })
+    .update({ [dbColumn(kind)]: now })
     .eq("id", sessionId)
     .eq("user_id", userId);
 
   if (error) {
-    // UPDATE 失敗 → Storage 側もロールバックして整合を保つ
     await safeRemove(fullPath);
     await safeRemove(thumbPath);
     return { ok: false, reason: "update", message: error.message };
@@ -117,21 +126,30 @@ export async function uploadPrevPhoto(params: {
   return { ok: true, uploadedAt: now };
 }
 
+/** 後方互換: 既存呼び出し用（prev スロット固定） */
+export async function uploadPrevPhoto(params: {
+  userId: string;
+  sessionId: string;
+  file: File;
+}): Promise<PhotoUploadResult> {
+  return uploadSessionPhoto({ ...params, kind: "prev" });
+}
+
 /**
- * 表示用の signed URL を取得（Public バケットではないため）。
- * 期限切れ時は呼び出し側で再取得する想定。
+ * 表示用 signed URL。kind と type を指定。
  */
 export async function getPhotoSignedUrl(
   userId: string,
   sessionId: string,
-  kind: "full" | "thumb",
+  type: "full" | "thumb",
   cacheBust?: string | null,
-  expiresInSec = 3600
+  expiresInSec = 3600,
+  kind: PhotoKind = "prev"
 ): Promise<string | null> {
   const supabase = createClient();
   const { data, error } = await supabase.storage
     .from(BUCKET)
-    .createSignedUrl(pathFor(userId, sessionId, kind), expiresInSec);
+    .createSignedUrl(pathFor(userId, sessionId, kind, type), expiresInSec);
   if (error || !data?.signedUrl) return null;
   return cacheBust ? `${data.signedUrl}&v=${encodeURIComponent(cacheBust)}` : data.signedUrl;
 }

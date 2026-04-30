@@ -110,6 +110,7 @@ export type Database = {
           memo: string | null;
           is_deleted: boolean;
           prev_photo_uploaded_at: string | null;
+          result_photo_uploaded_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -129,6 +130,7 @@ export type Database = {
           memo?: string | null;
           is_deleted?: boolean;
           prev_photo_uploaded_at?: string | null;
+          result_photo_uploaded_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -148,6 +150,7 @@ export type Database = {
           memo?: string | null;
           is_deleted?: boolean;
           prev_photo_uploaded_at?: string | null;
+          result_photo_uploaded_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
