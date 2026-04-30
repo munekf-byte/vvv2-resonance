@@ -13,6 +13,7 @@ const PENDING_KEY = "tgr_pending_saves";
 
 export interface SessionMeta {
   id: string;
+  userId?: string;
   machineName: string;
   createdAt: string;
   updatedAt: string;
@@ -22,6 +23,7 @@ export interface SessionMeta {
   balance: number | null;
   settingHint: string;
   userSettingGuess: string;
+  prevPhotoUploadedAt?: string | null;
 }
 
 // ── DB同期状態 ──────────────────────────────────────────────────────────────
@@ -88,8 +90,10 @@ export function lsSaveSession(session: PlaySession): void {
     const allSets = session.atEntries.flatMap((e) => e.rows.filter((r): r is TGATSet => r.rowType === "set"));
     const endScreen = allSets.map((s) => s.endingSuggestion ?? "").filter((s) => s.startsWith("[終了画面]"));
     const settingHint = inferSetting(czFail, endScreen, session.normalBlocks, session.atEntries);
+    const existing = list.find((s) => s.id === session.id);
     const meta: SessionMeta = {
       id: session.id,
+      userId: session.userId,
       machineName: session.machineName,
       createdAt: session.createdAt,
       updatedAt: new Date().toISOString(),
@@ -99,6 +103,7 @@ export function lsSaveSession(session: PlaySession): void {
       balance,
       settingHint,
       userSettingGuess: session.userSettingGuess ?? "",
+      prevPhotoUploadedAt: existing?.prevPhotoUploadedAt ?? null,
     };
     const idx = list.findIndex((s) => s.id === session.id);
     if (idx >= 0) list[idx] = meta;

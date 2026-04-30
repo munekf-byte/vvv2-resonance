@@ -21,6 +21,7 @@ import { captureAndDownload, captureAndShare } from "@/lib/tg/captureImage";
 import { inferSetting } from "@/components/tg/SummaryTab";
 import { computeMedalStamps, computeFinalResult } from "@/lib/tg/medalCalc";
 import { LongPressHint } from "@/components/ui/LongPressHint";
+import { useAuth } from "@/components/auth/AuthContext";
 
 interface PlayClientPageProps {
   initialSession: PlaySession;
@@ -61,6 +62,11 @@ const AT_CLOSED: ATEditingState = { open: false, atKey: "", row: null, defaultRo
 
 export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const router = useRouter();
+  const { profile } = useAuth();
+  const isPro = profile?.is_pro ?? false;
+  const [prevPhotoAt, setPrevPhotoAt] = useState<string | null>(
+    initialSession.prevPhotoUploadedAt ?? null
+  );
 
   const loadSession        = useSessionStore((s) => s.loadSession);
   const clearSession       = useSessionStore((s) => s.clearSession);
@@ -422,6 +428,12 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
             uchidashi={uchidashi}
             finalResult={finalResult}
             userBalance={headerBalance}
+            prevPhoto={{
+              userId: initialSession.userId,
+              isPro,
+              uploadedAt: prevPhotoAt,
+              onUploaded: (newAt) => setPrevPhotoAt(newAt),
+            }}
           />
         )}
       </main>

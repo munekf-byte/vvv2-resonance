@@ -202,6 +202,8 @@ export interface PlaySession {
   shushi: ShushiData | null;
   /** ユーザー推測設定 */
   userSettingGuess: string | null;
+  /** 前任者履歴写真のアップロード完了時刻（NULL=未アップロード）。キャッシュバスト用にも使用 */
+  prevPhotoUploadedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

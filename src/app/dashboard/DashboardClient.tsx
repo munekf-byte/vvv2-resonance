@@ -13,6 +13,8 @@ import {
   type SessionMeta,
 } from "@/lib/tg/localStore";
 import { FREE_SESSION_LIMIT } from "@/lib/auth/access";
+import { PrevPhotoThumb } from "@/components/photo/PrevPhotoThumb";
+import { uploadPrevPhoto } from "@/lib/photo/upload";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -31,6 +33,8 @@ export function DashboardClient() {
   const [hallName, setHallName] = useState("");
   const [machineNumber, setMachineNumber] = useState("");
   const [creating, setCreating] = useState(false);
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
+  const [pendingPhotoPreview, setPendingPhotoPreview] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<"date" | "balance" | "hall" | "setting">("date");
@@ -77,8 +81,40 @@ export function DashboardClient() {
     if (creating) return;
     setCreating(true);
     const session = await createSessionWithCloud(name);
+    // 写真が選択されていればここでアップロード（失敗してもセッション保存は成功扱い）
+    if (pendingPhoto && isPro && session.userId && !session.id.startsWith("local-")) {
+      try {
+        await uploadPrevPhoto({
+          userId: session.userId,
+          sessionId: session.id,
+          file: pendingPhoto,
+        });
+      } catch (e) {
+        console.warn("[NewSession] photo upload failed:", e);
+      }
+    }
     // creatingはfalseにしない — 遷移完了までグルグル表示を維持
     router.push(`/play/${session.id}`);
+  }
+
+  function handlePhotoPick() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.onchange = () => {
+      const f = input.files?.[0];
+      if (!f) return;
+      if (pendingPhotoPreview) URL.revokeObjectURL(pendingPhotoPreview);
+      setPendingPhoto(f);
+      setPendingPhotoPreview(URL.createObjectURL(f));
+    };
+    input.click();
+  }
+
+  function clearPendingPhoto() {
+    if (pendingPhotoPreview) URL.revokeObjectURL(pendingPhotoPreview);
+    setPendingPhoto(null);
+    setPendingPhotoPreview(null);
   }
 
   async function handleCreate() {
@@ -156,7 +192,18 @@ export function DashboardClient() {
             <div key={s.id} className="bg-white rounded-xl border-2 border-gray-400 shadow-sm overflow-hidden">
               <div className="flex items-stretch">
                 <button onClick={() => handleOpen(s.id)}
-                  className="flex-1 text-left px-3 py-2.5 hover:bg-gray-50 transition-colors min-w-0">
+                  className="flex-1 text-left px-3 py-2.5 hover:bg-gray-50 transition-colors min-w-0 flex items-start gap-2">
+                  {s.prevPhotoUploadedAt && s.userId && (
+                    <div className="pt-0.5">
+                      <PrevPhotoThumb
+                        userId={s.userId}
+                        sessionId={s.id}
+                        uploadedAt={s.prevPhotoUploadedAt}
+                        size={40}
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
                   {/* セッション名 */}
                   <p className="font-mono font-bold text-gray-900 text-[13px] break-all line-clamp-2 leading-tight">{s.machineName}</p>
                   {/* 稼働実績バッジ（固定位置グリッド） */}
@@ -190,6 +237,7 @@ export function DashboardClient() {
                       }}>
                       推測 {s.userSettingGuess || "—"}
                     </span>
+                  </div>
                   </div>
                 </button>
                 <div className="flex flex-col border-l border-gray-200 shrink-0">
@@ -308,6 +356,33 @@ export function DashboardClient() {
                 />
               </div>
 
+              {/* 前任者履歴写真（Pro限定・任意） */}
+              {isPro && (
+                <div>
+                  <p className="text-[10px] font-mono text-gray-500 mb-1">前任者の履歴写真（任意）</p>
+                  {pendingPhotoPreview ? (
+                    <div className="flex items-center gap-2 p-2 border-2 border-gray-300 rounded-lg">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={pendingPhotoPreview} alt="プレビュー" className="w-14 h-14 object-cover rounded" />
+                      <span className="flex-1 text-[11px] font-mono text-gray-700 truncate">{pendingPhoto?.name ?? ""}</span>
+                      <button
+                        onClick={clearPendingPhoto}
+                        className="text-[10px] font-mono px-2 py-1 rounded border border-gray-300 text-gray-600 hover:bg-gray-50"
+                      >
+                        外す
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handlePhotoPick}
+                      className="w-full py-2.5 rounded-lg border-2 border-dashed border-gray-400 text-gray-700 font-mono text-[12px] font-bold hover:bg-gray-50"
+                    >
+                      📷 写真を選択
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* 上記の情報でセッション作成 */}
               <button
                 onClick={handleAutoCreate}
@@ -344,7 +419,7 @@ export function DashboardClient() {
               {/* フリー入力でのアクションボタン */}
               <div className="flex gap-2 pt-1">
                 <button
-                  onClick={() => { setShowModal(false); setSessionName(""); setHallName(""); setMachineNumber(""); }}
+                  onClick={() => { setShowModal(false); setSessionName(""); setHallName(""); setMachineNumber(""); clearPendingPhoto(); }}
                   className="flex-1 py-3 rounded-lg border-2 border-gray-300 text-gray-600 font-mono text-sm font-bold hover:bg-gray-50"
                   disabled={creating}
                 >

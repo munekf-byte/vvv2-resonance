@@ -83,6 +83,7 @@ export async function GET() {
 
       return {
         id: row.id as string,
+        userId: (row.user_id as string) ?? "",
         machineName: (row.machine_name as string) ?? "セッション",
         createdAt: (row.created_at as string) ?? "",
         updatedAt: (row.updated_at as string) ?? "",
@@ -92,6 +93,7 @@ export async function GET() {
         balance,
         settingHint,
         userSettingGuess: ((row.user_setting_guess as string) ?? ""),
+        prevPhotoUploadedAt: (row.prev_photo_uploaded_at as string | null) ?? null,
       };
     });
 

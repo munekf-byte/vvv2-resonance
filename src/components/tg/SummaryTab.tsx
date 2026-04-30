@@ -28,6 +28,7 @@ import {
 import {
   getEventCellColor, getATCharColor, getBitesTypeCellColor,
 } from "@/lib/tg/cellColors";
+import { PrevPhotoBlock } from "@/components/photo/PrevPhotoBlock";
 
 interface Props {
   blocks: NormalBlock[];
@@ -37,6 +38,13 @@ interface Props {
   uchidashi?: import("@/types").UchidashiState | null;
   finalResult?: number;
   userBalance?: number | null;
+  /** 前任者履歴写真ブロック表示用 */
+  prevPhoto?: {
+    userId: string;
+    isPro: boolean;
+    uploadedAt: string | null;
+    onUploaded: (newUploadedAt: string) => void;
+  };
 }
 
 // ── ユーティリティ ──────────────────────────────────────────────────────────
@@ -162,7 +170,7 @@ function SqIcon({ top, bottom, bg }: { top: string; bottom: string; bg: string }
 
 // ── メインコンポーネント ─────────────────────────────────────────────────
 
-export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi, finalResult, userBalance }: Props) {
+export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi, finalResult, userBalance, prevPhoto }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
 
   const lsKey = `tgr_totalG_${sessionId}`;
@@ -349,6 +357,19 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
           </div>
         )}
       </div>
+
+      {/* ===== 前任者履歴写真（キャプチャ範囲外: X共有・画像保存に含めない） ===== */}
+      {prevPhoto && (
+        <div style={{ padding: "8px 6px 0", backgroundColor: "#ffffff" }}>
+          <PrevPhotoBlock
+            userId={prevPhoto.userId}
+            sessionId={sessionId}
+            uploadedAt={prevPhoto.uploadedAt}
+            isPro={prevPhoto.isPro}
+            onUploaded={prevPhoto.onUploaded}
+          />
+        </div>
+      )}
 
       <div ref={captureRef} style={{ padding: "8px 6px", backgroundColor: "#ffffff", fontFamily: "monospace" }}>
 
