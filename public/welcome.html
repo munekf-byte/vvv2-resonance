@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TOKYO GHOUL RESONANCE — 東京喰種スマスロ専用 実戦データ分析アプリ</title>
+<meta name="description" content="東京喰種スマスロのために生まれた実戦データ分析アプリ。タップだけで周期・AT・設定示唆を記録。モード推定・トータル数値分析であなたの稼働を可視化します。無料で始められます。">
+<meta property="og:title" content="TOKYO GHOUL RESONANCE — 東京喰種スマスロ専用 実戦データ分析アプリ">
+<meta property="og:description" content="東京喰種が好きで、毎週ホールに通う方へ。周期・AT・示唆をタップで記録し、トータル数値分析で全稼働を俯瞰。無料で始められます。">
+<meta property="og:image" content="/images/promo_lp/total_analysis.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap');
+
+  :root {
+    --bg: #f5f0e8;
+    --bg-card: #efe9df;
+    --bg-white: #faf8f4;
+    --bg-dark: #1a1410;
+    --bg-deep: #0f0c0a;
+    --border: #d4cbbf;
+    --border-light: #e0d8cc;
+    --text: #2c2520;
+    --text-sub: #5e5347;
+    --text-muted: #9a8e80;
+    --red: #c0392b;
+    --red-deep: #8b1f1f;
+    --red-bg: #fceeed;
+    --green: #27774a;
+    --green-bg: #edf7f0;
+    --blue: #3672a8;
+    --blue-bg: #edf4fb;
+    --purple: #7054a0;
+    --purple-bg: #f3eff8;
+    --gold: #a67c3d;
+    --gold-bg: #faf3e6;
+    --orange: #d4772c;
+    --orange-bg: #fef4ea;
+    --marker-yellow: linear-gradient(transparent 60%, #fde68a 60%);
+    --marker-pink: linear-gradient(transparent 60%, #fecdd3 60%);
+    --marker-blue: linear-gradient(transparent 60%, #bfdbfe 60%);
+    --marker-red: linear-gradient(transparent 60%, #fda4af 60%);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'M PLUS Rounded 1c', 'Hiragino Maru Gothic ProN', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.95;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .marker-y { background-image: var(--marker-yellow); font-weight: 700; }
+  .marker-p { background-image: var(--marker-pink); font-weight: 700; }
+  .marker-b { background-image: var(--marker-blue); font-weight: 700; }
+  .marker-r { background-image: var(--marker-red); font-weight: 700; }
+  .bold { font-weight: 800; }
+  .red { color: var(--red); }
+
+  /* ===== HERO ===== */
+  .hero {
+    position: relative;
+    min-height: 92vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 64px 24px 48px;
+    text-align: center;
+    background: linear-gradient(180deg, #1a1410 0%, #2a1f18 60%, #1a1410 100%);
+    color: #f5f0e8;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 25% 30%, rgba(192, 57, 43, 0.18) 0%, transparent 45%),
+      radial-gradient(circle at 75% 70%, rgba(166, 124, 61, 0.12) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .hero > * { position: relative; z-index: 1; }
+  .hero-eyebrow {
+    display: inline-block; padding: 5px 14px;
+    background: rgba(192, 57, 43, 0.15);
+    border: 1px solid rgba(192, 57, 43, 0.4);
+    color: #f4a89e;
+    border-radius: 4px;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.18em;
+    margin-bottom: 20px;
+  }
+  .hero-title {
+    font-size: 28px; font-weight: 900; line-height: 1.45;
+    margin-bottom: 18px;
+    letter-spacing: 0.01em;
+  }
+  .hero-title .accent { color: #e8b15c; }
+  .hero-title .accent-r { color: #f4a89e; }
+  .hero-sub {
+    font-size: 14px; line-height: 2.1;
+    color: #d4cbbf;
+    max-width: 380px; margin: 0 auto 32px;
+  }
+  .hero-cta {
+    display: inline-block;
+    padding: 16px 38px;
+    background: linear-gradient(135deg, #d4a346 0%, #b8862e 100%);
+    border: 2px solid #e8b15c;
+    color: #1a1410;
+    font-family: inherit; font-weight: 800; font-size: 15px;
+    border-radius: 10px; text-decoration: none;
+    box-shadow: 0 6px 24px rgba(166, 124, 61, 0.5);
+  }
+  .hero-cta:active { transform: scale(0.97); }
+  .hero-cta-sub {
+    font-size: 11px; color: #9a8e80; margin-top: 12px;
+    letter-spacing: 0.06em;
+  }
+  .hero-scroll {
+    margin-top: 36px;
+    color: #9a8e80;
+    font-size: 11px; letter-spacing: 0.2em;
+    animation: float 2s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  /* ===== SECTIONS ===== */
+  section { padding: 40px 24px; max-width: 540px; margin: 0 auto; }
+  .s-eyebrow { display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.2em; color: var(--red); margin-bottom: 8px; }
+  .s-title {
+    font-size: 22px; font-weight: 900; line-height: 1.55;
+    margin-bottom: 14px;
+  }
+  .s-title .em { color: var(--red); }
+  .s-lead { font-size: 14px; color: var(--text-sub); margin-bottom: 22px; line-height: 2.05; }
+
+  .divider { max-width: 540px; margin: 0 auto; padding: 0 24px; }
+  .divider hr { border: none; border-top: 1px dashed var(--border); }
+
+  /* ===== PAIN POINTS ===== */
+  .pain-grid { display: flex; flex-direction: column; gap: 12px; margin: 18px 0; }
+  .pain-item {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--red);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 14px; line-height: 1.95;
+  }
+  .pain-item .q {
+    display: block; font-weight: 800; color: var(--red); margin-bottom: 4px;
+    font-size: 14px;
+  }
+  .pain-item .q::before { content: '“'; margin-right: 2px; }
+  .pain-item .q::after { content: '”'; margin-left: 2px; }
+  .pain-item .a { font-size: 13px; color: var(--text-sub); }
+
+  .answer-box {
+    margin-top: 22px;
+    background: linear-gradient(135deg, #fef9ee 0%, #fef4ea 100%);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    padding: 20px 22px;
+    text-align: center;
+  }
+  .answer-box .label { font-size: 11px; color: var(--gold); font-weight: 800; letter-spacing: 0.15em; }
+  .answer-box .ans { font-size: 18px; font-weight: 900; line-height: 1.7; margin-top: 8px; color: var(--text); }
+  .answer-box .ans .em { color: var(--gold); }
+
+  /* ===== CONCEPT ===== */
+  .concept-card {
+    background: var(--bg-white);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    margin: 18px 0;
+  }
+  .concept-card .badge {
+    display: inline-block;
+    background: var(--bg-dark); color: #e8b15c;
+    padding: 4px 12px; border-radius: 4px;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.15em;
+    margin-bottom: 12px;
+  }
+  .concept-card h3 { font-size: 17px; font-weight: 800; line-height: 1.6; margin-bottom: 10px; }
+  .concept-card p { font-size: 14px; color: var(--text-sub); line-height: 2.0; }
+
+  /* ===== FEATURE CARD ===== */
+  .feat {
+    background: var(--bg-white);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 22px;
+    overflow: hidden;
+  }
+  .feat-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-card);
+  }
+  .feat-num {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 900; color: #fff;
+    font-family: 'M PLUS Rounded 1c', sans-serif;
+  }
+  .feat-title-wrap { flex: 1; min-width: 0; }
+  .feat-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 0.15em; color: var(--text-muted); }
+  .feat-title { font-size: 17px; font-weight: 900; line-height: 1.4; margin-top: 2px; }
+  .feat-body { padding: 18px; font-size: 14px; color: var(--text-sub); line-height: 2.05; }
+  .feat-img-wrap {
+    margin: 14px -2px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(28, 20, 16, 0.06);
+  }
+  .feat-img-wrap img { width: 100%; display: block; }
+  .feat-img-cap {
+    text-align: center;
+    font-size: 11px; color: var(--text-muted);
+    margin: 6px 0 12px;
+    letter-spacing: 0.04em;
+  }
+
+  .feat-bullets { list-style: none; margin: 14px 0; }
+  .feat-bullets li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 6px 0;
+    font-size: 14px; font-weight: 700;
+  }
+  .feat-bullets .ico {
+    flex-shrink: 0; width: 22px; height: 22px;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800;
+    margin-top: 2px;
+  }
+
+  /* Cropped image showcase (for tall/narrow assets) */
+  .feat-img-crop {
+    position: relative;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(28, 20, 16, 0.06);
+    margin: 14px 0;
+  }
+  .feat-img-crop .crop-inner {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+  .feat-img-crop .crop-inner img { width: 100%; display: block; }
+  .feat-img-crop .frame-mark {
+    position: absolute;
+    border: 3px solid var(--red);
+    border-radius: 6px;
+    pointer-events: none;
+    box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.18);
+  }
+
+  /* ===== STEP ===== */
+  .step-list { display: flex; flex-direction: column; gap: 14px; margin: 18px 0; }
+  .step {
+    display: flex; gap: 14px;
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--bg-dark); color: #e8b15c;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 900;
+  }
+  .step-body h4 { font-size: 15px; font-weight: 800; margin-bottom: 4px; }
+  .step-body p { font-size: 13px; color: var(--text-sub); line-height: 1.95; }
+
+  /* ===== TESTIMONIAL / NUMBERS ===== */
+  .stats {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin: 20px 0;
+  }
+  .stat {
+    background: var(--bg-white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 14px;
+    text-align: center;
+  }
+  .stat .num { font-size: 26px; font-weight: 900; color: var(--gold); line-height: 1.2; }
+  .stat .num .unit { font-size: 14px; margin-left: 2px; }
+  .stat .lbl { font-size: 11px; color: var(--text-sub); margin-top: 4px; font-weight: 700; }
+
+  /* ===== FREE / PRO callout ===== */
+  .free-card {
+    background: linear-gradient(135deg, #edf7f0 0%, #d6efde 100%);
+    border: 2px solid var(--green);
+    border-radius: 12px;
+    padding: 22px;
+    margin: 18px 0;
+    text-align: center;
+  }
+  .free-card .label { font-size: 11px; color: var(--green); font-weight: 800; letter-spacing: 0.15em; }
+  .free-card .head { font-size: 22px; font-weight: 900; color: var(--green); margin-top: 6px; line-height: 1.5; }
+  .free-card .desc { font-size: 13px; color: #2e4a36; margin-top: 10px; line-height: 2.0; }
+
+  /* ===== FINAL CTA ===== */
+  .final {
+    background: linear-gradient(180deg, #1a1410 0%, #2a1f18 100%);
+    color: #f5f0e8;
+    text-align: center;
+    padding: 56px 24px 76px;
+  }
+  .final .label { font-size: 11px; color: #e8b15c; font-weight: 800; letter-spacing: 0.2em; }
+  .final h2 { font-size: 24px; font-weight: 900; line-height: 1.55; margin: 12px 0 18px; }
+  .final h2 .accent { color: #e8b15c; }
+  .final p { font-size: 13px; color: #d4cbbf; line-height: 2.05; max-width: 360px; margin: 0 auto 28px; }
+  .final-cta {
+    display: inline-block;
+    padding: 18px 42px;
+    background: linear-gradient(135deg, #d4a346 0%, #b8862e 100%);
+    border: 2px solid #e8b15c;
+    color: #1a1410;
+    font-family: inherit; font-weight: 900; font-size: 16px;
+    border-radius: 12px; text-decoration: none;
+    box-shadow: 0 6px 28px rgba(166, 124, 61, 0.5);
+  }
+  .final-cta:active { transform: scale(0.97); }
+  .final-cta-sub { font-size: 11px; color: #9a8e80; margin-top: 12px; }
+
+  /* ===== FAQ ===== */
+  .faq { display: flex; flex-direction: column; gap: 8px; }
+  .faq-item { background: var(--bg-white); border: 1px solid var(--border-light); border-radius: 8px; overflow: hidden; }
+  .faq-q { padding: 14px 16px; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; gap: 12px; }
+  .faq-q::after { content: '+'; font-size: 20px; color: var(--text-muted); transition: transform 0.3s; flex-shrink: 0; }
+  .faq-item.open .faq-q::after { transform: rotate(45deg); }
+  .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.35s ease, padding 0.35s ease; }
+  .faq-item.open .faq-a { max-height: 600px; padding: 0 16px 14px; }
+  .faq-a p { font-size: 13px; color: var(--text-sub); line-height: 2.0; }
+
+  footer {
+    text-align: center;
+    padding: 28px 24px 56px;
+    border-top: 1px solid var(--border-light);
+    font-size: 11px; color: var(--text-muted); line-height: 2.2;
+    background: var(--bg);
+  }
+  footer a { color: var(--text-sub); text-decoration: none; }
+
+  /* Floating CTA */
+  .f-cta {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    padding: 12px 18px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(135deg, #d4a346 0%, #b8862e 50%, #a67c3d 100%);
+    border-top: 2px solid #8a6428;
+    box-shadow: 0 -6px 20px rgba(166, 124, 61, 0.35);
+    z-index: 100;
+    display: flex; align-items: center; gap: 12px;
+    max-width: 540px; margin: 0 auto;
+    transform: translateY(110%);
+    transition: transform 0.3s ease;
+  }
+  .f-cta.show { transform: translateY(0); }
+  .f-cta-info { flex: 1; }
+  .f-cta-title { font-size: 14px; font-weight: 800; color: #fff; line-height: 1.3; }
+  .f-cta-sub { font-size: 11px; color: rgba(255,255,255,0.92); margin-top: 2px; }
+  .f-cta-btn {
+    padding: 13px 24px;
+    background: #fff; color: #8a6428;
+    font-family: inherit; font-weight: 900; font-size: 14px;
+    border: 2px solid #fff; border-radius: 10px;
+    text-decoration: none; white-space: nowrap;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+  }
+  .f-cta-btn:active { transform: scale(0.96); }
+</style>
+</head>
+<body>
+
+<!-- ============== HERO ============== -->
+<header class="hero">
+  <span class="hero-eyebrow">TOKYO GHOUL — RESONANCE</span>
+  <h1 class="hero-title">
+    その<span class="accent-r">赫眼</span>の点滅、<br>
+    覚えていますか？
+  </h1>
+  <p class="hero-sub">
+    東京喰種スマスロのために生まれた、<br>
+    実戦データ分析アプリ。<br>
+    <br>
+    周期・AT・設定示唆を<span class="accent">タップひとつ</span>で記録。<br>
+    あなたの稼働を、数字で読み解く。
+  </p>
+  <a href="/" class="hero-cta">無料ではじめる →</a>
+  <p class="hero-cta-sub">登録1分・スマホブラウザだけで動きます</p>
+  <div class="hero-scroll">▼ SCROLL</div>
+</header>
+
+<!-- ============== INTRO STATS ============== -->
+<section style="padding-top: 28px;">
+  <div class="stats">
+    <div class="stat">
+      <div class="num">2,000<span class="unit">名</span></div>
+      <div class="lbl">前作シリーズ累計利用者</div>
+    </div>
+    <div class="stat">
+      <div class="num">¥0<span class="unit"></span></div>
+      <div class="lbl">無料で開始可能</div>
+    </div>
+    <div class="stat">
+      <div class="num">1<span class="unit">タップ</span></div>
+      <div class="lbl">周期・AT・示唆を記録</div>
+    </div>
+    <div class="stat">
+      <div class="num">0<span class="unit">秒</span></div>
+      <div class="lbl">差枚数の自動計算</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- ============== PAIN POINTS ============== -->
+<section>
+  <span class="s-eyebrow">PROBLEM</span>
+  <h2 class="s-title">
+    ホール帰り、<br>
+    <span class="em">こんなことありませんか？</span>
+  </h2>
+  <div class="pain-grid">
+    <div class="pain-item">
+      <span class="q">あのCZ、結局何回スルーした？</span>
+      <span class="a">スマホメモを開いても、肝心の数字が見つからない。</span>
+    </div>
+    <div class="pain-item">
+      <span class="q">終了画面、何だっけ？</span>
+      <span class="a">写真は撮ったはずだけど、整理できていない。</span>
+    </div>
+    <div class="pain-item">
+      <span class="q">この台、続行すべき？</span>
+      <span class="a">体感だけで「もう少し」を判断していて、不安になる。</span>
+    </div>
+    <div class="pain-item">
+      <span class="q">先月の収支、どうだった？</span>
+      <span class="a">月をまたいだ瞬間、データはどこかへ消える。</span>
+    </div>
+  </div>
+
+  <div class="answer-box">
+    <div class="label">SOLUTION</div>
+    <div class="ans">
+      <span class="em">記録の手間を限界まで削る。</span><br>
+      そのうえで、数字でしか見えないものを見せる。
+    </div>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- ============== CONCEPT ============== -->
+<section>
+  <span class="s-eyebrow">CONCEPT</span>
+  <h2 class="s-title">
+    RESONANCE<span style="font-size:14px;color:var(--text-muted);font-weight:700;">（レゾナンス）</span>とは
+  </h2>
+  <div class="concept-card">
+    <span class="badge">CORE IDEA</span>
+    <h3>東京喰種スマスロ専用の、<br>実戦データ分析プラットフォーム</h3>
+    <p>
+      汎用の収支アプリでは取れない、<span class="marker-y">機種固有の挙動</span>に踏み込みます。<br><br>
+      赫眼・精神世界・招待状・前兆履歴・喰種対決・BITESテーブル・有馬ジャッジメント——<span class="bold">この台でしか起こらないことを、この台のために設計されたUIで記録</span>します。<br><br>
+      入力した瞬間、差枚数・確率・モード推定が更新され、稼働中もリアルタイムに状況を把握できます。
+    </p>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- ============== FEATURE 1: 周期記録 ============== -->
+<section>
+  <span class="s-eyebrow">FEATURE 01</span>
+  <h2 class="s-title">
+    <span class="em">タップだけ</span>で、<br>
+    1周期の挙動を完全記録
+  </h2>
+  <p class="s-lead">
+    実G数、ゾーン、当選契機、イベント、終了画面、トロフィー——<br>
+    すべてプルダウンとボタンで完結。<span class="marker-y">紙のメモも、写真の整理もいりません。</span>
+  </p>
+
+  <div class="feat">
+    <div class="feat-head">
+      <div class="feat-num" style="background: var(--blue)">1</div>
+      <div class="feat-title-wrap">
+        <div class="feat-eyebrow">NORMAL HISTORY</div>
+        <div class="feat-title">通常時の履歴を、見やすい1画面で</div>
+      </div>
+    </div>
+    <div class="feat-body">
+      ゾーン・当選契機・イベント・AT初当りまで、<span class="marker-b">1行で1周期分が見渡せる</span>レイアウト。<br><br>
+      上から順に色分けされ、何が起きたかが一目で分かります。
+      <div class="feat-img-wrap">
+        <img src="/images/promo_lp/tg_normal_capture.png" alt="通常時履歴閲覧画面">
+      </div>
+      <div class="feat-img-cap">▲ 実画面：通常時履歴ビュー</div>
+
+      <ul class="feat-bullets">
+        <li><span class="ico" style="background:var(--blue-bg);border:2px solid var(--blue);color:var(--blue)">✓</span><span style="color:var(--blue)">ゾーン到達と当選契機が色で即判別</span></li>
+        <li><span class="ico" style="background:var(--blue-bg);border:2px solid var(--blue);color:var(--blue)">✓</span><span style="color:var(--blue)">タップで該当行の編集ダッシュボードへ</span></li>
+        <li><span class="ico" style="background:var(--blue-bg);border:2px solid var(--blue);color:var(--blue)">✓</span><span style="color:var(--blue)">差枚数は入力に応じて自動更新</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="feat">
+    <div class="feat-head">
+      <div class="feat-num" style="background: var(--purple)">2</div>
+      <div class="feat-title-wrap">
+        <div class="feat-eyebrow">CZ COUNTER</div>
+        <div class="feat-title">CZ中の成立役を、PUSH 1回で</div>
+      </div>
+    </div>
+    <div class="feat-body">
+      押し順ベル・リプ・弱レア・強レア——CZ中はPUSHボタンを押すだけ。<br>
+      <span class="marker-p">「当選契機をどの役で引いたか」</span>もワンタップで残せます。
+      <div class="feat-img-wrap" style="background: #faf8f4; padding: 16px;">
+        <img src="/images/promo_lp/cz_counter.png" alt="CZ内容カウンター">
+      </div>
+      <div class="feat-img-cap">▲ CZ内容カウンター（イメージ）</div>
+
+      <ul class="feat-bullets">
+        <li><span class="ico" style="background:var(--purple-bg);border:2px solid var(--purple);color:var(--purple)">✓</span><span style="color:var(--purple)">役ごとに色分けされた大きなボタン</span></li>
+        <li><span class="ico" style="background:var(--purple-bg);border:2px solid var(--purple);color:var(--purple)">✓</span><span style="color:var(--purple)">スルー時もカウントが残るので後から振り返れる</span></li>
+        <li><span class="ico" style="background:var(--purple-bg);border:2px solid var(--purple);color:var(--purple)">✓</span><span style="color:var(--purple)">当選率は集計画面で自動算出</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="feat">
+    <div class="feat-head">
+      <div class="feat-num" style="background: var(--orange)">3</div>
+      <div class="feat-title-wrap">
+        <div class="feat-eyebrow">AT HISTORY</div>
+        <div class="feat-title">AT中の喰種対決も、SET単位で完全記録</div>
+      </div>
+    </div>
+    <div class="feat-body">
+      キャラ・BITESテーブル・直乗せ・対決成績・有馬ジャッジメント——<br>
+      <span class="marker-y">AT中の細かい挙動も、SET番号付きで残せます。</span>
+      <div class="feat-img-wrap">
+        <img src="/images/promo_lp/tg_at_capture.png" alt="AT履歴閲覧画面">
+      </div>
+      <div class="feat-img-cap">▲ 実画面：AT履歴ビュー（複数AT分を縦に表示）</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- ============== FEATURE 2: 設定示唆 ============== -->
+<section>
+  <span class="s-eyebrow">FEATURE 02</span>
+  <h2 class="s-title">
+    設定示唆を、<br>
+    <span class="em">自動で集計</span>してくれる
+  </h2>
+  <p class="s-lead">
+    CZ失敗画面・AT終了画面・トロフィー・エンディングカード。<br>
+    入力した示唆は、その場で<span class="marker-y">設定推測の材料へ自動変換</span>されます。
+  </p>
+
+  <div class="feat">
+    <div class="feat-head">
+      <div class="feat-num" style="background: var(--gold)">4</div>
+      <div class="feat-title-wrap">
+        <div class="feat-eyebrow">SETTING HINTS</div>
+        <div class="feat-title">設定1否定 → 6確まで、画面が物語る</div>
+      </div>
+    </div>
+    <div class="feat-body">
+      数値が並ぶ表ではなく、<span class="bold">示唆そのものの意味（弱／強・偶数／奇数・〇以上）</span>を直感的に色で表示。<br><br>
+      何回も同じ示唆が出ているのか、それとも均等に散っているのか——一目で見分けられます。
+      <div class="feat-img-wrap" style="padding: 12px; background: #faf8f4;">
+        <img src="/images/promo_lp/total_analysis.jpg" alt="設定示唆の自動集計">
+      </div>
+      <div class="feat-img-cap">▲ トータル数値分析の一部：示唆別カウント</div>
+
+      <ul class="feat-bullets">
+        <li><span class="ico" style="background:var(--gold-bg);border:2px solid var(--gold);color:var(--gold)">✓</span><span>CZ失敗画面・AT終了画面・トロフィー・EDカードを横断集計</span></li>
+        <li><span class="ico" style="background:var(--gold-bg);border:2px solid var(--gold);color:var(--gold)">✓</span><span>設定6濃厚・5以上・4以上・3以上・2以上・1否定で自動分類</span></li>
+        <li><span class="ico" style="background:var(--gold-bg);border:2px solid var(--gold);color:var(--gold)">✓</span><span>枚数表示示唆（456／666／1000-7）にも対応</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- ============== FEATURE 3: モード推定 ============== -->
+<section>
+  <span class="s-eyebrow">FEATURE 03</span>
+  <h2 class="s-title">
+    モード推定で、<br>
+    <span class="em">次の挙動</span>を読む
+  </h2>
+  <p class="s-lead">
+    入力されたゾーン・当選契機・前兆履歴・示唆情報を踏まえて、<br>
+    現在のモードを<span class="marker-b">ベイズ推定</span>で逆算します。
+  </p>
+
+  <div class="feat">
+    <div class="feat-head">
+      <div class="feat-num" style="background: var(--red)">5</div>
+      <div class="feat-title-wrap">
+        <div class="feat-eyebrow">MODE INFERENCE</div>
+        <div class="feat-title">「天国かもしれない」を、確率で示す</div>
+      </div>
+    </div>
+    <div class="feat-body">
+      天国・通常A・通常B・チャンス・解析未公開モード——各モードの存在確率を、<span class="bold">入力イベントが起きるたびに更新</span>。<br><br>
+      たとえば「精神33Gが2回出ているならチャンスモード以上の確率が高い」「CZ失敗画面が高設定[強]なら設定×モード両面で示唆が入る」——<span class="marker-r">推測の根拠が画面に見えるかたち</span>で表れます。
+      <ul class="feat-bullets">
+        <li><span class="ico" style="background:var(--red-bg);border:2px solid var(--red);color:var(--red)">✓</span><span style="color:var(--red)">天国転落例外・前兆確定・示唆補正をすべて織り込み</span></li>
+        <li><span class="ico" style="background:var(--red-bg);border:2px solid var(--red);color:var(--red)">✓</span><span style="color:var(--red)">CZ失敗示唆は「次ブロック」に反映する仕様</span></li>
+        <li><span class="ico" style="background:var(--red-bg);border:2px solid var(--red);color:var(--red)">✓</span><span style="color:var(--red)">アイキャッチは当該ブロックに反映</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- ============== FEATURE 4: TOTAL ANALYSIS ============== -->
+<section>
+  <span class="s-eyebrow">FEATURE 04</span>
+  <h2 class="s-title">
+    全稼働を、<br>
+    <span class="em">1枚にまとめる</span>
+  </h2>
+  <p class="s-lead">
+    記録したセッションを横断して集計。<br>
+    <span class="marker-y">確率・分布・勝率・出現回数</span>が、PNG画像1枚に収まります。<br>
+    そのままX（旧Twitter）に共有できます。
+  </p>
+
+  <div class="feat">
+    <div class="feat-head">
+      <div class="feat-num" style="background: var(--green)">6</div>
+      <div class="feat-title-wrap">
+        <div class="feat-eyebrow">TOTAL ANALYSIS</div>
+        <div class="feat-title">トータル数値分析・セッション選択集計</div>
+      </div>
+    </div>
+    <div class="feat-body">
+      CZ確率、AT確率、AT直撃率、赫眼・精神世界の出現分布、ゾーン集計（全体／AT後／リセット後）、キャラ別の対決勝率、有馬set判定、招待状の示唆カウント——<br><br>
+      <span class="bold">10項目以上を、1スクロール内で俯瞰</span>できます。
+      <div class="feat-img-wrap">
+        <img src="/images/promo_lp/total_analysis.jpg" alt="トータル数値分析画面">
+      </div>
+      <div class="feat-img-cap">▲ 実画面：トータル数値分析の全景</div>
+
+      <ul class="feat-bullets">
+        <li><span class="ico" style="background:var(--green-bg);border:2px solid var(--green);color:var(--green)">✓</span><span style="color:var(--green)">勝った稼働・負けた稼働だけを抽出して集計</span></li>
+        <li><span class="ico" style="background:var(--green-bg);border:2px solid var(--green);color:var(--green)">✓</span><span style="color:var(--green)">高設定と感じた稼働だけを抽出して傾向を見る</span></li>
+        <li><span class="ico" style="background:var(--green-bg);border:2px solid var(--green);color:var(--green)">✓</span><span style="color:var(--green)">画像保存・X共有（ホール名・台番は伏せて出力）</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="feat">
+    <div class="feat-head">
+      <div class="feat-num" style="background: var(--blue)">7</div>
+      <div class="feat-title-wrap">
+        <div class="feat-eyebrow">SESSION LIST</div>
+        <div class="feat-title">過去の全稼働が、ホーム1画面に</div>
+      </div>
+    </div>
+    <div class="feat-body">
+      日付・収支・差枚・台番・AT回数を一覧で。<br>
+      タップで<span class="marker-b">過去稼働を即再表示・再集計</span>できます。
+      <div class="feat-img-crop">
+        <div class="crop-inner">
+          <img src="/images/promo_lp/session_list.jpg" alt="セッション一覧">
+        </div>
+      </div>
+      <div class="feat-img-cap">▲ 実画面：セッション一覧（ダッシュボード）</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- ============== HOW IT WORKS ============== -->
+<section>
+  <span class="s-eyebrow">HOW IT WORKS</span>
+  <h2 class="s-title">3ステップで、<span class="em">使えます</span></h2>
+
+  <div class="step-list">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>新規セッションを開始</h4>
+        <p>機種名・台番・打ち出しG数を入力するだけ。所要時間 約20秒。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>ホールでタップ記録</h4>
+        <p>1周期ごとに「ゾーン」「契機」「画面」を選ぶだけ。差枚数・確率は自動更新。</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>帰宅後、集計を開く</h4>
+        <p>1日の挙動が画像1枚に。共有も振り返りも、ここから。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- ============== FREE START ============== -->
+<section>
+  <span class="s-eyebrow">START FREE</span>
+  <h2 class="s-title">
+    まずは、<br>
+    <span class="em">無料で使ってみてください</span>
+  </h2>
+  <p class="s-lead">
+    インストール不要。スマホブラウザだけで動きます。<br>
+    <span class="marker-y">主要機能はすべて無料版に含まれています。</span>
+  </p>
+
+  <div class="free-card">
+    <div class="label">FREE FOREVER</div>
+    <div class="head">¥0 で<br>3セッションまで保存</div>
+    <div class="desc">
+      周期記録・AT記録・モード推定・差枚計算・<br>
+      設定示唆の自動集計・画像保存・X共有——<br>
+      <span class="bold">主要機能はすべて無料</span>でお使いいただけます。
+    </div>
+  </div>
+
+  <div style="background: var(--gold-bg); border: 1px solid var(--gold); border-radius: 10px; padding: 16px 18px; font-size: 13px; line-height: 2.0; color: #6b5630;">
+    <span style="font-weight: 800; color: var(--gold);">＋ 続けたくなったら、Pro（¥1,500 買い切り）</span><br>
+    セッション保存無制限・トータル数値分析・限定Discord——気に入ったタイミングで一度だけ。月額課金なし、永久利用です。
+  </div>
+</section>
+
+<div class="divider"><hr></div>
+
+<!-- ============== FAQ ============== -->
+<section>
+  <span class="s-eyebrow">FAQ</span>
+  <h2 class="s-title">よくある質問</h2>
+  <div class="faq">
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">アプリのインストールは必要？</div><div class="faq-a"><p>不要です。お使いのスマホブラウザでアクセスして、Google または X（旧Twitter）のアカウントでログインするだけで始められます。ホーム画面に追加するとアプリのように使えます。</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">機種を打っていないと使えませんか？</div><div class="faq-a"><p>記録する対象は東京喰種スマスロのみですが、見学・友人の稼働の同伴記録など、ホールで実際に挙動を観測できる場面であれば自由にお使いいただけます。</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">無料版とProの違いは？</div><div class="faq-a"><p>無料版でも周期記録・AT記録・モード推定・差枚計算・設定示唆の自動集計・画像保存・X共有など、主要機能はすべてお使いいただけます。Proでは「セッション保存数の制限解除」「トータル数値分析」「Pro限定Discordコミュニティへの参加」が追加されます。</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">データはどこに保存されますか？</div><div class="faq-a"><p>クラウド（Supabase）に保存され、端末を変更しても同じアカウントでログインすれば過去の稼働データを引き継げます。ローカルにはキャッシュとしても残ります。</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">他の収支アプリとは何が違うの？</div><div class="faq-a"><p>汎用の収支アプリは「投資・回収・差枚」を記録するためのものです。RESONANCEは東京喰種スマスロの挙動そのもの——赫眼・精神世界・招待状・喰種対決・BITESテーブルなど機種固有の要素を、機種専用UIで記録・分析します。設定推測やモード推定はそのデータを土台に成立しています。</p></div></div>
+    <div class="faq-item"><div class="faq-q" onclick="this.parentElement.classList.toggle('open')">推奨の使い方は？</div><div class="faq-a"><p>稼働中：1周期ごとに「ゾーン」「契機」「示唆」を入れる。AT中：SETごとにキャラと対決成績を記録。帰宅後：集計画面で1日を振り返る。これで稼働の全体像が画像1枚に残ります。</p></div></div>
+  </div>
+</section>
+
+<!-- ============== FINAL CTA ============== -->
+<section class="final" style="max-width: none; padding-left: 0; padding-right: 0;">
+  <div style="max-width: 540px; margin: 0 auto; padding: 0 24px;">
+    <div class="label">START NOW</div>
+    <h2>その<span class="accent">赫眼</span>、<br>記憶ではなく、<br>記録に残しませんか？</h2>
+    <p>
+      東京喰種スマスロ専用の実戦データ分析アプリ。<br>
+      無料で始められます。インストール不要。
+    </p>
+    <a href="/" class="final-cta">無料ではじめる →</a>
+    <div class="final-cta-sub">登録1分・主要機能はすべて無料</div>
+  </div>
+</section>
+
+<footer>
+  TOKYO GHOUL RESONANCE — 実戦データ分析システム<br>
+  <a href="/terms">利用規約</a> ・ <a href="/privacy">プライバシーポリシー</a> ・ <a href="/lp">Pro プランのご案内</a><br><br>
+  <a href="https://x.com/puchun_dobadoba" target="_blank" rel="noopener">X (@puchun_dobadoba)</a>
+</footer>
+
+<div class="f-cta" id="fc">
+  <div class="f-cta-info">
+    <div class="f-cta-title">無料で始める</div>
+    <div class="f-cta-sub">登録1分・スマホブラウザだけで動きます</div>
+  </div>
+  <a href="/" class="f-cta-btn">はじめる →</a>
+</div>
+
+<script>
+  const fc = document.getElementById('fc');
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY, h = window.innerHeight;
+    const bot = y + h > document.documentElement.scrollHeight - 200;
+    fc.classList.toggle('show', y > h * 0.6 && !bot);
+  }, { passive: true });
+</script>
+
+</body>
+</html>
