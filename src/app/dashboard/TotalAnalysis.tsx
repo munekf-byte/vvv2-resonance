@@ -706,7 +706,7 @@ export function TotalAnalysis() {
             <TRow cols={COLS3_PCT} i={shinsekaiBS.length + 3}
               values={[`　当選`, `${shinsekaiWeakRareWin}回`, pct(shinsekaiWeakRareWin, shinsekaiWeakRareTotal)]} />
             <TRow cols={COLS3_PCT} i={shinsekaiBS.length + 4}
-              values={[<b key="l">弱レア役 当選率</b>, `${shinsekaiWeakRareWin}/${shinsekaiWeakRareTotal}`, prob(shinsekaiWeakRareWin, shinsekaiWeakRareTotal)]} />
+              values={[<b key="l">当選率</b>, `${shinsekaiWeakRareWin}/${shinsekaiWeakRareTotal}`, pct(shinsekaiWeakRareWin, shinsekaiWeakRareTotal)]} />
           </Cat>
         </div>
 
