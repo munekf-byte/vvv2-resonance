@@ -41,6 +41,9 @@ interface Props {
   /** セッション全体で1つの精神世界弱レア役カウンター */
   shinsekaiWeakRare: TGShinsekaiCounter | null;
   onShinsekaiWeakRareChange: (counter: TGShinsekaiCounter) => void;
+  /** 赫眼 後追い確定 — 既に保留中なら新規開始は不可 */
+  pendingKakuganActive: boolean;
+  onStartPendingKakugan: (savedBlock: NormalBlock) => void;
   onSave: (block: NormalBlock) => void;
   onTempSave: (block: NormalBlock) => void;
   onClose: () => void;
@@ -82,7 +85,7 @@ const LANDSCAPE_STORAGE_KEY = "tgr_normal_dashboard_landscape";
 
 // ─── メインコンポーネント ──────────────────────────────────────────────────────
 
-export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinsekaiWeakRare, onShinsekaiWeakRareChange, onSave, onTempSave, onClose, onYame }: Props) {
+export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinsekaiWeakRare, onShinsekaiWeakRareChange, pendingKakuganActive, onStartPendingKakugan, onSave, onTempSave, onClose, onYame }: Props) {
   const isNew = block === null;
   const [form, setForm] = useState<FormState>(() =>
     block ? { ...block, memo: block.memo ?? "" } : emptyForm()
@@ -198,6 +201,13 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
 
   function handleSave()     { onSave(buildBlock()); }
   function handleTempSave() { onTempSave(buildBlock()); }
+
+  /** 赫眼発生 — 現フォームを保存しつつ pending を開始してダッシュボードを閉じる */
+  function handleStartPendingKakugan() {
+    const saved = buildBlock();
+    onStartPendingKakugan(saved);
+    onClose();
+  }
 
   return (
     <>
@@ -488,7 +498,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
           />
         </Section>
 
-        {/* ── 赫眼状態 (nd-12) — 5スロット独立プルダウン ── */}
+        {/* ── 赫眼状態 (nd-12) — 5スロット独立プルダウン + 後追い確定ボタン ── */}
         <Section title="赫眼状態（最大5回）">
           <MultiSlotPicker
             values={form.kakugan}
@@ -497,6 +507,25 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
             accentColor="#b91c1c"
             borderActive="#991b1b"
           />
+          {/* 後追い確定ボタン: 通常→AT へ赫眼が継続する場面で、継続Gが未確定でも先に発生だけマークしたい時に使う */}
+          <button
+            onClick={handleStartPendingKakugan}
+            disabled={pendingKakuganActive}
+            className="w-full mt-2 py-3 rounded-lg font-mono font-bold text-[12px] active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+            style={{
+              backgroundColor: pendingKakuganActive ? "#9ca3af" : "#b91c1c",
+              color: "#ffffff",
+              border: "2px solid #7f1d1d",
+              boxShadow: pendingKakuganActive ? "none" : "0 2px 8px rgba(185,28,28,0.35)",
+            }}
+          >
+            {pendingKakuganActive
+              ? "他の赫眼が保留中（先にバナーから確定）"
+              : "🔴 赫眼発生（継続Gは後で確定）"}
+          </button>
+          <p className="text-[9px] text-gray-500 font-mono mt-1.5 leading-snug">
+            この周期で赫眼が発生したことだけを記録し、最終的な継続G数は画面遷移後に追従バナーから確定できます。
+          </p>
         </Section>
 
         {/* ── 精神世界 (nd-14) — 5スロット独立プルダウン ── */}

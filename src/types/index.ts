@@ -146,6 +146,18 @@ export interface TGATEntry {
 }
 
 // -----------------------------------------------------------------------------
+// 赫眼 後追い確定（pending state）
+// -----------------------------------------------------------------------------
+
+/** 通常ダッシュボードで「赫眼発生」だけ押して継続G数は後で確定するための保留状態 */
+export interface PendingKakugan {
+  /** 発生した周期ブロックの id（confirm 時にここの kakugan[] に値を append する） */
+  blockId: string;
+  /** 発生時刻（ISO 文字列）。バナー表示用 */
+  startedAt: string;
+}
+
+// -----------------------------------------------------------------------------
 // 打ち出し状態設定
 // -----------------------------------------------------------------------------
 
@@ -212,6 +224,8 @@ export interface PlaySession {
   userSettingGuess: string | null;
   /** 精神世界中の弱レア役カウンター（セッション全体で1つ） */
   shinsekaiWeakRare: TGShinsekaiCounter | null;
+  /** 赫眼 後追い確定 — null=保留なし */
+  pendingKakugan: PendingKakugan | null;
   /** 前任者履歴写真のアップロード完了時刻（NULL=未アップロード）。キャッシュバスト用にも使用 */
   prevPhotoUploadedAt?: string | null;
   /** 稼働結果写真のアップロード完了時刻（NULL=未アップロード） */

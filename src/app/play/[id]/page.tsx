@@ -31,6 +31,7 @@ function makeFallbackSession(id: string, userId: string): PlaySession {
     shushi: null,
     userSettingGuess: null,
     shinsekaiWeakRare: null,
+    pendingKakugan: null,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

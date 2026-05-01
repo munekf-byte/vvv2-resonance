@@ -265,6 +265,7 @@ export async function createSessionWithCloud(machineName: string): Promise<PlayS
     shushi: null,
     userSettingGuess: null,
     shinsekaiWeakRare: null,
+    pendingKakugan: null,
     createdAt: now,
     updatedAt: now,
   };

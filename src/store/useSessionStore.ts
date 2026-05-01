@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { create } from "zustand";
-import type { PlaySession, NormalBlock, TGATEntry, TGATRow, UchidashiState, ShushiData, TGShinsekaiCounter } from "@/types";
+import type { PlaySession, NormalBlock, TGATEntry, TGATRow, UchidashiState, ShushiData, TGShinsekaiCounter, PendingKakugan } from "@/types";
 
 // -----------------------------------------------------------------------------
 // Store 型定義
@@ -37,6 +37,13 @@ interface SessionActions {
   updateShushi: (shushi: ShushiData | null) => void;
   updateUserSettingGuess: (guess: string | null) => void;
   updateShinsekaiWeakRare: (counter: TGShinsekaiCounter) => void;
+
+  /** 赫眼 発生をマークして保留開始（バナー表示開始） */
+  startPendingKakugan: (blockId: string) => void;
+  /** 保留中の赫眼を確定 — 対象ブロックの kakugan[] に value を append */
+  confirmPendingKakugan: (value: string) => void;
+  /** 保留をキャンセル（ブロック側は何も変更しない） */
+  cancelPendingKakugan: () => void;
 
   clearSession: () => void;
   clearError: () => void;
@@ -90,6 +97,8 @@ export const useSessionStore = create<SessionState & SessionActions>(
       mutateSession(set, get, (s) => ({
         ...s,
         normalBlocks: s.normalBlocks.filter((b) => b.id !== blockId),
+        // 削除対象が pending の発生元だった場合は保留もクリア
+        pendingKakugan: s.pendingKakugan?.blockId === blockId ? null : s.pendingKakugan,
       })),
 
     // ---- TG ATエントリ ----
@@ -158,6 +167,29 @@ export const useSessionStore = create<SessionState & SessionActions>(
 
     updateShinsekaiWeakRare: (counter) =>
       mutateSession(set, get, (s) => ({ ...s, shinsekaiWeakRare: counter })),
+
+    // ---- 赫眼 後追い確定 ----
+    startPendingKakugan: (blockId) =>
+      mutateSession(set, get, (s) => ({
+        ...s,
+        pendingKakugan: { blockId, startedAt: new Date().toISOString() } satisfies PendingKakugan,
+      })),
+
+    confirmPendingKakugan: (value) =>
+      mutateSession(set, get, (s) => {
+        const pk = s.pendingKakugan;
+        if (!pk) return s;
+        return {
+          ...s,
+          normalBlocks: s.normalBlocks.map((b) =>
+            b.id === pk.blockId ? { ...b, kakugan: [...b.kakugan, value] } : b
+          ),
+          pendingKakugan: null,
+        };
+      }),
+
+    cancelPendingKakugan: () =>
+      mutateSession(set, get, (s) => ({ ...s, pendingKakugan: null })),
 
     // ---- ユーティリティ ----
     clearSession: () => set({ session: null, error: null }),

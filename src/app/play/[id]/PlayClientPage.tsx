@@ -10,6 +10,7 @@ import type { PlaySession, NormalBlock, TGATRow, TGATSet, TGATEntry, UchidashiSt
 import { useSessionStore } from "@/store/useSessionStore";
 import { NormalBlockList } from "@/components/tg/NormalBlockList";
 import { NormalBlockEditDashboard } from "@/components/tg/NormalBlockEditDashboard";
+import { PendingKakuganBanner } from "@/components/tg/PendingKakuganBanner";
 import { ATBlockList } from "@/components/tg/ATBlockList";
 import { ATBlockEditDashboard } from "@/components/tg/ATBlockEditDashboard";
 import { SummaryTab } from "@/components/tg/SummaryTab";
@@ -85,6 +86,9 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const updateShushi          = useSessionStore((s) => s.updateShushi);
   const updateUserSettingGuess = useSessionStore((s) => s.updateUserSettingGuess);
   const updateShinsekaiWeakRare = useSessionStore((s) => s.updateShinsekaiWeakRare);
+  const startPendingKakugan   = useSessionStore((s) => s.startPendingKakugan);
+  const confirmPendingKakugan = useSessionStore((s) => s.confirmPendingKakugan);
+  const cancelPendingKakugan  = useSessionStore((s) => s.cancelPendingKakugan);
 
   const [activeTab,    setActiveTab]    = useState<"normal" | "at" | "summary">("normal");
   const [normalEdit,   setNormalEdit]   = useState<NormalEditingState>(NORMAL_CLOSED);
@@ -139,6 +143,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const shushi           = session?.shushi           ?? null;
   const userSettingGuess = session?.userSettingGuess ?? null;
   const shinsekaiWeakRare = session?.shinsekaiWeakRare ?? null;
+  const pendingKakugan    = session?.pendingKakugan    ?? null;
 
   // ヘッダー用サマリー
   const totalGames = blocks.reduce((s, b) => s + (b.jisshuG ?? 0), 0);
@@ -186,6 +191,12 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
     if (normalEdit.block === null) appendNormalBlock(block);
     else updateNormalBlock(block.id, block);
     setNormalEdit(NORMAL_CLOSED);
+  }
+  /** 「赫眼発生」ボタン: 現フォームを保存し pending を開始 */
+  function handleStartPendingKakugan(savedBlock: NormalBlock) {
+    if (normalEdit.block === null) appendNormalBlock(savedBlock);
+    else updateNormalBlock(savedBlock.id, savedBlock);
+    startPendingKakugan(savedBlock.id);
   }
 
   // ── ATハンドラ ─────────────────────────────────────────────────────────────
@@ -247,8 +258,26 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
   const anyEditOpen = normalEdit.open || atEdit.open || uchidashiOpen || shushiOpen || settingGuessOpen;
 
+  // 赫眼バナーに表示する周期No（pendingKakugan の発生元ブロックが配列の何番目か）
+  const pendingKakuganBlockNo = pendingKakugan
+    ? (() => {
+        const idx = blocks.findIndex((b) => b.id === pendingKakugan.blockId);
+        return idx >= 0 ? idx + 1 : null;
+      })()
+    : null;
+
   return (
     <div className="flex flex-col overflow-hidden" style={{ height: "100dvh" }}>
+
+      {/* ===== 赫眼 後追い確定バナー（最上位・どの画面でも追従） ===== */}
+      {pendingKakugan && (
+        <PendingKakuganBanner
+          pending={pendingKakugan}
+          blockNo={pendingKakuganBlockNo}
+          onConfirm={confirmPendingKakugan}
+          onCancel={cancelPendingKakugan}
+        />
+      )}
 
       {/* ===== ヘッダー ===== */}
       <header
@@ -514,6 +543,8 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           medalStamp={medalStamps[normalEdit.index - 1] ?? null}
           shinsekaiWeakRare={shinsekaiWeakRare}
           onShinsekaiWeakRareChange={updateShinsekaiWeakRare}
+          pendingKakuganActive={pendingKakugan !== null}
+          onStartPendingKakugan={handleStartPendingKakugan}
           onSave={handleNormalSave}
           onTempSave={handleNormalTempSave}
           onClose={() => setNormalEdit(NORMAL_CLOSED)}

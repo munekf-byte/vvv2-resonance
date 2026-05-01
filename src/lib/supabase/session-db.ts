@@ -2,7 +2,7 @@
 // VALVRAVE-RESONANCE: セッション DB 操作 (サーバー用)
 // =============================================================================
 
-import type { PlaySession, NormalBlock, TGATEntry, SessionSummary, UchidashiState, ShushiData, TGShinsekaiCounter } from "@/types";
+import type { PlaySession, NormalBlock, TGATEntry, SessionSummary, UchidashiState, ShushiData, TGShinsekaiCounter, PendingKakugan } from "@/types";
 import { createServerSupabaseClient } from "./server";
 
 // -----------------------------------------------------------------------------
@@ -33,6 +33,7 @@ function rowToSession(row: Record<string, unknown>): PlaySession {
     shushi: castJson<ShushiData | null>(row.shushi ?? null),
     userSettingGuess: (row.user_setting_guess as string | null) ?? null,
     shinsekaiWeakRare: castJson<TGShinsekaiCounter | null>(row.shinsekai_weak_rare ?? null),
+    pendingKakugan: castJson<PendingKakugan | null>(row.pending_kakugan ?? null),
     prevPhotoUploadedAt: (row.prev_photo_uploaded_at as string | null) ?? null,
     resultPhotoUploadedAt: (row.result_photo_uploaded_at as string | null) ?? null,
     createdAt: row.created_at as string,
@@ -94,6 +95,7 @@ export async function saveSessionToDb(session: PlaySession): Promise<boolean> {
       shushi: session.shushi as unknown as import("@/types").Json,
       user_setting_guess: session.userSettingGuess,
       shinsekai_weak_rare: session.shinsekaiWeakRare as unknown as import("@/types").Json,
+      pending_kakugan: session.pendingKakugan as unknown as import("@/types").Json,
       updated_at: new Date().toISOString(),
     })
     .eq("id", session.id)
