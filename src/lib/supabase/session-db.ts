@@ -2,7 +2,7 @@
 // VALVRAVE-RESONANCE: セッション DB 操作 (サーバー用)
 // =============================================================================
 
-import type { PlaySession, NormalBlock, TGATEntry, SessionSummary, UchidashiState, ShushiData } from "@/types";
+import type { PlaySession, NormalBlock, TGATEntry, SessionSummary, UchidashiState, ShushiData, TGShinsekaiCounter } from "@/types";
 import { createServerSupabaseClient } from "./server";
 
 // -----------------------------------------------------------------------------
@@ -32,6 +32,7 @@ function rowToSession(row: Record<string, unknown>): PlaySession {
     uchidashi: castJson<UchidashiState | null>(row.uchidashi ?? null),
     shushi: castJson<ShushiData | null>(row.shushi ?? null),
     userSettingGuess: (row.user_setting_guess as string | null) ?? null,
+    shinsekaiWeakRare: castJson<TGShinsekaiCounter | null>(row.shinsekai_weak_rare ?? null),
     prevPhotoUploadedAt: (row.prev_photo_uploaded_at as string | null) ?? null,
     resultPhotoUploadedAt: (row.result_photo_uploaded_at as string | null) ?? null,
     createdAt: row.created_at as string,
@@ -92,6 +93,7 @@ export async function saveSessionToDb(session: PlaySession): Promise<boolean> {
       uchidashi: session.uchidashi as unknown as import("@/types").Json,
       shushi: session.shushi as unknown as import("@/types").Json,
       user_setting_guess: session.userSettingGuess,
+      shinsekai_weak_rare: session.shinsekaiWeakRare as unknown as import("@/types").Json,
       updated_at: new Date().toISOString(),
     })
     .eq("id", session.id)

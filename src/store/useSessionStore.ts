@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { create } from "zustand";
-import type { PlaySession, NormalBlock, TGATEntry, TGATRow, UchidashiState, ShushiData } from "@/types";
+import type { PlaySession, NormalBlock, TGATEntry, TGATRow, UchidashiState, ShushiData, TGShinsekaiCounter } from "@/types";
 
 // -----------------------------------------------------------------------------
 // Store 型定義
@@ -36,6 +36,7 @@ interface SessionActions {
   updateUchidashi: (uchidashi: UchidashiState | null) => void;
   updateShushi: (shushi: ShushiData | null) => void;
   updateUserSettingGuess: (guess: string | null) => void;
+  updateShinsekaiWeakRare: (counter: TGShinsekaiCounter) => void;
 
   clearSession: () => void;
   clearError: () => void;
@@ -154,6 +155,9 @@ export const useSessionStore = create<SessionState & SessionActions>(
 
     updateUserSettingGuess: (guess) =>
       mutateSession(set, get, (s) => ({ ...s, userSettingGuess: guess })),
+
+    updateShinsekaiWeakRare: (counter) =>
+      mutateSession(set, get, (s) => ({ ...s, shinsekaiWeakRare: counter })),
 
     // ---- ユーティリティ ----
     clearSession: () => set({ session: null, error: null }),

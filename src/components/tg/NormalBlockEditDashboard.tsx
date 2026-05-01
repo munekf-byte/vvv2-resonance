@@ -7,7 +7,7 @@
 // =============================================================================
 
 import { useEffect, useRef, useState } from "react";
-import type { NormalBlock } from "@/types";
+import type { NormalBlock, TGShinsekaiCounter } from "@/types";
 import {
   TG_ZONES, TG_MODES, TG_WIN_TRIGGERS, TG_EVENTS,
   TG_ENDING_SUGGESTIONS, TG_TROPHIES, TG_KAKUGAN,
@@ -38,6 +38,9 @@ interface Props {
   block: NormalBlock | null;
   blockIndex: number;
   medalStamp?: number | null;
+  /** セッション全体で1つの精神世界弱レア役カウンター */
+  shinsekaiWeakRare: TGShinsekaiCounter | null;
+  onShinsekaiWeakRareChange: (counter: TGShinsekaiCounter) => void;
   onSave: (block: NormalBlock) => void;
   onTempSave: (block: NormalBlock) => void;
   onClose: () => void;
@@ -58,7 +61,6 @@ function emptyForm(): FormState {
     trophy: "",
     kakugan:    [],
     shinsekai:  [],
-    shinsekaiCounters: [],
     invitation: [],
     zencho:     [],
     eyecatch: [],
@@ -80,7 +82,7 @@ const LANDSCAPE_STORAGE_KEY = "tgr_normal_dashboard_landscape";
 
 // ─── メインコンポーネント ──────────────────────────────────────────────────────
 
-export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave, onTempSave, onClose, onYame }: Props) {
+export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinsekaiWeakRare, onShinsekaiWeakRareChange, onSave, onTempSave, onClose, onYame }: Props) {
   const isNew = block === null;
   const [form, setForm] = useState<FormState>(() =>
     block ? { ...block, memo: block.memo ?? "" } : emptyForm()
@@ -137,22 +139,13 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
     setField("czCounter", { ...cz, [key]: Math.max(0, (cz[key as keyof typeof cz] as number) + delta) });
   }
 
-  /** 精神世界スロットを更新し、カウンター配列も同期させる */
-  function setShinsekaiSlots(vals: string[]) {
-    const prev = form.shinsekaiCounters ?? [];
-    const next = vals.map((label, i) =>
-      label ? (prev[i] ?? { miss: 0, win: 0 }) : { miss: 0, win: 0 }
-    );
-    setForm((p) => ({ ...p, shinsekai: vals, shinsekaiCounters: next }));
-  }
-
-  /** 精神世界カウンター個別更新 */
-  function setShinsekaiCounter(slotIndex: number, key: "miss" | "win", delta: number) {
-    const arr = [...(form.shinsekaiCounters ?? [])];
-    while (arr.length <= slotIndex) arr.push({ miss: 0, win: 0 });
-    const cur = arr[slotIndex] ?? { miss: 0, win: 0 };
-    arr[slotIndex] = { ...cur, [key]: Math.max(0, cur[key] + delta) };
-    setField("shinsekaiCounters", arr);
+  /** 精神世界弱レア役カウンター（セッション全体）を増減 */
+  function bumpShinsekaiWeakRare(key: "miss" | "win", delta: number) {
+    const cur = shinsekaiWeakRare ?? { miss: 0, win: 0 };
+    onShinsekaiWeakRareChange({
+      ...cur,
+      [key]: Math.max(0, cur[key] + delta),
+    });
   }
   const [czOverlay, setCZOverlay] = useState(false);
   const [czOverlayPhase, setCZOverlayPhase] = useState<1 | 2>(1);
@@ -506,58 +499,51 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, onSave
           />
         </Section>
 
-        {/* ── 精神世界 (nd-14) — 5スロット独立プルダウン + 弱レア役カウンター ── */}
+        {/* ── 精神世界 (nd-14) — 5スロット独立プルダウン ── */}
         <Section title="精神世界（最大5回）">
           <MultiSlotPicker
             values={form.shinsekai}
             options={[...TG_SHINSEKAI]}
-            onChange={setShinsekaiSlots}
+            onChange={(vals) => setField("shinsekai", vals)}
             accentColor="#1e40af"
             borderActive="#1d4ed8"
           />
-          {form.shinsekai.some((v) => !!v) && (
-            <div className="mt-3 space-y-2">
-              <p className="text-[9px] font-mono text-gray-500 leading-tight">
-                精神世界中の弱レア役を記録（ハズレ／当選はセパレート）
-              </p>
-              {form.shinsekai.map((label, i) => {
-                if (!label) return null;
-                const c = form.shinsekaiCounters?.[i] ?? { miss: 0, win: 0 };
-                return (
-                  <div
-                    key={`shinc-${i}`}
-                    className="rounded border-2 overflow-hidden"
-                    style={{ borderColor: "#1d4ed8" }}
-                  >
-                    <div
-                      className="flex items-center justify-between px-2 py-1"
-                      style={{ backgroundColor: "#1e40af", color: "#ffffff" }}
-                    >
-                      <span className="text-[10px] font-mono font-bold tracking-wide">
-                        {i + 1}. {label} <span className="opacity-70">/ 弱レア役</span>
-                      </span>
-                    </div>
-                    <ShinsekaiCounterRow
-                      label="ハズレ"
-                      bg="#fce4ec"
-                      color="#880e4f"
-                      value={c.miss}
-                      onPlus={() => setShinsekaiCounter(i, "miss", 1)}
-                      onMinus={() => setShinsekaiCounter(i, "miss", -1)}
-                    />
-                    <ShinsekaiCounterRow
-                      label="当選"
-                      bg="#c8e6c9"
-                      color="#1b5e20"
-                      value={c.win}
-                      onPlus={() => setShinsekaiCounter(i, "win", 1)}
-                      onMinus={() => setShinsekaiCounter(i, "win", -1)}
-                    />
-                  </div>
-                );
-              })}
+
+          {/* セッション全体の弱レア役カウンター（常時表示・どの周期からも同じ値を編集） */}
+          <div className="mt-3 space-y-2">
+            <p className="text-[9px] font-mono text-gray-500 leading-tight">
+              精神世界中の弱レア役（セッション全体・全周期で共通カウンター）
+            </p>
+            <div
+              className="rounded border-2 overflow-hidden"
+              style={{ borderColor: "#1d4ed8" }}
+            >
+              <div
+                className="flex items-center justify-between px-2 py-1"
+                style={{ backgroundColor: "#1e40af", color: "#ffffff" }}
+              >
+                <span className="text-[10px] font-mono font-bold tracking-wide">
+                  弱レア役 / セッション合計
+                </span>
+              </div>
+              <ShinsekaiCounterRow
+                label="ハズレ"
+                bg="#fce4ec"
+                color="#880e4f"
+                value={shinsekaiWeakRare?.miss ?? 0}
+                onPlus={() => bumpShinsekaiWeakRare("miss", 1)}
+                onMinus={() => bumpShinsekaiWeakRare("miss", -1)}
+              />
+              <ShinsekaiCounterRow
+                label="当選"
+                bg="#c8e6c9"
+                color="#1b5e20"
+                value={shinsekaiWeakRare?.win ?? 0}
+                onPlus={() => bumpShinsekaiWeakRare("win", 1)}
+                onMinus={() => bumpShinsekaiWeakRare("win", -1)}
+              />
             </div>
-          )}
+          </div>
         </Section>
 
         {/* ── フリーメモ (nd-16) ── */}

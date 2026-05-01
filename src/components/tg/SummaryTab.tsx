@@ -36,6 +36,7 @@ interface Props {
   sessionId: string;
   userSettingGuess?: string | null;
   uchidashi?: import("@/types").UchidashiState | null;
+  shinsekaiWeakRare?: import("@/types").TGShinsekaiCounter | null;
   finalResult?: number;
   userBalance?: number | null;
   /** 前任者履歴写真（1枚目） */
@@ -177,7 +178,7 @@ function SqIcon({ top, bottom, bg }: { top: string; bottom: string; bg: string }
 
 // ── メインコンポーネント ─────────────────────────────────────────────────
 
-export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi, finalResult, userBalance, prevPhoto, resultPhoto }: Props) {
+export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi, shinsekaiWeakRare, finalResult, userBalance, prevPhoto, resultPhoto }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
 
   const lsKey = `tgr_totalG_${sessionId}`;
@@ -235,13 +236,9 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
   const allShinsekai = blocks.flatMap((b) => b.shinsekai);
   const shinsekaiTotal = allShinsekai.length;
   const shinsekaiBS = [...TG_SHINSEKAI].map((s) => ({ label: s, count: allShinsekai.filter((v) => v === s).length }));
-  // 精神世界中の弱レア役 — 全ブロックのシンセカイカウンター集計
-  const shinsekaiWeakRareMiss = blocks
-    .flatMap((b) => b.shinsekaiCounters ?? [])
-    .reduce((s, c) => s + (c?.miss ?? 0), 0);
-  const shinsekaiWeakRareWin = blocks
-    .flatMap((b) => b.shinsekaiCounters ?? [])
-    .reduce((s, c) => s + (c?.win ?? 0), 0);
+  // 精神世界中の弱レア役 — セッション全体カウンターから直接読み出し
+  const shinsekaiWeakRareMiss = shinsekaiWeakRare?.miss ?? 0;
+  const shinsekaiWeakRareWin = shinsekaiWeakRare?.win ?? 0;
   const shinsekaiWeakRareTotal = shinsekaiWeakRareMiss + shinsekaiWeakRareWin;
 
   const czFailSuggestions = blocks.filter((b) => b.endingSuggestion.startsWith("[cz失敗]")).map((b) => b.endingSuggestion);

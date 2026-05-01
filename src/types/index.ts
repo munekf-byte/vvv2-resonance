@@ -18,7 +18,7 @@ export interface TGCZCounter {
   hitRole: string;
 }
 
-/** 精神世界中の弱レア役カウンター（精神世界スロットごと、index-aligned with shinsekai[]） */
+/** 精神世界中の弱レア役カウンター（セッション全体で1つ） */
 export interface TGShinsekaiCounter {
   /** 弱レア役ハズレ回数（当選しなかった発生数） */
   miss: number;
@@ -48,8 +48,6 @@ export interface TGNormalBlock {
   kakugan: string[];
   /** 精神世界 — 複数記録可 (TG_SHINSEKAI values) */
   shinsekai: string[];
-  /** 精神世界中の弱レア役カウンター — shinsekai[] と index-aligned */
-  shinsekaiCounters?: TGShinsekaiCounter[];
   /** 招待状 — 複数記録可 (TG_INVITATIONS values) */
   invitation: string[];
   /** 前兆履歴 — 複数記録可 (TG_ZENCHO values) */
@@ -212,6 +210,8 @@ export interface PlaySession {
   shushi: ShushiData | null;
   /** ユーザー推測設定 */
   userSettingGuess: string | null;
+  /** 精神世界中の弱レア役カウンター（セッション全体で1つ） */
+  shinsekaiWeakRare: TGShinsekaiCounter | null;
   /** 前任者履歴写真のアップロード完了時刻（NULL=未アップロード）。キャッシュバスト用にも使用 */
   prevPhotoUploadedAt?: string | null;
   /** 稼働結果写真のアップロード完了時刻（NULL=未アップロード） */

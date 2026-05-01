@@ -84,6 +84,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const updateUchidashi       = useSessionStore((s) => s.updateUchidashi);
   const updateShushi          = useSessionStore((s) => s.updateShushi);
   const updateUserSettingGuess = useSessionStore((s) => s.updateUserSettingGuess);
+  const updateShinsekaiWeakRare = useSessionStore((s) => s.updateShinsekaiWeakRare);
 
   const [activeTab,    setActiveTab]    = useState<"normal" | "at" | "summary">("normal");
   const [normalEdit,   setNormalEdit]   = useState<NormalEditingState>(NORMAL_CLOSED);
@@ -137,6 +138,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const uchidashi        = session?.uchidashi        ?? null;
   const shushi           = session?.shushi           ?? null;
   const userSettingGuess = session?.userSettingGuess ?? null;
+  const shinsekaiWeakRare = session?.shinsekaiWeakRare ?? null;
 
   // ヘッダー用サマリー
   const totalGames = blocks.reduce((s, b) => s + (b.jisshuG ?? 0), 0);
@@ -429,6 +431,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
             sessionId={initialSession.id}
             userSettingGuess={userSettingGuess}
             uchidashi={uchidashi}
+            shinsekaiWeakRare={shinsekaiWeakRare}
             finalResult={finalResult}
             userBalance={headerBalance}
             prevPhoto={{
@@ -509,6 +512,8 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           block={normalEdit.block}
           blockIndex={normalEdit.index}
           medalStamp={medalStamps[normalEdit.index - 1] ?? null}
+          shinsekaiWeakRare={shinsekaiWeakRare}
+          onShinsekaiWeakRareChange={updateShinsekaiWeakRare}
           onSave={handleNormalSave}
           onTempSave={handleNormalTempSave}
           onClose={() => setNormalEdit(NORMAL_CLOSED)}

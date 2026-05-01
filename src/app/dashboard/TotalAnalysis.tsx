@@ -255,13 +255,11 @@ export function TotalAnalysis() {
   const allShinsekai = allBlocks.flatMap((b) => b.shinsekai);
   const shinsekaiTotal = allShinsekai.length;
   const shinsekaiBS = [...TG_SHINSEKAI].map((s) => ({ label: s, count: allShinsekai.filter((v) => v === s).length }));
-  // 精神世界中の弱レア役 — 全ブロックのシンセカイカウンター集計
-  const shinsekaiWeakRareMiss = allBlocks
-    .flatMap((b) => b.shinsekaiCounters ?? [])
-    .reduce((s, c) => s + (c?.miss ?? 0), 0);
-  const shinsekaiWeakRareWin = allBlocks
-    .flatMap((b) => b.shinsekaiCounters ?? [])
-    .reduce((s, c) => s + (c?.win ?? 0), 0);
+  // 精神世界中の弱レア役 — セッション単位カウンターを全セッション合算
+  const shinsekaiWeakRareMiss = activeSessions
+    .reduce((s, sess) => s + (sess.shinsekaiWeakRare?.miss ?? 0), 0);
+  const shinsekaiWeakRareWin = activeSessions
+    .reduce((s, sess) => s + (sess.shinsekaiWeakRare?.win ?? 0), 0);
   const shinsekaiWeakRareTotal = shinsekaiWeakRareMiss + shinsekaiWeakRareWin;
 
   const czFailSuggestions = allBlocks.filter((b) => b.endingSuggestion.startsWith("[cz失敗]")).map((b) => b.endingSuggestion);

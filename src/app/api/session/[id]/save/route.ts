@@ -43,6 +43,7 @@ export async function POST(
   if (session.uchidashi !== undefined) payload.uchidashi = session.uchidashi;
   if (session.shushi !== undefined) payload.shushi = session.shushi;
   if (session.userSettingGuess !== undefined) payload.user_setting_guess = session.userSettingGuess;
+  if (session.shinsekaiWeakRare !== undefined) payload.shinsekai_weak_rare = session.shinsekaiWeakRare;
   if (session.summary !== undefined) payload.summary = session.summary;
   if (session.modeInferences !== undefined) payload.mode_inferences = session.modeInferences;
   if (session.endedAt !== undefined) payload.ended_at = session.endedAt;
