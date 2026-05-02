@@ -319,6 +319,39 @@
   /* SCREENSHOT */
   .ss { background: var(--bg-card); border: 2px dashed var(--border); border-radius: 10px; padding: 36px 16px; text-align: center; font-size: 12px; color: var(--text-muted); margin: 14px 0; }
 
+  /* TIP CARD (無料版での賢い使い方) */
+  .tip-card {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 2px solid var(--gold);
+    border-radius: 12px;
+    margin: 20px 0 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(166, 124, 61, 0.18);
+  }
+  .tip-head {
+    background: var(--gold);
+    color: #fff;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tip-icon { font-size: 18px; }
+  .tip-title { font-size: 15px; font-weight: 800; letter-spacing: 0.02em; }
+  .tip-body { padding: 16px 18px 12px; font-size: 14px; line-height: 2; color: #6b5630; }
+  .tip-link {
+    display: block;
+    padding: 12px 18px;
+    background: rgba(255,255,255,0.7);
+    border-top: 1px dashed #d4b88a;
+    color: var(--gold);
+    font-weight: 800;
+    font-size: 14px;
+    text-decoration: none;
+    text-align: center;
+  }
+  .tip-link:active { background: rgba(255,255,255,0.95); }
+
   /* PRICING */
   .price-card { background: var(--bg-white); border: 2px solid var(--gold); border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
   .price-head { background: var(--gold-bg); padding: 20px; text-align: center; border-bottom: 1px solid #d4b88a; }
@@ -391,12 +424,17 @@
     </tbody>
   </table>
 
-  <div class="info-box blue">
-    💡 セッションの保存枠は <span class="bold">3件まで</span> ですが、削除前に<span class="marker-b">画像保存</span>をしていただければ、稼働データは画像としてお手元に残ります。<br>
-    無料版のまま使い続けていただいても、まったく問題ありません。<br>
-    <a href="#" style="color:var(--blue);font-weight:700;font-size:13px">→ 画像保存の手順はこちら</a>
+  <div class="tip-card">
+    <div class="tip-head">
+      <span class="tip-icon">💡</span>
+      <span class="tip-title">無料版での賢い使い方</span>
+    </div>
+    <div class="tip-body">
+      セッションの保存枠は <span class="bold">3件まで</span> ですが、削除前に<span class="marker-b">画像保存</span>をしていただければ、稼働データは画像としてお手元に残ります。<br>
+      無料版のまま使い続けていただいても、まったく問題ありません。
+    </div>
+    <a href="/save-guide.html" class="tip-link">→ 画像保存の手順はこちら</a>
   </div>
-  <img src="/images/lp/ss_image_save.jpg" alt="画像保存機能" style="width:100%;border-radius:10px;border:1px solid #d4cbbf;margin:14px 0" />
 </section>
 
 <div class="divider"><hr></div>
