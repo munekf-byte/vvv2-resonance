@@ -23,6 +23,20 @@ import {
   getEndingCellColor, getTrophyCellColor, getSuggestionListLines,
   type CellColor,
 } from "@/lib/tg/cellColors";
+import { logAnalyticsEvent } from "@/lib/analytics/event-logger";
+
+// "AT3" → 3 (パースできなければ null)
+function parseAtSeqFromKey(atKey: string): number | null {
+  const m = atKey.match(/^AT(\d+)$/);
+  return m ? Number(m[1]) : null;
+}
+
+// BITES獲得を数値に。"ED" / 空文字 / 不正値 は null。"100" / "1000" は数値化。
+function parseBitesCoinsNumeric(v: string): number | null {
+  if (!v || v === "ED") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
 
 // AT側では [終了画面] prefix のみ
 const ENDING_SUGGESTIONS_AT = TG_ENDING_SUGGESTIONS.filter((s) =>
@@ -46,6 +60,12 @@ interface Props {
   row: TGATRow | null;
   defaultRowType?: "set" | "arima";
   defaultAtType?: string;
+  /** analytics: TGATEntry に紐付く UUID (親が セッション毎に管理) */
+  atInstanceId?: string;
+  /** analytics: AT 内の SET 連番 (新規=既存SET数+1, 編集=既存位置) */
+  setSeqInAt?: number;
+  /** analytics: AT 突入契機 (前段 NormalBlock.winTrigger) */
+  atEntryType?: string | null;
   onSave: (row: TGATRow) => void;
   onTempSave: (row: TGATRow) => void;
   onClose: () => void;
@@ -100,7 +120,11 @@ const LANDSCAPE_STORAGE_KEY = "tgr_at_dashboard_landscape";
 // メインコンポーネント
 // =============================================================================
 
-export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", defaultAtType, onSave, onTempSave, onClose }: Props) {
+export function ATBlockEditDashboard({
+  atKey, row, defaultRowType = "set", defaultAtType,
+  atInstanceId, setSeqInAt, atEntryType,
+  onSave, onTempSave, onClose,
+}: Props) {
   const isNew    = row === null;
   const rowType  = row?.rowType ?? defaultRowType;
 
@@ -177,7 +201,16 @@ export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", defau
         </div>
 
         {rowType === "set" ? (
-          <SetForm initial={row?.rowType === "set" ? row : null} defaultAtType={defaultAtType} onSave={onSave} onTempSave={onTempSave} />
+          <SetForm
+            initial={row?.rowType === "set" ? row : null}
+            defaultAtType={defaultAtType}
+            atKey={atKey}
+            atInstanceId={atInstanceId}
+            setSeqInAt={setSeqInAt}
+            atEntryType={atEntryType}
+            onSave={onSave}
+            onTempSave={onTempSave}
+          />
         ) : (
           <ArimaForm initial={row?.rowType === "arima" ? row : null} onSave={onSave} onTempSave={onTempSave} />
         )}
@@ -190,9 +223,16 @@ export function ATBlockEditDashboard({ atKey, row, defaultRowType = "set", defau
 // SET行フォーム
 // =============================================================================
 
-function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
+function SetForm({
+  initial, defaultAtType, atKey, atInstanceId, setSeqInAt, atEntryType,
+  onSave, onTempSave,
+}: {
   initial: TGATSet | null;
   defaultAtType?: string;
+  atKey: string;
+  atInstanceId?: string;
+  setSeqInAt?: number;
+  atEntryType?: string | null;
   onSave: (r: TGATRow) => void;
   onTempSave: (r: TGATRow) => void;
 }) {
@@ -211,6 +251,9 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
         }
       : emptySet(defaultAtType)
   );
+
+  // analytics: set_instance_id をマウント時に確定 (buildRow の id と一致させる)
+  const [setInstanceId] = useState<string>(() => initial?.id ?? crypto.randomUUID());
   const [bitesFreeInput, setBitesFreeInput] = useState(() => {
     if (!initial?.bitesCoins) return "";
     const presets = TG_BITES_COINS.map(String);
@@ -258,7 +301,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
     const battles    = form.battles.filter((b) => b.trigger || b.result);
     const directAdds = form.directAdds.filter((d) => d.trigger || d.coins != null);
     return {
-      id: initial?.id ?? crypto.randomUUID(),
+      id: setInstanceId,
       ...form,
       battles,
       directAdds,
@@ -266,7 +309,62 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
     };
   }
 
-  function handleSave()     { onSave(buildRow()); }
+  /**
+   * analytics: SET確定保存時のみ analytics_at_set_events に1行投入。
+   * 一時保存では送らない（編集中の中間値で重複レコードが量産されるのを防ぐ）。
+   * 親が atInstanceId を渡していない場合（旧フローや未統合画面）は送信スキップ。
+   */
+  function logAtSetEvent() {
+    if (typeof window === "undefined") return;
+    if (!atInstanceId) return;
+    const atSeq = parseAtSeqFromKey(atKey);
+    if (atSeq == null) return;
+
+    const validBattles = form.battles.filter((b) => b.trigger || b.result);
+    const validDirectAdds = form.directAdds.filter((d) => d.trigger || d.coins != null);
+    const battleCount = validBattles.length;
+    const battleWins  = validBattles.filter((b) => b.result === "○").length;
+    const kakuganList = (form.kakugan ?? []).filter((k) => !!k);
+
+    logAnalyticsEvent("at-set", {
+      at_instance_id: atInstanceId,
+      at_seq_in_session: atSeq,
+      set_instance_id: setInstanceId,
+      set_seq_in_at: setSeqInAt ?? 1,
+
+      at_type: form.atType,
+      at_entry_type: atEntryType ?? null,
+
+      character: form.character,
+      bites_type: form.bitesType,
+      bites_coins: form.bitesCoins,
+      bites_coins_numeric: parseBitesCoinsNumeric(form.bitesCoins),
+      disadvantage: form.disadvantage,
+
+      battle_count: battleCount > 0 ? battleCount : null,
+      battle_wins:  battleCount > 0 ? battleWins  : null,
+      battle_triggers: battleCount > 0 ? validBattles.map((b) => b.trigger) : null,
+      battle_results:  battleCount > 0 ? validBattles.map((b) => b.result)  : null,
+
+      direct_add_count: validDirectAdds.length > 0 ? validDirectAdds.length : null,
+      direct_add_total_coins: validDirectAdds.length > 0
+        ? validDirectAdds.reduce((s, d) => s + (d.coins ?? 0), 0)
+        : null,
+
+      ending_suggestion: form.endingSuggestion,
+      trophy: form.trophy,
+      ending_card_data: form.endingCard,
+      ed_kakugan_count: form.edKakuganCount ?? null,
+      kakugan_states: kakuganList,
+      kakugan_count: kakuganList.length,
+      coins_hint: form.coinsHint,
+
+      is_correction: false,
+      recorded_at: new Date().toISOString(),
+    });
+  }
+
+  function handleSave()     { logAtSetEvent(); onSave(buildRow()); }
   function handleTempSave() { onTempSave(buildRow()); }
 
   const ec = form.endingCard ?? emptyEndingCard();

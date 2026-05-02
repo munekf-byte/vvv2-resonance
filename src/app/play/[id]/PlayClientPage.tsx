@@ -58,8 +58,44 @@ interface ATEditingState {
   row: TGATRow | null;
   defaultRowType: "set" | "arima";
   defaultAtType?: string;
+  /** analytics: TGATEntry に紐付く UUID (セッション x atKey で一意) */
+  atInstanceId?: string;
+  /** analytics: AT 内の SET 連番 (新規=既存SET数+1, 編集=既存位置) */
+  setSeqInAt?: number;
+  /** analytics: AT 突入契機 (前段 NormalBlock.winTrigger) */
+  atEntryType?: string | null;
 }
 const AT_CLOSED: ATEditingState = { open: false, atKey: "", row: null, defaultRowType: "set" };
+
+// analytics: at_instance_id を atKey ごとに発番・永続化 (sessionId スコープ)
+function getOrCreateAtInstanceId(sessionId: string, atKey: string): string {
+  const storageKey = `tgr_at_instances_${sessionId}`;
+  let map: Record<string, string> = {};
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (raw) map = JSON.parse(raw) ?? {};
+  } catch {}
+  if (!map[atKey]) {
+    map[atKey] = crypto.randomUUID();
+    try { localStorage.setItem(storageKey, JSON.stringify(map)); } catch {}
+  }
+  return map[atKey];
+}
+
+// analytics: AT突入契機を atKey から推定 ("AT3" → 3 番目に atWin=true となった周期の winTrigger)
+function inferAtEntryType(atKey: string, blocks: NormalBlock[]): string | null {
+  const m = atKey.match(/^AT(\d+)$/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  let count = 0;
+  for (const b of blocks) {
+    if (b.atWin) {
+      count += 1;
+      if (count === n) return b.winTrigger || null;
+    }
+  }
+  return null;
+}
 
 export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const router = useRouter();
@@ -217,11 +253,31 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
     // 直前のSET行のAT種別を引き継ぐ
     const sets = (entry?.rows ?? []).filter((r): r is TGATSet => r.rowType === "set");
     const defaultAtType = sets.length > 0 ? sets[sets.length - 1].atType : undefined;
-    setATEdit({ open: true, atKey, row: null, defaultRowType: rowType, defaultAtType });
+    // analytics: 新規SET → 連番 = 既存SET数+1。Arima は SET ではないので未設定。
+    const atInstanceId = getOrCreateAtInstanceId(initialSession.id, atKey);
+    const setSeqInAt = rowType === "set" ? sets.length + 1 : undefined;
+    const atEntryType = inferAtEntryType(atKey, blocks);
+    setATEdit({
+      open: true, atKey, row: null, defaultRowType: rowType, defaultAtType,
+      atInstanceId, setSeqInAt, atEntryType,
+    });
   }
 
   function handleATEditRow(atKey: string, row: TGATRow) {
-    setATEdit({ open: true, atKey, row, defaultRowType: row.rowType });
+    // analytics: 編集対象が SET の場合のみ連番を計算 (entry.rows 内の SET 行で何番目か)
+    const entry = atEntries.find((e) => e.atKey === atKey);
+    let setSeqInAt: number | undefined;
+    if (row.rowType === "set" && entry) {
+      const sets = entry.rows.filter((r): r is TGATSet => r.rowType === "set");
+      const idx = sets.findIndex((s) => s.id === row.id);
+      setSeqInAt = idx >= 0 ? idx + 1 : sets.length + 1;
+    }
+    const atInstanceId = getOrCreateAtInstanceId(initialSession.id, atKey);
+    const atEntryType = inferAtEntryType(atKey, blocks);
+    setATEdit({
+      open: true, atKey, row, defaultRowType: row.rowType,
+      atInstanceId, setSeqInAt, atEntryType,
+    });
   }
 
   function handleATTempSave(row: TGATRow) {
@@ -563,6 +619,9 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           row={atEdit.row}
           defaultRowType={atEdit.defaultRowType}
           defaultAtType={atEdit.defaultAtType}
+          atInstanceId={atEdit.atInstanceId}
+          setSeqInAt={atEdit.setSeqInAt}
+          atEntryType={atEdit.atEntryType}
           onSave={handleATSave}
           onTempSave={handleATTempSave}
           onClose={() => setATEdit(AT_CLOSED)}
