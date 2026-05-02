@@ -293,8 +293,8 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
                       ? { backgroundColor: "#b91c1c", color: "#fff", border: "2px solid #b91c1c", boxShadow: "0 0 0 2px #1f2937" }
                       : t === "隠れ裏AT（推測）"
                       ? { backgroundColor: "#4a148c", color: "#fff", border: "2px solid #4a148c", boxShadow: "0 0 0 2px #1f2937" }
-                      : { backgroundColor: "#374151", color: "#fff", border: "2px solid #374151", boxShadow: "0 0 0 2px #1f2937" }
-                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }
+                      : { backgroundColor: "#374151", color: "#fff", border: "2px solid #111827", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #6b7280" }
                 }
               >{t}</button>
             ))}
@@ -311,7 +311,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
                 <button key={c} onClick={() => setField("character", c)}
                   className="py-3 rounded text-[11px] font-mono font-bold transition-all active:scale-95"
                   style={sel ? { ...col, boxShadow: "0 0 0 2px #1f2937" }
-                             : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }}
+                             : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #6b7280" }}
                 >{c}</button>
               );
             })}
@@ -395,7 +395,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
 
         {/* BITES種別 (ad-9) — EDボナ時は非表示・トグルキャンセル対応 */}
         {!isED && (
-        <Section title="BITES種別" bgImage="/images/atdashboard_bites.jpg">
+        <Section title="BITES種別" bgImage="/images/atdashboard_shubetsu.jpg">
           <div className="grid grid-cols-3 gap-2">
             {TG_BITES_TYPES.map((bt) => {
               const sel  = form.bitesType === bt;
@@ -403,7 +403,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
                 <button key={bt} onClick={() => setField("bitesType", sel ? "" : bt)}
                   className="py-2 px-1 rounded leading-tight text-center transition-all active:scale-95 flex flex-col items-center"
                   style={sel ? { backgroundColor: "#1f2937", color: "#f9fafb", border: "2px solid #1f2937", boxShadow: "0 0 0 2px #1f2937" }
-                             : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }}
+                             : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #6b7280" }}
                 >
                   <span className="text-[10px] font-mono font-bold">{getBitesTypeShort(bt)}</span>
                   {getBitesDesc(bt) && <span className="text-[8px] font-mono opacity-75 mt-0.5">{getBitesDesc(bt)}</span>}
@@ -463,7 +463,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
               <button
                 onClick={() => setField("edKakuganCount" as keyof typeof form, Math.max(0, (form.edKakuganCount ?? 0) - 1) as never)}
                 className="w-14 h-14 rounded-lg text-xl font-mono font-black active:scale-95 transition-transform"
-                style={{ backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #d1d5db" }}
+                style={{ backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #6b7280" }}
               >−</button>
               <div className="flex flex-col items-center">
                 <span className="text-[28px] font-mono font-black leading-none" style={{ color: "#b91c1c" }}>
@@ -537,7 +537,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
                   className="py-3 rounded text-center transition-all active:scale-95 flex flex-col items-center"
                   style={sel
                     ? { backgroundColor: "#fde68a", color: "#92400e", border: "2px solid #f59e0b", boxShadow: "0 0 0 2px #1f2937" }
-                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #e5e7eb" }}>
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #6b7280" }}>
                   <span className="text-[11px] font-mono font-black">{label}</span>
                   <span className="text-[7px] font-mono mt-0.5 opacity-75">{hint}</span>
                 </button>
@@ -770,7 +770,7 @@ function ArimaForm({ initial, onSave, onTempSave }: {
                     ? r === "成功"
                       ? { backgroundColor: "#f9a825", color: "#000", border: "2px solid #f9a825", boxShadow: "0 0 0 2px #1f2937" }
                       : { backgroundColor: "#424242", color: "#fff", border: "2px solid #424242", boxShadow: "0 0 0 2px #1f2937" }
-                    : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #e5e7eb" }
+                    : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #6b7280" }
                 }
               >{r}</button>
             ))}
@@ -784,8 +784,8 @@ function ArimaForm({ initial, onSave, onTempSave }: {
                 className="py-4 rounded text-[11px] font-mono font-bold transition-all active:scale-95 text-center"
                 style={
                   form.role === r
-                    ? { backgroundColor: "#374151", color: "#fff", border: "2px solid #374151", boxShadow: "0 0 0 2px #1f2937" }
-                    : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #e5e7eb" }
+                    ? { backgroundColor: "#374151", color: "#fff", border: "2px solid #111827", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #6b7280" }
                 }
               >{r}</button>
             ))}
@@ -804,7 +804,7 @@ function ArimaForm({ initial, onSave, onTempSave }: {
                 style={
                   form.ccgCoins === c
                     ? { backgroundColor: "#b91c1c", color: "#fff", border: "2px solid #b91c1c", boxShadow: "0 0 0 2px #1f2937" }
-                    : { backgroundColor: "#f3f4f6", color: "#374151", border: "2px solid #e5e7eb" }
+                    : { backgroundColor: "#f3f4f6", color: "#374151", border: "2px solid #6b7280" }
                 }
               >{c.toLocaleString()}枚</button>
             ))}
@@ -819,7 +819,7 @@ function ArimaForm({ initial, onSave, onTempSave }: {
                 style={
                   (form.favorableCut ?? "-") === opt
                     ? { backgroundColor: "#1e3a5f", color: "#fff", border: "2px solid #1e3a5f", boxShadow: "0 0 0 2px #1f2937" }
-                    : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #e5e7eb" }
+                    : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #6b7280" }
                 }
               >{opt}</button>
             ))}
@@ -971,7 +971,7 @@ function TrophyImagePicker({ value, onChange }: { value: string; onChange: (v: s
       <button
         onClick={() => setOpen(true)}
         className="mt-2 w-full rounded overflow-hidden active:scale-95 transition-transform"
-        style={{ minHeight: "56px", border: "2px solid #374151" }}
+        style={{ minHeight: "56px", border: "2px solid #111827" }}
       >
         {hasValue ? (
           <div className="flex items-center gap-2 px-2 py-1.5" style={color ?? {}}>
@@ -1006,7 +1006,7 @@ function TrophyImagePicker({ value, onChange }: { value: string; onChange: (v: s
                 className="w-full rounded-lg py-3 text-center font-mono text-sm active:scale-95 transition-transform"
                 style={!hasValue
                   ? { backgroundColor: "#1f2937", color: "#fff", boxShadow: "0 0 0 2px #1f2937" }
-                  : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "1px solid #d1d5db" }
+                  : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #6b7280" }
                 }
               >
                 なし
@@ -1166,7 +1166,7 @@ function EndingImagePicker({ value, onChange }: { value: string; onChange: (v: s
       <button
         onClick={() => setOpen(true)}
         className="mt-2 w-full rounded overflow-hidden active:scale-95 transition-transform"
-        style={{ minHeight: "56px", border: "2px solid #374151" }}
+        style={{ minHeight: "56px", border: "2px solid #111827" }}
       >
         {hasValue ? (
           <div className="flex items-center gap-2 px-2 py-1.5" style={color ?? {}}>
@@ -1209,7 +1209,7 @@ function EndingImagePicker({ value, onChange }: { value: string; onChange: (v: s
                 style={
                   !hasValue
                     ? { backgroundColor: "#1f2937", color: "#fff", boxShadow: "0 0 0 2px #1f2937" }
-                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "1px solid #d1d5db" }
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #6b7280" }
                 }
               >
                 なし
@@ -1277,7 +1277,7 @@ function PickerCell({
     <div className="relative rounded overflow-hidden" style={{ minHeight: "56px" }}>
       <div
         className="absolute inset-0 flex items-center justify-center gap-1 font-mono font-bold text-[11px] text-center px-1 pointer-events-none"
-        style={color ? { ...color } : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #e5e7eb" }}
+        style={color ? { ...color } : { backgroundColor: "#f3f4f6", color: "#9ca3af", border: "2px solid #6b7280" }}
       >
         <span className="truncate">{displayLabel}</span>
         <span className="text-[9px] opacity-50 shrink-0">▼</span>
@@ -1299,7 +1299,7 @@ function PickerCell({
 
 function Section({ title, children, bgImage }: { title: string; children: React.ReactNode; bgImage?: string }) {
   return (
-    <div className="relative bg-white rounded border border-gray-400 px-3 pt-3 pb-4 overflow-hidden">
+    <div className="relative bg-white rounded border-2 border-gray-700 px-3 pt-3 pb-4 overflow-hidden shadow-md">
       {bgImage && (
         <div
           className="absolute inset-0 z-0 pointer-events-none"
@@ -1307,12 +1307,18 @@ function Section({ title, children, bgImage }: { title: string; children: React.
             backgroundImage: `url('${bgImage}')`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            opacity: 0.20,
+            opacity: 0.25,
           }}
         />
       )}
       <div className="relative z-10">
-        <p className="text-[10px] font-mono text-gray-500 font-bold mb-2 uppercase tracking-wide">{title}</p>
+        <div
+          className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 rounded"
+          style={{ backgroundColor: "#1f2937", boxShadow: "0 2px 6px rgba(0,0,0,0.25)" }}
+        >
+          <span className="block w-1.5 h-5 rounded-sm" style={{ backgroundColor: "#fbbf24" }} />
+          <span className="text-[14px] font-mono font-black tracking-wider text-white uppercase">{title}</span>
+        </div>
         {children}
       </div>
     </div>

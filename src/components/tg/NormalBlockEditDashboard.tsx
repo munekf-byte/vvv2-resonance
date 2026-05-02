@@ -275,7 +275,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                 inputMode="numeric"
                 placeholder="G数"
                 className="w-full text-sm font-mono rounded px-1 py-3 focus:outline-none bg-white text-center"
-                style={{ border: "1px solid #374151" }}
+                style={{ border: "2px solid #111827" }}
                 value={form.jisshuG ?? ""}
                 onChange={(e) =>
                   setField("jisshuG", e.target.value === "" ? null : Number(e.target.value))
@@ -334,8 +334,8 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                 className="w-full font-mono font-bold text-[11px] rounded transition-all active:scale-95"
                 style={{
                   ...(form.atWin
-                    ? { backgroundColor: "#38761d", color: "#fff", border: "1px solid #374151", boxShadow: "0 0 0 2px #1f2937" }
-                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "1px solid #374151" }),
+                    ? { backgroundColor: "#38761d", color: "#fff", border: "2px solid #111827", boxShadow: "0 0 0 2px #1f2937" }
+                    : { backgroundColor: "#f3f4f6", color: "#6b7280", border: "2px solid #111827" }),
                   minHeight: "56px",
                 }}
               >
@@ -425,9 +425,9 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                   const val = cz[key] as number;
                   const isHit = cz.hitRole === key;
                   return (
-                    <div key={key} className="flex items-center" style={{ minHeight: "48px", borderBottom: "2px solid #374151" }}>
+                    <div key={key} className="flex items-center" style={{ minHeight: "48px", borderBottom: "2px solid #111827" }}>
                       <div className="flex items-center justify-center font-mono font-bold text-[13px] shrink-0"
-                        style={{ width: "68px", height: "48px", backgroundColor: bg, color, borderRight: "2px solid #374151" }}>
+                        style={{ width: "68px", height: "48px", backgroundColor: bg, color, borderRight: "2px solid #111827" }}>
                         {label}
                       </div>
                       <div className="flex items-center gap-1.5 flex-1 justify-center px-1">
@@ -452,7 +452,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                       </div>
                       <span className="text-[22px] shrink-0 mr-0.5" style={{ color: isHit ? "#f59e0b" : "transparent" }}>★</span>
                       <div className="flex items-center justify-center font-mono font-black text-xl shrink-0"
-                        style={{ width: "48px", height: "48px", border: "2px solid #374151", borderRadius: "4px", marginRight: "4px",
+                        style={{ width: "48px", height: "48px", border: "2px solid #111827", borderRadius: "4px", marginRight: "4px",
                           backgroundColor: isHit ? "#b91c1c" : val > 0 ? "#1f2937" : "#f9fafb",
                           color: val > 0 || isHit ? "#ffffff" : "#9ca3af" }}>
                         {val}
@@ -584,7 +584,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
           <textarea
             placeholder="メモを入力..."
             className="w-full rounded px-2 py-2 text-[12px] font-mono focus:outline-none resize-none bg-white"
-            style={{ border: "1px solid #374151" }}
+            style={{ border: "2px solid #111827" }}
             rows={3}
             value={form.memo ?? ""}
             onChange={(e) => setField("memo", e.target.value || undefined)}
@@ -707,7 +707,7 @@ function MultiSlotPicker({
 
         return (
           <div key={i} className="flex flex-col rounded overflow-hidden border-2"
-            style={hasValue ? { borderColor: borderActive } : { borderColor: "#e5e7eb" }}>
+            style={hasValue ? { borderColor: borderActive } : { borderColor: "#6b7280" }}>
             {/* スロット番号 */}
             <div className="text-center text-[8px] font-mono py-0.5 leading-none"
               style={{ backgroundColor: "#f3f4f6", color: "#9ca3af" }}>
@@ -759,11 +759,11 @@ function ShinsekaiCounterRow({
   return (
     <div
       className="flex items-center"
-      style={{ minHeight: "44px", borderTop: "2px solid #374151" }}
+      style={{ minHeight: "44px", borderTop: "2px solid #111827" }}
     >
       <div
         className="flex items-center justify-center font-mono font-bold text-[12px] shrink-0"
-        style={{ width: "68px", height: "44px", backgroundColor: bg, color, borderRight: "2px solid #374151" }}
+        style={{ width: "68px", height: "44px", backgroundColor: bg, color, borderRight: "2px solid #111827" }}
       >
         {label}
       </div>
@@ -786,7 +786,7 @@ function ShinsekaiCounterRow({
       <div
         className="flex items-center justify-center font-mono font-black text-xl shrink-0"
         style={{
-          width: "48px", height: "44px", border: "2px solid #374151", borderRadius: "4px", marginRight: "4px",
+          width: "48px", height: "44px", border: "2px solid #111827", borderRadius: "4px", marginRight: "4px",
           backgroundColor: value > 0 ? "#1f2937" : "#f9fafb",
           color: value > 0 ? "#ffffff" : "#9ca3af",
         }}
@@ -823,7 +823,7 @@ function ZenchoSlot({ zone, value, onChange }: {
   return (
     <div
       className="flex flex-col rounded border-2 overflow-hidden"
-      style={hasValue ? { borderColor: "#374151" } : { borderColor: "#e5e7eb" }}
+      style={hasValue ? { borderColor: "#374151" } : { borderColor: "#6b7280" }}
     >
       {/* 上段: ゾーン数 */}
       <div
@@ -861,7 +861,7 @@ function ZenchoSlot({ zone, value, onChange }: {
 
 function Section({ title, children, bgImage }: { title: string; children: React.ReactNode; bgImage?: string }) {
   return (
-    <div className="relative bg-white rounded border border-gray-400 px-3 pt-3 pb-4 overflow-hidden">
+    <div className="relative bg-white rounded border-2 border-gray-700 px-3 pt-3 pb-4 overflow-hidden shadow-md">
       {bgImage && (
         <div
           className="absolute inset-0 z-0 pointer-events-none"
@@ -869,12 +869,18 @@ function Section({ title, children, bgImage }: { title: string; children: React.
             backgroundImage: `url('${bgImage}')`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            opacity: 0.20,
+            opacity: 0.25,
           }}
         />
       )}
       <div className="relative z-10">
-        <p className="text-[10px] font-mono text-gray-500 font-bold mb-2 uppercase tracking-wide">{title}</p>
+        <div
+          className="inline-flex items-center gap-2 mb-3 px-3 py-1.5 rounded"
+          style={{ backgroundColor: "#1f2937", boxShadow: "0 2px 6px rgba(0,0,0,0.25)" }}
+        >
+          <span className="block w-1.5 h-5 rounded-sm" style={{ backgroundColor: "#fbbf24" }} />
+          <span className="text-[14px] font-mono font-black tracking-wider text-white uppercase">{title}</span>
+        </div>
         {children}
       </div>
     </div>
@@ -907,7 +913,7 @@ function ColoredSelectIcon({
   return (
     <div
       className="relative rounded overflow-hidden"
-      style={{ minHeight: "56px", border: "1px solid #374151" }}
+      style={{ minHeight: "56px", border: "2px solid #111827" }}
     >
       <div
         className="absolute inset-0 flex items-center justify-center gap-1 font-mono font-bold text-[11px] text-center px-1 pointer-events-none"
