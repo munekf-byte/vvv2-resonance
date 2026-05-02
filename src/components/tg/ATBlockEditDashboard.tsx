@@ -319,7 +319,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
         </Section>
 
         {/* 対決 (ad-5) — EDボナ時は非表示 */}
-        {!isED && <Section title="対決（契機 + 成績）">
+        {!isED && <Section title="対決（契機 + 成績）" bgImage="/images/atdashboard_taiketsu.jpg">
           <div className="grid grid-cols-5 gap-1.5">
             {Array.from({ length: TG_MAX_BATTLE_RESULTS }, (_, i) => {
               const battle = form.battles[i] ?? { trigger: "", result: "" };
@@ -341,7 +341,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
         </Section>}
 
         {/* 直乗せ (ad-7) — EDボナ時は非表示 */}
-        {!isED && <Section title="直乗せ（契機 + 枚数）">
+        {!isED && <Section title="直乗せ（契機 + 枚数）" bgImage="/images/atdashboard_uwanose.jpg">
           <div className="grid grid-cols-5 gap-1.5">
             {Array.from({ length: TG_MAX_DIRECT_ADDS }, (_, i) => {
               const d = form.directAdds[i] ?? { id: "", trigger: "", coins: null };
@@ -395,7 +395,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
 
         {/* BITES種別 (ad-9) — EDボナ時は非表示・トグルキャンセル対応 */}
         {!isED && (
-        <Section title="BITES種別">
+        <Section title="BITES種別" bgImage="/images/atdashboard_bites.jpg">
           <div className="grid grid-cols-3 gap-2">
             {TG_BITES_TYPES.map((bt) => {
               const sel  = form.bitesType === bt;
@@ -416,7 +416,7 @@ function SetForm({ initial, defaultAtType, onSave, onTempSave }: {
 
         {/* BITES獲得 (ad-11) — EDボナ時は非表示 */}
         {!isED && (
-        <Section title="BITES獲得">
+        <Section title="BITES獲得" bgImage="/images/atdashboard_bites.jpg">
           <div className="grid grid-cols-5 gap-2 mb-3">
             {TG_BITES_COINS.map((c) => (
               <button key={c}
@@ -1297,11 +1297,24 @@ function PickerCell({
 
 // ─── 共通サブコンポーネント ───────────────────────────────────────────────────
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, bgImage }: { title: string; children: React.ReactNode; bgImage?: string }) {
   return (
-    <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
-      <p className="text-[10px] font-mono text-gray-500 font-bold mb-2 uppercase tracking-wide">{title}</p>
-      {children}
+    <div className="relative bg-white rounded border border-gray-400 px-3 pt-3 pb-4 overflow-hidden">
+      {bgImage && (
+        <div
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{
+            backgroundImage: `url('${bgImage}')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.08,
+          }}
+        />
+      )}
+      <div className="relative z-10">
+        <p className="text-[10px] font-mono text-gray-500 font-bold mb-2 uppercase tracking-wide">{title}</p>
+        {children}
+      </div>
     </div>
   );
 }

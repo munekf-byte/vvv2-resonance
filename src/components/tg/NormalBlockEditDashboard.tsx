@@ -466,7 +466,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
         })()}
 
         {/* ── 前兆履歴 (nd-8) ── */}
-        <Section title="前兆履歴">
+        <Section title="前兆履歴" bgImage="/images/tokyo_joku.jpg">
           <div className="grid grid-cols-3 gap-2">
             {([...TG_ZENCHO_ZONES] as string[]).map((zone) => (
               <ZenchoSlot
@@ -480,7 +480,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
         </Section>
 
         {/* ── 招待状 (nd-10) — 5スロット独立プルダウン ── */}
-        <Section title="招待状（最大5回）">
+        <Section title="招待状（最大5回）" bgImage="/images/invitationcard.jpg">
           <MultiSlotPicker
             values={form.invitation}
             options={[...TG_INVITATIONS]}
@@ -493,7 +493,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
         </Section>
 
         {/* ── アイキャッチ（5スロット独立プルダウン） ── */}
-        <Section title="アイキャッチ（複数記録可）">
+        <Section title="アイキャッチ（複数記録可）" bgImage="/images/eye_catch.jpg">
           <MultiSlotPicker
             values={Array.isArray(form.eyecatch) ? form.eyecatch : (form.eyecatch ? [form.eyecatch] : [])}
             options={[...TG_EYECATCH]}
@@ -503,7 +503,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
         </Section>
 
         {/* ── 赫眼状態 (nd-12) — 5スロット独立プルダウン + 後追い確定ボタン ── */}
-        <Section title="赫眼状態（最大5回）">
+        <Section title="赫眼状態（最大5回）" bgImage="/images/kakugan.jpg">
           <MultiSlotPicker
             values={form.kakugan}
             options={[...TG_KAKUGAN]}
@@ -533,7 +533,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
         </Section>
 
         {/* ── 精神世界 (nd-14) — 5スロット独立プルダウン ── */}
-        <Section title="精神世界（最大5回）">
+        <Section title="精神世界（最大5回）" bgImage="/images/seishin_sekai.jpg">
           <MultiSlotPicker
             values={form.shinsekai}
             options={[...TG_SHINSEKAI]}
@@ -859,11 +859,24 @@ function ZenchoSlot({ zone, value, onChange }: {
 
 // ─── 共通サブコンポーネント ───────────────────────────────────────────────────
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, bgImage }: { title: string; children: React.ReactNode; bgImage?: string }) {
   return (
-    <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4">
-      <p className="text-[10px] font-mono text-gray-500 font-bold mb-2 uppercase tracking-wide">{title}</p>
-      {children}
+    <div className="relative bg-white rounded border border-gray-400 px-3 pt-3 pb-4 overflow-hidden">
+      {bgImage && (
+        <div
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{
+            backgroundImage: `url('${bgImage}')`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            opacity: 0.08,
+          }}
+        />
+      )}
+      <div className="relative z-10">
+        <p className="text-[10px] font-mono text-gray-500 font-bold mb-2 uppercase tracking-wide">{title}</p>
+        {children}
+      </div>
     </div>
   );
 }
