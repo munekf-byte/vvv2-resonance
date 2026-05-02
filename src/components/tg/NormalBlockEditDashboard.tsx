@@ -869,7 +869,7 @@ function Section({ title, children, bgImage }: { title: string; children: React.
             backgroundImage: `url('${bgImage}')`,
             backgroundSize: "cover",
             backgroundPosition: "center",
-            opacity: 0.08,
+            opacity: 0.20,
           }}
         />
       )}
