@@ -191,7 +191,7 @@
     background-position: 0% 100%;
   }
   .lp-wave-cut {
-    height: 56px;
+    height: 84px;
     background: #fff;
     position: relative;
     overflow: hidden;
@@ -199,11 +199,27 @@
   .lp-wave-cut svg.wave-svg {
     position: absolute;
     left: 0; right: 0;
-    top: 50%;
-    transform: translateY(-50%);
+    bottom: 12px;
     width: 100%;
-    height: 28px;
+    height: 24px;
     display: block;
+  }
+  .lp-wave-label {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fde68a;
+    border: 2px solid #1f2937;
+    border-radius: 6px;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #1f2937;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    z-index: 2;
+    letter-spacing: 0.04em;
   }
 
   /* SORT IMAGE WITH HALL/MACHINE NUMBER MASKS */
@@ -550,6 +566,7 @@
       <div class="lp-example" aria-label="トータル数値分析 出力例">
         <div class="lp-crop-total-top" role="img" aria-label="トータル数値分析（上部）"></div>
         <div class="lp-wave-cut">
+          <span class="lp-wave-label">途中省略</span>
           <svg class="wave-svg" viewBox="0 0 200 24" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M 0 8 Q 12.5 0 25 8 T 50 8 T 75 8 T 100 8 T 125 8 T 150 8 T 175 8 T 200 8" stroke="#1f2937" stroke-width="1.4" fill="none"/>
             <path d="M 0 18 Q 12.5 10 25 18 T 50 18 T 75 18 T 100 18 T 125 18 T 150 18 T 175 18 T 200 18" stroke="#1f2937" stroke-width="1.4" fill="none"/>
