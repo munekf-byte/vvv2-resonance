@@ -275,7 +275,7 @@
   .crop-bottom img { bottom: 0; }
 
   .wave-cut {
-    height: 96px;
+    height: 56px;
     background: #fff;
     position: relative;
     overflow: hidden;
@@ -283,27 +283,11 @@
   .wave-cut svg.wave-svg {
     position: absolute;
     left: 0; right: 0;
-    bottom: 14px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 100%;
     height: 28px;
     display: block;
-  }
-  .wave-label {
-    position: absolute;
-    top: 18px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #fde68a;
-    border: 2px solid #1f2937;
-    border-radius: 6px;
-    padding: 5px 14px;
-    font-size: 12px;
-    font-weight: 800;
-    color: #1f2937;
-    white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-    z-index: 2;
-    letter-spacing: 0.04em;
   }
 
   /* INFO BOX */
@@ -362,8 +346,8 @@
         </div>
         <!-- ボタン強調枠 -->
         <div class="highlight-box" style="top: 25.5%; right: 4%; width: 24%; height: 4.4%;"></div>
-        <!-- タップ案内吹き出し -->
-        <div class="tap-callout bottom" style="top: 21.5%; right: 6%;">ここをタップ</div>
+        <!-- タップ案内吹き出し（ボタン上部に余白を確保） -->
+        <div class="tap-callout bottom" style="top: 16.5%; right: 6%;">ここをタップ</div>
       </div>
 
       <div class="info-box blue">
@@ -457,7 +441,6 @@
           <img src="/images/save-guide/sessionNormal.png" alt="通常時 出力例（上部）" />
         </div>
         <div class="wave-cut">
-          <span class="wave-label">WEB画面の省略</span>
           <svg class="wave-svg" viewBox="0 0 200 24" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M 0 8 Q 12.5 0 25 8 T 50 8 T 75 8 T 100 8 T 125 8 T 150 8 T 175 8 T 200 8" stroke="#1f2937" stroke-width="1.4" fill="none"/>
             <path d="M 0 18 Q 12.5 10 25 18 T 50 18 T 75 18 T 100 18 T 125 18 T 150 18 T 175 18 T 200 18" stroke="#1f2937" stroke-width="1.4" fill="none"/>
@@ -478,7 +461,6 @@
           <img src="/images/save-guide/sassionAT.png" alt="AT記録 出力例（上部）" />
         </div>
         <div class="wave-cut">
-          <span class="wave-label">WEB画面の省略</span>
           <svg class="wave-svg" viewBox="0 0 200 24" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M 0 8 Q 12.5 0 25 8 T 50 8 T 75 8 T 100 8 T 125 8 T 150 8 T 175 8 T 200 8" stroke="#1f2937" stroke-width="1.4" fill="none"/>
             <path d="M 0 18 Q 12.5 10 25 18 T 50 18 T 75 18 T 100 18 T 125 18 T 150 18 T 175 18 T 200 18" stroke="#1f2937" stroke-width="1.4" fill="none"/>
@@ -499,7 +481,6 @@
           <img src="/images/save-guide/session_sum.PNG" alt="集計 出力例（上部）" />
         </div>
         <div class="wave-cut">
-          <span class="wave-label">WEB画面の省略</span>
           <svg class="wave-svg" viewBox="0 0 200 24" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M 0 8 Q 12.5 0 25 8 T 50 8 T 75 8 T 100 8 T 125 8 T 150 8 T 175 8 T 200 8" stroke="#1f2937" stroke-width="1.4" fill="none"/>
             <path d="M 0 18 Q 12.5 10 25 18 T 50 18 T 75 18 T 100 18 T 125 18 T 150 18 T 175 18 T 200 18" stroke="#1f2937" stroke-width="1.4" fill="none"/>
