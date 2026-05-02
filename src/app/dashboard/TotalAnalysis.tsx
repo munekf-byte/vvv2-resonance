@@ -238,16 +238,26 @@ export function TotalAnalysis() {
   const hikimodoCount = allBlocks.filter((b) => b.event === "引き戻し").length;
 
   // CZ内容集計
-  const czBlocks = allBlocks.filter((b) => b.czCounter && (b.czCounter.bell > 0 || b.czCounter.replay > 0 || b.czCounter.weakRare > 0 || b.czCounter.strongRare > 0));
-  const czTotalBell = czBlocks.reduce((s, b) => s + (b.czCounter?.bell ?? 0), 0);
-  const czTotalReplay = czBlocks.reduce((s, b) => s + (b.czCounter?.replay ?? 0), 0);
-  const czTotalWeakRare = czBlocks.reduce((s, b) => s + (b.czCounter?.weakRare ?? 0), 0);
-  const czTotalStrongRare = czBlocks.reduce((s, b) => s + (b.czCounter?.strongRare ?? 0), 0);
-  const czHitBell = czBlocks.filter((b) => b.czCounter?.hitRole === "bell").length;
-  const czHitReplay = czBlocks.filter((b) => b.czCounter?.hitRole === "replay").length;
-  const czHitWeakRare = czBlocks.filter((b) => b.czCounter?.hitRole === "weakRare").length;
-  const czHitStrongRare = czBlocks.filter((b) => b.czCounter?.hitRole === "strongRare").length;
-  const czSuccessCount = czBlocks.filter((b) => !!b.czCounter?.hitRole).length;
+  const hasCzActivity = (b: typeof allBlocks[number]) =>
+    !!b.czCounter && (b.czCounter.bell > 0 || b.czCounter.replay > 0 || b.czCounter.weakRare > 0 || b.czCounter.strongRare > 0);
+  function aggregateCz(list: typeof allBlocks) {
+    const arr = list.filter(hasCzActivity);
+    return {
+      blocks: arr,
+      totalBell:       arr.reduce((s, b) => s + (b.czCounter?.bell ?? 0), 0),
+      totalReplay:     arr.reduce((s, b) => s + (b.czCounter?.replay ?? 0), 0),
+      totalWeakRare:   arr.reduce((s, b) => s + (b.czCounter?.weakRare ?? 0), 0),
+      totalStrongRare: arr.reduce((s, b) => s + (b.czCounter?.strongRare ?? 0), 0),
+      hitBell:       arr.filter((b) => b.czCounter?.hitRole === "bell").length,
+      hitReplay:     arr.filter((b) => b.czCounter?.hitRole === "replay").length,
+      hitWeakRare:   arr.filter((b) => b.czCounter?.hitRole === "weakRare").length,
+      hitStrongRare: arr.filter((b) => b.czCounter?.hitRole === "strongRare").length,
+      successCount:  arr.filter((b) => !!b.czCounter?.hitRole).length,
+    };
+  }
+  const czReminiAgg = aggregateCz(reminiBlocks);
+  const czOoguiAgg  = aggregateCz(ooguiBlocks);
+  const czTotalAgg  = aggregateCz(allBlocks);
 
   const allKakugan = allBlocks.flatMap((b) => b.kakugan);
   const kakuganTotal = allKakugan.length;
@@ -561,41 +571,47 @@ export function TotalAnalysis() {
           );
         })()}
 
-        {/* ===== 1c. CZ内容（役別当選率） ===== */}
-        <Cat color="#7b1fa2" title="CZ内容（役別 当選率）" mb>
-          <div style={{
-            display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
-            borderBottom: "2px solid #7b1fa2", backgroundColor: "#f3e8ff", padding: "6px 8px", gap: "8px",
-          }}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#6b21a8", lineHeight: 1.4 }}>CZ記録</span>
-              <span style={{ fontSize: "16px", fontWeight: 900, color: "#1f2937", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>{czBlocks.length}回</span>
+        {/* ===== 1c. CZ内容（役別当選率）— レミニ / 大喰い / 合計 ===== */}
+        {([
+          { title: "CZ内容 — レミニセンス（役別 当選率）", agg: czReminiAgg, color: "#0f913c", bg: "#dcfce7", textDeep: "#14532d", textMid: "#15803d" },
+          { title: "CZ内容 — 大喰いの利世（役別 当選率）", agg: czOoguiAgg,  color: "#cf5858", bg: "#fee2e2", textDeep: "#7f1d1d", textMid: "#b91c1c" },
+          { title: "CZ内容 — 全体合計（役別 当選率）",   agg: czTotalAgg,  color: "#7b1fa2", bg: "#f3e8ff", textDeep: "#6b21a8", textMid: "#7b1fa2" },
+        ] as const).map(({ title, agg, color, bg, textDeep, textMid }) => (
+          <Cat key={title} color={color} title={title} mb>
+            <div style={{
+              display: "grid", gridTemplateColumns: "1fr 1fr 1fr",
+              borderBottom: `2px solid ${color}`, backgroundColor: bg, padding: "6px 8px", gap: "8px",
+            }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontSize: "10px", fontWeight: 700, color: textDeep, lineHeight: 1.4 }}>CZ記録</span>
+                <span style={{ fontSize: "16px", fontWeight: 900, color: "#1f2937", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>{agg.blocks.length}回</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontSize: "10px", fontWeight: 700, color: textDeep, lineHeight: 1.4 }}>成功</span>
+                <span style={{ fontSize: "16px", fontWeight: 900, color: "#16a34a", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>{agg.successCount}回</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontSize: "10px", fontWeight: 700, color: textDeep, lineHeight: 1.4 }}>成功率</span>
+                <span style={{ fontSize: "16px", fontWeight: 900, color: textMid, fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>
+                  {agg.blocks.length > 0 ? pct(agg.successCount, agg.blocks.length) : "—"}
+                </span>
+              </div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#6b21a8", lineHeight: 1.4 }}>成功</span>
-              <span style={{ fontSize: "16px", fontWeight: 900, color: "#16a34a", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>{czSuccessCount}回</span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <span style={{ fontSize: "10px", fontWeight: 700, color: "#6b21a8", lineHeight: 1.4 }}>成功率</span>
-              <span style={{ fontSize: "16px", fontWeight: 900, color: "#7b1fa2", fontVariantNumeric: "tabular-nums", lineHeight: 1.3 }}>
-                {czBlocks.length > 0 ? pct(czSuccessCount, czBlocks.length) : "—"}
-              </span>
-            </div>
-          </div>
-          <THead cols={COLS_CZ} color="#7b1fa2" align="center" />
-          {([
-            { label: "押/斜🔔", total: czTotalBell, hit: czHitBell },
-            { label: "リプ", total: czTotalReplay, hit: czHitReplay },
-            { label: "弱レア", total: czTotalWeakRare, hit: czHitWeakRare },
-            { label: "強レア", total: czTotalStrongRare, hit: czHitStrongRare },
-          ] as const).map((r, i) => (
-            <TRow key={r.label} cols={COLS_CZ} i={i} align="center" values={[
-              r.label, `${r.total}回`,
-              r.hit > 0 ? <span key="h" style={{ color: "#b91c1c" }}>★{r.hit}</span> : "—",
-              r.total > 0 ? pct(r.hit, r.total) : "—",
-            ]} />
-          ))}
-        </Cat>
+            <THead cols={COLS_CZ} color={color} align="center" />
+            {([
+              { label: "押/斜🔔", total: agg.totalBell, hit: agg.hitBell },
+              { label: "リプ", total: agg.totalReplay, hit: agg.hitReplay },
+              { label: "弱レア", total: agg.totalWeakRare, hit: agg.hitWeakRare },
+              { label: "強レア", total: agg.totalStrongRare, hit: agg.hitStrongRare },
+            ] as const).map((r, i) => (
+              <TRow key={r.label} cols={COLS_CZ} i={i} align="center" values={[
+                r.label, `${r.total}回`,
+                r.hit > 0 ? <span key="h" style={{ color: "#b91c1c" }}>★{r.hit}</span> : "—",
+                r.total > 0 ? pct(r.hit, r.total) : "—",
+              ]} />
+            ))}
+          </Cat>
+        ))}
 
         {/* ===== 2. AT（全幅） ===== */}
         <Cat color="#2e7d32" title="AT" mb>

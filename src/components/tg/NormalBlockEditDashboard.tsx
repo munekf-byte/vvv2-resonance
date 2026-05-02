@@ -373,12 +373,16 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
         {(() => {
           const cz = form.czCounter ?? { bell: 0, replay: 0, weakRare: 0, strongRare: 0, hitRole: "" };
           const hasHit = !!cz.hitRole;
+          const isOogui = form.event === "大喰いの利世";
+          const bgImg      = isOogui ? "/images/rize_pre_hit.jpg"    : "/images/pre_hit.png";
+          const hitImg1    = isOogui ? "/images/rize_after_hit.jpg"  : "/images/after_hit.png";
+          const hitImg2    = isOogui ? "/images/rize_after_hit_1.jpg": "/images/after_hit_2.png";
           return (
             <div className="relative rounded border border-gray-400 overflow-hidden">
               {/* 背景画像: pre_hit（うっすら） */}
               <div className="absolute inset-0 pointer-events-none"
                 style={{
-                  backgroundImage: "url(/images/pre_hit.png)",
+                  backgroundImage: `url(${bgImg})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                   opacity: 0.08,
@@ -391,8 +395,8 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                   className="absolute inset-0 z-50 animate-[fadeIn_0.15s_ease-out]"
                   style={{
                     backgroundImage: czOverlayPhase === 1
-                      ? "url(/images/after_hit.png)"
-                      : "url(/images/after_hit_2.png)",
+                      ? `url(${hitImg1})`
+                      : `url(${hitImg2})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                     opacity: 0.85,
