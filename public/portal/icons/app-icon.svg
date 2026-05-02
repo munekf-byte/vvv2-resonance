@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a0a06"></stop>
+      <stop offset="50%" stop-color="#8a0d0d"></stop>
+      <stop offset="100%" stop-color="#ff3b1f"></stop>
+    </linearGradient>
+    <radialGradient id="sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff7d0"></stop>
+      <stop offset="60%" stop-color="#ffd56b"></stop>
+      <stop offset="100%" stop-color="#ff9a3c"></stop>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="20"></feGaussianBlur>
+    </filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"></rect>
+  <circle cx="256" cy="540" r="280" fill="url(#sun)" opacity="0.8" filter="url(#glow)"></circle>
+  <circle cx="256" cy="540" r="260" fill="url(#sun)"></circle>
+  <text x="256" y="290" text-anchor="middle" font-family="Orbitron, Arial Black, sans-serif" font-weight="900" font-size="170" letter-spacing="-8" fill="#1a0606">HIVE</text>
+  <text x="256" y="290" text-anchor="middle" font-family="Orbitron, Arial Black, sans-serif" font-weight="900" font-size="170" letter-spacing="-8" fill="none" stroke="#ffd56b" stroke-width="2" opacity="0.6" transform="translate(0,4)">HIVE</text>
+</svg>

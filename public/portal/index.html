@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>HiveMind Portal</title>
+
+<!-- PWA / Home Screen -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#8a0d0d" />
+<meta name="application-name" content="HIVE" />
+
+<!-- iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="HIVE" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+<!-- Favicons -->
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png" />
+<link rel="shortcut icon" href="icons/favicon-32.png" />
+
+<!-- Open Graph -->
+<meta property="og:title" content="HIVEMIND Portal" />
+<meta property="og:description" content="ヒカリマインド系列スロットアプリのポータル" />
+<meta property="og:image" content="icons/icon-512.png" />
+<meta property="og:type" content="website" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    /* default theme: 炎 */
+    --bg-0:#0a0507;
+    --bg-1:#160a0a;
+    --ink:#f5e9d8;
+    --ink-dim:#a89280;
+    --line:rgba(255,200,140,.14);
+    --line-strong:rgba(255,200,140,.32);
+    --accent:#ff3b1f;        /* 炎赤 */
+    --accent-2:#ffb43c;      /* 金 */
+    --accent-3:#7cff5b;      /* 蛍光緑 */
+    --danger:#ff2a2a;
+    --grid:rgba(255,180,60,.06);
+    --tile:#120709;
+    --tile-edge:#3a1a13;
+    --shadow:0 20px 50px rgba(0,0,0,.7), 0 4px 14px rgba(255,60,30,.18);
+  }
+  html[data-theme="cyber"]{
+    --bg-0:#02030a;
+    --bg-1:#06081a;
+    --ink:#e6f1ff;
+    --ink-dim:#7e90b8;
+    --line:rgba(120,200,255,.16);
+    --line-strong:rgba(120,200,255,.36);
+    --accent:#22e6ff;
+    --accent-2:#ff3df0;
+    --accent-3:#a8ff3d;
+    --grid:rgba(120,200,255,.08);
+    --tile:#06091a;
+    --tile-edge:#1a2050;
+    --shadow:0 20px 50px rgba(0,0,0,.7), 0 4px 14px rgba(34,230,255,.18);
+  }
+  html[data-theme="dark"]{
+    --bg-0:#080808;
+    --bg-1:#101010;
+    --ink:#eaeaea;
+    --ink-dim:#8a8a8a;
+    --line:rgba(255,255,255,.08);
+    --line-strong:rgba(255,255,255,.22);
+    --accent:#ffffff;
+    --accent-2:#9aff5b;
+    --accent-3:#ff5b5b;
+    --grid:rgba(255,255,255,.04);
+    --tile:#0e0e0e;
+    --tile-edge:#262626;
+    --shadow:0 20px 50px rgba(0,0,0,.8), 0 4px 14px rgba(0,0,0,.5);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg-0);color:var(--ink)}
+  body{
+    font-family:"Noto Sans JP","Helvetica Neue",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    min-height:100vh;
+    position:relative;
+  }
+
+  /* ===== background scaffold ===== */
+  .bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+  .bg .gradient{
+    position:absolute;inset:0;
+    background:
+      radial-gradient(60% 40% at 50% 0%, color-mix(in oklab, var(--accent) 35%, transparent) 0%, transparent 70%),
+      radial-gradient(80% 60% at 50% 100%, color-mix(in oklab, var(--accent-2) 18%, transparent) 0%, transparent 70%),
+      linear-gradient(180deg, var(--bg-0), var(--bg-1) 60%, var(--bg-0));
+  }
+  .bg .grid{
+    position:absolute;inset:-2px;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:48px 48px, 48px 48px;
+    mask-image: radial-gradient(120% 80% at 50% 30%, #000 30%, transparent 80%);
+  }
+  .bg .scan{
+    position:absolute;inset:0;
+    background:repeating-linear-gradient(180deg, transparent 0 3px, rgba(255,255,255,.025) 3px 4px);
+    mix-blend-mode:overlay;
+    opacity:.5;
+  }
+  .bg .vignette{
+    position:absolute;inset:0;
+    background:radial-gradient(120% 100% at 50% 50%, transparent 50%, rgba(0,0,0,.85) 100%);
+  }
+  /* embers */
+  .embers{position:absolute;inset:0}
+  .ember{
+    position:absolute;
+    width:3px;height:3px;border-radius:50%;
+    background:var(--accent-2);
+    box-shadow:0 0 8px var(--accent-2),0 0 18px var(--accent);
+    animation:rise linear infinite;
+    opacity:.0;
+  }
+  @keyframes rise{
+    0%{transform:translateY(20vh) translateX(0) scale(.6);opacity:0}
+    10%{opacity:.9}
+    90%{opacity:.7}
+    100%{transform:translateY(-110vh) translateX(var(--dx,30px)) scale(1);opacity:0}
+  }
+  html[data-motion="off"] .embers,
+  html[data-motion="off"] .scan,
+  html[data-motion="off"] .pulse-line{display:none}
+
+  /* moving wireframe lines */
+  .pulse-line{
+    position:absolute;left:0;right:0;height:1px;
+    background:linear-gradient(90deg, transparent, var(--line-strong), transparent);
+    animation:pulse 9s linear infinite;
+  }
+  .pulse-line.l1{top:30%;animation-duration:11s}
+  .pulse-line.l2{top:62%;animation-duration:14s;animation-delay:-3s}
+  .pulse-line.l3{top:84%;animation-duration:17s;animation-delay:-6s}
+  @keyframes pulse{
+    0%{transform:translateX(-30%);opacity:0}
+    20%{opacity:.7}
+    80%{opacity:.7}
+    100%{transform:translateX(30%);opacity:0}
+  }
+
+  /* ===== main shell ===== */
+  .wrap{
+    position:relative;z-index:2;
+    max-width:1180px;margin:0 auto;
+    padding:24px 20px 96px;
+  }
+
+  /* topbar */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:8px 4px 18px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:24px;
+  }
+  .brand{
+    display:flex;align-items:center;gap:12px;
+  }
+  .brand .crest{
+    width:36px;height:36px;position:relative;flex:0 0 36px;
+  }
+  .brand .crest svg{width:100%;height:100%;display:block;filter:drop-shadow(0 0 6px var(--accent))}
+  .brand .name{
+    font-family:"Orbitron",sans-serif;font-weight:900;letter-spacing:.18em;
+    font-size:14px;color:var(--ink);
+  }
+  .brand .name b{color:var(--accent)}
+  .topbar .meta{
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    color:var(--ink-dim);letter-spacing:.12em;
+  }
+  .topbar .meta .dot{
+    display:inline-block;width:6px;height:6px;border-radius:50%;
+    background:var(--accent-3);box-shadow:0 0 8px var(--accent-3);
+    margin-right:6px;animation:blink 1.6s steps(2) infinite;
+  }
+  @keyframes blink{50%{opacity:.3}}
+
+  /* hero */
+  .hero{
+    position:relative;
+    padding:36px 24px 28px;
+    border:1px solid var(--line);
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--accent) 7%, transparent), transparent 60%),
+      var(--tile);
+    overflow:hidden;
+    margin-bottom:28px;
+  }
+  .hero::before{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(60% 80% at 100% 0%, color-mix(in oklab, var(--accent) 25%, transparent), transparent 60%),
+      radial-gradient(60% 80% at 0% 100%, color-mix(in oklab, var(--accent-2) 18%, transparent), transparent 60%);
+    pointer-events:none;
+  }
+  .hero::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+    background:linear-gradient(90deg,transparent,var(--accent),var(--accent-2),var(--accent),transparent);
+    box-shadow:0 0 12px var(--accent);
+  }
+  .hero .corner{
+    position:absolute;width:18px;height:18px;border:1px solid var(--accent);
+  }
+  .hero .corner.tl{top:8px;left:8px;border-right:0;border-bottom:0}
+  .hero .corner.tr{top:8px;right:8px;border-left:0;border-bottom:0}
+  .hero .corner.bl{bottom:8px;left:8px;border-right:0;border-top:0}
+  .hero .corner.br{bottom:8px;right:8px;border-left:0;border-top:0}
+
+  .hero-tag{
+    font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.32em;
+    color:var(--accent);text-transform:uppercase;margin:0 0 12px;
+  }
+  .hero-title{
+    font-family:"Orbitron","Noto Sans JP",sans-serif;
+    font-weight:900;font-size:clamp(28px, 6.4vw, 56px);
+    margin:0 0 8px;line-height:1.05;letter-spacing:.02em;
+    color:var(--ink);
+    text-shadow:0 2px 0 #000, 0 0 24px color-mix(in oklab, var(--accent) 50%, transparent);
+  }
+  .hero-title .glow{
+    background:linear-gradient(180deg, #fff 0%, var(--accent-2) 55%, var(--accent) 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    -webkit-text-stroke:1px rgba(0,0,0,.4);
+  }
+  .hero-sub{
+    font-size:13px;color:var(--ink-dim);letter-spacing:.06em;margin:0;
+    max-width:62ch;
+  }
+  .hero-stats{
+    display:flex;flex-wrap:wrap;gap:18px 28px;margin-top:18px;
+    font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-dim);
+    letter-spacing:.14em;
+  }
+  .hero-stats b{color:var(--ink);font-weight:700}
+  .install-btn{
+    appearance:none;border:1px solid var(--accent);background:rgba(255,59,31,.12);
+    color:var(--ink);font-family:"JetBrains Mono",monospace;font-size:11px;
+    letter-spacing:.14em;padding:8px 14px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;
+    text-transform:uppercase;transition:all .2s ease;
+  }
+  .install-btn:hover{background:var(--accent);color:#0a0507;box-shadow:0 0 16px var(--accent)}
+  .standalone .install-btn{display:none !important}
+  .hero-stats span{display:inline-flex;align-items:center;gap:8px}
+  .hero-stats span::before{
+    content:"";width:6px;height:6px;background:var(--accent);
+    transform:rotate(45deg);
+  }
+
+  /* section heading */
+  .sect-head{
+    display:flex;align-items:center;justify-content:space-between;
+    margin:36px 0 14px;gap:12px;
+  }
+  .sect-head h2{
+    margin:0;font-family:"Orbitron","Noto Sans JP",sans-serif;
+    font-weight:900;font-size:14px;letter-spacing:.28em;
+    color:var(--ink);text-transform:uppercase;
+    display:flex;align-items:center;gap:10px;
+  }
+  .sect-head h2::before{
+    content:"";display:block;width:14px;height:14px;
+    background:var(--accent);
+    clip-path:polygon(0 0,100% 0,100% 70%,70% 100%,0 100%);
+    box-shadow:0 0 10px var(--accent);
+  }
+  .sect-head .meta{
+    font-family:"JetBrains Mono",monospace;font-size:10px;
+    color:var(--ink-dim);letter-spacing:.18em;
+  }
+  .sect-rule{
+    height:1px;background:linear-gradient(90deg,var(--line-strong),transparent);
+    margin-bottom:20px;
+  }
+
+  /* ===== app grid ===== */
+  .grid-apps{
+    display:grid;
+    grid-template-columns:repeat(var(--cols, 4), minmax(0,1fr));
+    gap:18px;
+  }
+  @media (max-width:520px){
+    .grid-apps{ grid-template-columns:repeat(min(var(--cols, 4), 3), minmax(0,1fr)); gap:14px;}
+  }
+  .app{
+    position:relative;
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+    text-decoration:none;color:inherit;
+    -webkit-tap-highlight-color:transparent;
+    transition:transform .25s ease;
+  }
+  .app:hover{transform:translateY(-3px)}
+  .app .frame{
+    position:relative;width:100%;aspect-ratio:1/1;
+    border-radius:22%;
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--accent-2) 25%, #000), color-mix(in oklab, var(--accent) 25%, #000));
+    padding:3px;
+    box-shadow:
+      0 10px 24px rgba(0,0,0,.6),
+      0 2px 0 rgba(255,255,255,.06) inset,
+      0 -3px 8px rgba(0,0,0,.6) inset;
+    transition:box-shadow .25s ease, transform .25s ease;
+    isolation:isolate;
+  }
+  .app .frame::before{
+    /* outer glow burst on hover */
+    content:"";position:absolute;inset:-8px;border-radius:26%;
+    background:radial-gradient(50% 50% at 50% 50%, color-mix(in oklab, var(--accent) 80%, transparent), transparent 70%);
+    opacity:0;filter:blur(10px);transition:opacity .3s ease;z-index:-1;
+  }
+  .app:hover .frame::before{opacity:.9}
+  .app .frame::after{
+    /* inner sheen */
+    content:"";position:absolute;inset:3px;border-radius:20%;
+    background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0) 35%, rgba(0,0,0,.25));
+    pointer-events:none;mix-blend-mode:overlay;
+  }
+  .app .icon{
+    position:relative;width:100%;height:100%;
+    border-radius:19%;
+    background:
+      radial-gradient(80% 80% at 30% 20%, rgba(255,255,255,.08), transparent 60%),
+      linear-gradient(160deg, #1a0d10, #0a0506);
+    overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .app .icon img{
+    position:absolute;inset:0;width:100%;height:100%;
+    object-fit:cover;display:block;
+  }
+  .app .icon .scrim{
+    position:absolute;inset:0;
+    background:linear-gradient(180deg, transparent 50%, rgba(0,0,0,.55));
+    pointer-events:none;
+  }
+  .app.coming .icon::after{
+    content:"COMING SOON";
+    position:absolute;left:0;right:0;bottom:0;
+    font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:700;
+    letter-spacing:.18em;color:#fff;
+    background:linear-gradient(180deg, transparent, rgba(0,0,0,.85));
+    padding:14px 6px 6px;text-align:center;
+    z-index:2;
+  }
+  .app.coming .icon img{filter:saturate(.55) brightness(.55)}
+  .app.coming .frame{
+    background:linear-gradient(180deg, #5a4a3a, #2a1a14);
+  }
+  .app:hover .frame{
+    box-shadow:
+      0 14px 28px rgba(0,0,0,.7),
+      0 0 0 1px color-mix(in oklab, var(--accent) 60%, transparent),
+      0 0 30px color-mix(in oklab, var(--accent) 60%, transparent);
+    transform:scale(1.02);
+  }
+  .app .label{
+    font-size:12px;color:var(--ink);letter-spacing:.04em;
+    text-align:center;line-height:1.2;
+    font-weight:700;
+    max-width:100%;
+    text-shadow:0 1px 0 #000;
+  }
+  .app .sub{
+    font-family:"JetBrains Mono",monospace;font-size:9.5px;
+    color:var(--ink-dim);letter-spacing:.18em;text-transform:uppercase;
+    margin-top:-4px;
+  }
+  .app .badge{
+    position:absolute;top:-6px;right:-6px;z-index:3;
+    font-family:"JetBrains Mono",monospace;font-size:9px;font-weight:700;
+    background:var(--accent);color:#000;
+    padding:3px 6px;border-radius:6px;
+    letter-spacing:.16em;
+    box-shadow:0 4px 10px rgba(0,0,0,.5),0 0 0 1px rgba(0,0,0,.3) inset;
+  }
+
+  /* ===== two-column area ===== */
+  .two-col{
+    display:grid;grid-template-columns:1fr;gap:28px;
+    margin-top:8px;
+  }
+  @media (min-width:780px){
+    .two-col{grid-template-columns:1.2fr .8fr;gap:24px}
+  }
+
+  /* news */
+  .news{
+    border:1px solid var(--line);
+    background:var(--tile);
+    padding:0;
+  }
+  .news .item{
+    display:grid;grid-template-columns:auto 1fr auto;
+    gap:14px;align-items:center;
+    padding:14px 16px;
+    border-bottom:1px dashed var(--line);
+    text-decoration:none;color:inherit;
+    transition:background .2s ease;
+  }
+  .news .item:last-child{border-bottom:0}
+  .news .item:hover{background:color-mix(in oklab, var(--accent) 6%, transparent)}
+  .news .item .date{
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    color:var(--ink-dim);letter-spacing:.1em;white-space:nowrap;
+  }
+  .news .item .tag{
+    display:inline-block;
+    font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:700;
+    padding:3px 7px;letter-spacing:.16em;
+    border:1px solid currentColor;
+    margin-right:10px;vertical-align:1px;
+  }
+  .news .item .tag.new{color:var(--accent)}
+  .news .item .tag.upd{color:var(--accent-3)}
+  .news .item .tag.evt{color:var(--accent-2)}
+  .news .item .ttl{
+    font-size:13.5px;color:var(--ink);font-weight:500;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .news .item .arr{color:var(--ink-dim);font-family:"JetBrains Mono",monospace;font-size:14px}
+  .news .item:hover .arr{color:var(--accent);transform:translateX(2px)}
+
+  /* X profile + posts */
+  .x-card{
+    border:1px solid var(--line);
+    background:var(--tile);
+    padding:18px;
+    display:flex;flex-direction:column;gap:14px;
+  }
+  .x-prof{
+    display:flex;align-items:center;gap:12px;
+  }
+  .x-prof .avatar{
+    width:48px;height:48px;border-radius:50%;
+    background:
+      conic-gradient(from 220deg, var(--accent), var(--accent-2), var(--accent-3), var(--accent));
+    padding:2px;flex:0 0 48px;
+  }
+  .x-prof .avatar div{
+    width:100%;height:100%;border-radius:50%;
+    background:
+      radial-gradient(60% 60% at 30% 30%, rgba(255,255,255,.18), transparent 70%),
+      #1a0d10;
+    display:flex;align-items:center;justify-content:center;
+    font-family:"Orbitron",sans-serif;font-weight:900;color:var(--ink);
+  }
+  .x-prof .who .nm{font-weight:700;font-size:14px}
+  .x-prof .who .hd{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-dim)}
+  .x-prof .follow{
+    margin-left:auto;
+    font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;
+    text-decoration:none;
+    color:var(--bg-0);background:var(--ink);
+    padding:8px 12px;letter-spacing:.14em;
+    border:1px solid var(--ink);
+    transition:all .2s ease;
+  }
+  .x-prof .follow:hover{background:var(--accent);border-color:var(--accent);color:#000}
+
+  .x-posts{display:flex;flex-direction:column;gap:10px;max-height:380px;overflow:auto}
+  .x-posts::-webkit-scrollbar{width:6px}
+  .x-posts::-webkit-scrollbar-thumb{background:var(--tile-edge)}
+  .post{
+    border:1px solid var(--line);
+    padding:12px;
+    font-size:13px;line-height:1.55;
+    background:color-mix(in oklab, var(--bg-0) 60%, transparent);
+    transition:border-color .2s ease;
+  }
+  .post:hover{border-color:var(--line-strong)}
+  .post .meta{
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:"JetBrains Mono",monospace;font-size:10px;
+    color:var(--ink-dim);letter-spacing:.12em;margin-bottom:8px;
+  }
+  .post .body{color:var(--ink);white-space:pre-wrap}
+  .post .stats{
+    display:flex;gap:14px;margin-top:10px;
+    font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-dim);
+  }
+  .post .stats span b{color:var(--ink)}
+
+  /* footer */
+  .foot{
+    margin-top:48px;padding-top:18px;
+    border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:"JetBrains Mono",monospace;font-size:10.5px;
+    color:var(--ink-dim);letter-spacing:.16em;
+  }
+  .foot a{color:var(--ink-dim);text-decoration:none}
+  .foot a:hover{color:var(--accent)}
+
+  /* utility */
+  .glitch{position:relative;display:inline-block}
+  .glitch::before,.glitch::after{
+    content:attr(data-text);position:absolute;left:0;top:0;width:100%;
+    pointer-events:none;
+  }
+  .glitch::before{color:var(--accent);transform:translate(2px,0);mix-blend-mode:screen;clip-path:inset(0 0 60% 0)}
+  .glitch::after{color:var(--accent-3);transform:translate(-2px,0);mix-blend-mode:screen;clip-path:inset(60% 0 0 0)}
+
+  /* respect tweaks panel z-index */
+  .tweaks-host{position:relative;z-index:50}
+</style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="gradient"></div>
+    <div class="grid"></div>
+    <div class="pulse-line l1"></div>
+    <div class="pulse-line l2"></div>
+    <div class="pulse-line l3"></div>
+    <div class="embers" id="embers"></div>
+    <div class="scan"></div>
+    <div class="vignette"></div>
+  </div>
+
+  <main class="wrap">
+
+    <header class="topbar" data-screen-label="00 Topbar">
+      <div class="brand">
+        <div class="crest" aria-hidden="true">
+          <svg viewBox="0 0 64 64">
+            <defs>
+              <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#fff"/>
+                <stop offset="60%" stop-color="#ffb43c"/>
+                <stop offset="100%" stop-color="#ff3b1f"/>
+              </linearGradient>
+            </defs>
+            <polygon points="32,4 58,18 58,46 32,60 6,46 6,18" fill="none" stroke="url(#cg)" stroke-width="2"/>
+            <polygon points="32,14 48,22 48,42 32,50 16,42 16,22" fill="none" stroke="url(#cg)" stroke-width="1.2" opacity=".7"/>
+            <path d="M22 38 L32 22 L42 38 Z" fill="url(#cg)"/>
+            <circle cx="32" cy="34" r="2.4" fill="#000"/>
+          </svg>
+        </div>
+        <div class="name">HIVE<b>MIND</b> · PORTAL</div>
+      </div>
+      <div class="meta"><span class="dot"></span>SYS / ONLINE · v1.0</div>
+    </header>
+
+    <section class="hero" data-screen-label="01 Hero">
+      <span class="corner tl"></span><span class="corner tr"></span>
+      <span class="corner bl"></span><span class="corner br"></span>
+      <p class="hero-tag">// SLOT APP NETWORK — UNIT.01 ~ UNIT.05</p>
+      <h1 class="hero-title">
+        <span class="glow glitch" data-text="ENTER">ENTER</span>
+        <span style="color:var(--ink)"> THE </span>
+        <span class="glow glitch" data-text="HIVE">HIVE</span>
+      </h1>
+      <p class="hero-sub">
+        各機種のアプリへの入り口。最新情報と更新はここに集約。アイコンを選んで起動してください。
+      </p>
+      <div class="hero-stats">
+        <span><b id="appCount">8</b> APPS ONLINE</span>
+        <span>LAST SYNC <b id="lastSync">--:--:--</b></span>
+        <span>NODE <b>JP-01</b></span>
+        <button id="installBtn" class="install-btn" onclick="triggerInstall()" style="display:none">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 4v12m0 0l-5-5m5 5l5-5M4 20h16"/></svg>
+          ホーム画面に追加
+        </button>
+      </div>
+    </section>
+
+    <div class="sect-head">
+      <h2>APPLICATION&nbsp;LIST</h2>
+      <div class="meta">SELECT&nbsp;UNIT&nbsp;»</div>
+    </div>
+    <div class="sect-rule"></div>
+
+    <div class="grid-apps" id="appGrid" style="--cols:4">
+      <!-- placeholders injected by JS -->
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div class="sect-head">
+          <h2>NEWS&nbsp;/&nbsp;お知らせ</h2>
+          <div class="meta">UPDATED&nbsp;DAILY</div>
+        </div>
+        <div class="sect-rule"></div>
+        <div class="news" id="newsList"></div>
+      </div>
+
+      <div>
+        <div class="sect-head">
+          <h2>X&nbsp;FEED</h2>
+          <div class="meta">@puchun_dobadoba</div>
+        </div>
+        <div class="sect-rule"></div>
+        <div class="x-card">
+          <div class="x-prof">
+            <div class="avatar"><div>P</div></div>
+            <div class="who">
+              <div class="nm">ぷちゅん</div>
+              <div class="hd">@puchun_dobadoba</div>
+            </div>
+            <a class="follow" href="https://x.com/puchun_dobadoba" target="_blank" rel="noopener">FOLLOW →</a>
+          </div>
+          <div class="x-posts" id="xPosts"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="foot">
+      <span>© HIVEMIND PORTAL · 2026</span>
+      <span><a href="https://x.com/puchun_dobadoba" target="_blank" rel="noopener">X / @puchun_dobadoba</a></span>
+    </footer>
+
+  </main>
+
+  <div class="tweaks-host" id="tweaksHost"></div>
+
+  <script>
+    /* ===== editable tweak defaults (single JSON block) ===== */
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "theme": "dark",
+      "cols": 3,
+      "motion": "on"
+    }/*EDITMODE-END*/;
+    window.__TWEAK_DEFAULTS__ = TWEAK_DEFAULTS;
+  </script>
+
+  <!-- React + Babel for tweaks panel only -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <!-- Install to Home Screen prompt (Android Chrome / Edge) -->
+  <script>
+    let __deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      __deferredPrompt = e;
+      const btn = document.getElementById('installBtn');
+      if (btn) btn.style.display = 'inline-flex';
+    });
+    window.addEventListener('appinstalled', () => {
+      const btn = document.getElementById('installBtn');
+      if (btn) btn.style.display = 'none';
+      __deferredPrompt = null;
+    });
+    function triggerInstall(){
+      if (__deferredPrompt) {
+        __deferredPrompt.prompt();
+        __deferredPrompt.userChoice.finally(() => { __deferredPrompt = null; });
+      } else {
+        // iOS Safari fallback: show instructions
+        const ua = navigator.userAgent;
+        const isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        if (isIOS) {
+          alert('iOSの場合：Safariで共有ボタン → 「ホーム画面に追加」を選択してください。');
+        } else {
+          alert('ブラウザのメニューから「ホーム画面に追加」または「アプリをインストール」を選択してください。');
+        }
+      }
+    }
+    window.triggerInstall = triggerInstall;
+
+    // If running standalone (PWA), hide install button
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      document.documentElement.classList.add('standalone');
+    }
+  </script>
+
+  <script>
+    /* ===== Apps (placeholders until icons land) ===== */
+    const APPS = [
+      { id:"tokyo_ghuru",       name:"L東京喛種",                    code:"UNIT.01", img:"icons/tokyo_ghuru.jpg",       url:"https://vvv2-resonance.vercel.app/", isNew:true, status:"live" },
+      { id:"vvv2",              name:"L革命機ヴァルヴレイヴ2",       code:"UNIT.02", img:"icons/vvv2.jpg",              url:"#", status:"coming" },
+      { id:"god_kiseki",        name:"ミリオンゴッド-神々の軌跡-",        code:"UNIT.03", img:"icons/god_kiseki.jpg",        url:"#", status:"coming" },
+      { id:"shinuchi_yoshimune",name:"真打吉宗",                      code:"UNIT.04", img:"icons/shinuchi_yoshimune.jpg",url:"#", status:"coming" },
+      { id:"juggler_gogo",      name:"ジャグラーシリーズ",            code:"UNIT.05", img:"icons/juggler_gogo.jpg",      url:"#", status:"coming" },
+    ];
+
+    function renderApps(){
+      const g = document.getElementById('appGrid');
+      g.innerHTML = APPS.map(a => {
+        const coming = a.status === 'coming';
+        const target = coming ? '' : 'target="_blank" rel="noopener"';
+        const onclick = coming ? 'onclick="return false;" aria-disabled="true"' : '';
+        return `
+        <a class="app ${coming?'coming':''}" href="${a.url}" ${target} ${onclick} data-id="${a.id}" aria-label="${a.name}">
+          ${a.isNew ? '<span class="badge">LIVE</span>' : ''}
+          <span class="frame">
+            <span class="icon">
+              <img src="${a.img}" alt="" loading="lazy" />
+              <span class="scrim"></span>
+            </span>
+          </span>
+          <span class="label">${a.name}</span>
+          <span class="sub">${a.code}</span>
+        </a>`;
+      }).join('');
+      document.getElementById('appCount').textContent = APPS.length;
+    }
+    renderApps();
+
+    /* ===== News (dummy) ===== */
+    const NEWS = [
+      { d:"2026.05.01", tag:"NEW", cls:"new", t:"UNIT.01『L東京喛種』アプリ公開・現在プレイ可能" },
+      { d:"2026.04.28", tag:"UPD", cls:"upd", t:"UNIT.02『L革命機ヴァルヴレイヴ2』開発進行中" },
+      { d:"2026.04.22", tag:"EVT", cls:"evt", t:"ポータルサイト オープン記念・続アプリも順次リリース予定" },
+      { d:"2026.04.15", tag:"UPD", cls:"upd", t:"UNIT.03『ミリオンゴッド-神々の軌跡-』準備中" },
+      { d:"2026.04.10", tag:"NEW", cls:"new", t:"HIVEMIND PORTAL オープンのお知らせ" },
+    ];
+    document.getElementById('newsList').innerHTML = NEWS.map(n => `
+      <a class="item" href="#">
+        <span class="date">${n.d}</span>
+        <span class="ttl"><span class="tag ${n.cls}">${n.tag}</span>${n.t}</span>
+        <span class="arr">»</span>
+      </a>
+    `).join('');
+
+    /* ===== X posts (dummy until embed) ===== */
+    const POSTS = [
+      { time:"5月 1", body:"UNIT.06のアプリ、公開しました🔥\n触ってみてくれ！", likes:128, rt:32, rep:14 },
+      { time:"4月 28", body:"演出エンジン更新したのでチェックよろしく👀 動作の重さも改善してます。", likes:84, rt:11, rep:6 },
+      { time:"4月 24", body:"GW中はキャンペーン走らせます。詳しくはお知らせ欄からどうぞ。", likes:56, rt:9, rep:3 },
+      { time:"4月 18", body:"次のアプリはちょっと変わったやつになる予定。お楽しみに。", likes:212, rt:48, rep:22 },
+    ];
+    document.getElementById('xPosts').innerHTML = POSTS.map(p => `
+      <div class="post">
+        <div class="meta"><span>POST</span><span>${p.time}</span></div>
+        <div class="body">${p.body}</div>
+        <div class="stats">
+          <span>♡ <b>${p.likes}</b></span>
+          <span>↻ <b>${p.rt}</b></span>
+          <span>💬 <b>${p.rep}</b></span>
+        </div>
+      </div>
+    `).join('');
+
+    /* ===== sync clock ===== */
+    function tickSync(){
+      const d = new Date();
+      const p = n => String(n).padStart(2,'0');
+      document.getElementById('lastSync').textContent =
+        `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    }
+    tickSync(); setInterval(tickSync,1000);
+
+    /* ===== embers ===== */
+    (function makeEmbers(){
+      const root = document.getElementById('embers');
+      const N = 28;
+      for(let i=0;i<N;i++){
+        const e = document.createElement('span');
+        e.className = 'ember';
+        const left = Math.random()*100;
+        const dur = 7 + Math.random()*10;
+        const delay = -Math.random()*dur;
+        const dx = (Math.random()*60 - 30) + 'px';
+        const size = 1 + Math.random()*3;
+        e.style.left = left + 'vw';
+        e.style.bottom = (-Math.random()*40)+'vh';
+        e.style.width = e.style.height = size+'px';
+        e.style.animationDuration = dur+'s';
+        e.style.animationDelay = delay+'s';
+        e.style.setProperty('--dx', dx);
+        e.style.opacity = 0;
+        root.appendChild(e);
+      }
+    })();
+
+    /* ===== Tweaks (theme, cols, motion) ===== */
+    function applyTweaks(t){
+      document.documentElement.dataset.theme = t.theme || 'fire';
+      document.documentElement.dataset.motion = t.motion || 'on';
+      document.getElementById('appGrid').style.setProperty('--cols', String(t.cols || 4));
+    }
+    applyTweaks(TWEAK_DEFAULTS);
+  </script>
+
+  <script type="text/babel">
+    const { useEffect } = React;
+    function Tweaks(){
+      const [tweaks, setTweak] = useTweaks(window.__TWEAK_DEFAULTS__);
+      useEffect(() => { applyTweaks(tweaks); }, [tweaks]);
+      return (
+        <TweaksPanel title="Tweaks">
+          <TweakSection title="Theme">
+            <TweakRadio
+              label="テーマ"
+              value={tweaks.theme}
+              onChange={v => setTweak('theme', v)}
+              options={[
+                { value:'fire',  label:'炎' },
+                { value:'cyber', label:'サイバー' },
+                { value:'dark',  label:'ダーク' },
+              ]}
+            />
+          </TweakSection>
+          <TweakSection title="Layout">
+            <TweakSlider
+              label="アイコン列数"
+              min={2} max={6} step={1}
+              value={tweaks.cols}
+              onChange={v => setTweak('cols', v)}
+            />
+            <TweakRadio
+              label="背景演出"
+              value={tweaks.motion}
+              onChange={v => setTweak('motion', v)}
+              options={[
+                { value:'on',  label:'ON' },
+                { value:'off', label:'OFF' },
+              ]}
+            />
+          </TweakSection>
+        </TweaksPanel>
+      );
+    }
+    const root = ReactDOM.createRoot(document.getElementById('tweaksHost'));
+    root.render(<Tweaks />);
+  </script>
+</body>
+</html>

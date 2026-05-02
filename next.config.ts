@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
       { source: "/save-guide", destination: "/save-guide.html" },
     ];
   },
+  async redirects() {
+    return [
+      // portal: 相対パス解決のため必ず末尾スラを付ける
+      { source: "/portal", destination: "/portal/", permanent: false },
+    ];
+  },
 };
 
 export default nextConfig;
