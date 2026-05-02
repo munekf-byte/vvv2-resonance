@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
 import { DashboardClient } from "./DashboardClient";
 import { TotalAnalysis } from "./TotalAnalysis";
-import { LINK_DISCORD } from "@/lib/config/links";
 import { createClient } from "@/lib/supabase/client";
 import { ProUpgradePopup } from "@/components/pro/ProUpgradePopup";
 
@@ -117,15 +116,6 @@ export function DashboardShell() {
         )}
       </div>
 
-      {/* Pro Discord リンク */}
-      {isPro && (
-        <div className="px-4 pb-4">
-          <button onClick={() => alert("現在パイロット版で準備中です")}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-center font-mono font-bold text-sm rounded-lg px-4 py-3 transition-colors">
-            Discord コミュニティに参加
-          </button>
-        </div>
-      )}
     </div>
   );
 }

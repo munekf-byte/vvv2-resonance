@@ -20,7 +20,7 @@ export default function DashboardPage() {
         }}
       >
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-end justify-start">
-          <span className="font-mono text-white/80 text-[9px] tracking-wider pb-1">v5.19</span>
+          <span className="font-mono text-white/80 text-[9px] tracking-wider pb-1">v5.20</span>
         </div>
       </header>
 
