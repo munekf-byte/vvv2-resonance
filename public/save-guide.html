@@ -275,41 +275,35 @@
   .crop-bottom img { bottom: 0; }
 
   .wave-cut {
-    height: 64px;
-    background: var(--bg-card);
+    height: 96px;
+    background: #fff;
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-top: 1px dashed var(--border);
-    border-bottom: 1px dashed var(--border);
+    overflow: hidden;
   }
-  .wave-cut::before, .wave-cut::after {
-    content: '';
+  .wave-cut svg.wave-svg {
     position: absolute;
     left: 0; right: 0;
-    height: 12px;
-    background-image: radial-gradient(circle at 8px 0, transparent 8px, var(--bg-card) 8px);
-    background-size: 16px 16px;
-  }
-  .wave-cut::before {
-    top: -1px;
-    background-image: radial-gradient(circle at 8px 12px, transparent 8px, #fff 8px);
-  }
-  .wave-cut::after {
-    bottom: -1px;
-    background-image: radial-gradient(circle at 8px 0, transparent 8px, #fff 8px);
+    bottom: 14px;
+    width: 100%;
+    height: 28px;
+    display: block;
   }
   .wave-label {
-    background: #fff;
-    padding: 4px 16px;
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--text-muted);
-    letter-spacing: 0.05em;
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fde68a;
+    border: 2px solid #1f2937;
+    border-radius: 6px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #1f2937;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
     z-index: 2;
+    letter-spacing: 0.04em;
   }
 
   /* INFO BOX */
@@ -393,8 +387,8 @@
         <div class="mask-blur" style="top: 11.0%; left: 14%; width: 56%; height: 2.9%; font-size: 9px;">
           ホール名・台番（マスク済）
         </div>
-        <!-- 連絡先（円形アバター + 名前）の行をマスク -->
-        <div class="mask-blur" style="top: 39.5%; left: 4%; width: 92%; height: 11%; font-size: 11px;">
+        <!-- 連絡先（円形アバター + 名前 + 見切れアイコン）の行をフル幅マスク -->
+        <div class="mask-blur" style="top: 38%; left: 0%; width: 100%; height: 17%; font-size: 11px; border-radius: 0; border-left: 0; border-right: 0;">
           連絡先候補（個人情報のためマスク済）
         </div>
       </div>
@@ -463,7 +457,11 @@
           <img src="/images/save-guide/sessionNormal.png" alt="通常時 出力例（上部）" />
         </div>
         <div class="wave-cut">
-          <span class="wave-label">… 中略 …</span>
+          <span class="wave-label">WEB画面の省略</span>
+          <svg class="wave-svg" viewBox="0 0 200 24" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 0 8 Q 12.5 0 25 8 T 50 8 T 75 8 T 100 8 T 125 8 T 150 8 T 175 8 T 200 8" stroke="#1f2937" stroke-width="1.4" fill="none"/>
+            <path d="M 0 18 Q 12.5 10 25 18 T 50 18 T 75 18 T 100 18 T 125 18 T 150 18 T 175 18 T 200 18" stroke="#1f2937" stroke-width="1.4" fill="none"/>
+          </svg>
         </div>
         <div class="crop-bottom">
           <img src="/images/save-guide/sessionNormal.png" alt="通常時 出力例（下部）" />
@@ -480,7 +478,11 @@
           <img src="/images/save-guide/sassionAT.png" alt="AT記録 出力例（上部）" />
         </div>
         <div class="wave-cut">
-          <span class="wave-label">… 中略 …</span>
+          <span class="wave-label">WEB画面の省略</span>
+          <svg class="wave-svg" viewBox="0 0 200 24" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 0 8 Q 12.5 0 25 8 T 50 8 T 75 8 T 100 8 T 125 8 T 150 8 T 175 8 T 200 8" stroke="#1f2937" stroke-width="1.4" fill="none"/>
+            <path d="M 0 18 Q 12.5 10 25 18 T 50 18 T 75 18 T 100 18 T 125 18 T 150 18 T 175 18 T 200 18" stroke="#1f2937" stroke-width="1.4" fill="none"/>
+          </svg>
         </div>
         <div class="crop-bottom">
           <img src="/images/save-guide/sassionAT.png" alt="AT記録 出力例（下部）" />
@@ -497,7 +499,11 @@
           <img src="/images/save-guide/session_sum.PNG" alt="集計 出力例（上部）" />
         </div>
         <div class="wave-cut">
-          <span class="wave-label">… 中略 …</span>
+          <span class="wave-label">WEB画面の省略</span>
+          <svg class="wave-svg" viewBox="0 0 200 24" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 0 8 Q 12.5 0 25 8 T 50 8 T 75 8 T 100 8 T 125 8 T 150 8 T 175 8 T 200 8" stroke="#1f2937" stroke-width="1.4" fill="none"/>
+            <path d="M 0 18 Q 12.5 10 25 18 T 50 18 T 75 18 T 100 18 T 125 18 T 150 18 T 175 18 T 200 18" stroke="#1f2937" stroke-width="1.4" fill="none"/>
+          </svg>
         </div>
         <div class="crop-bottom">
           <img src="/images/save-guide/session_sum.PNG" alt="集計 出力例（下部）" />
