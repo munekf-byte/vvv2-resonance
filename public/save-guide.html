@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>画像保存の手順 | TOKYO GHOUL RESONANCE</title>
+<meta name="description" content="稼働ログを画像として写真フォルダに保存する手順をご案内します。">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
+
+  :root {
+    --bg: #f5f0e8;
+    --bg-card: #efe9df;
+    --bg-white: #faf8f4;
+    --border: #d4cbbf;
+    --border-light: #e0d8cc;
+    --text: #2c2520;
+    --text-sub: #5e5347;
+    --text-muted: #9a8e80;
+    --red: #c0392b;
+    --red-bg: #fceeed;
+    --green: #27774a;
+    --green-bg: #edf7f0;
+    --blue: #3672a8;
+    --blue-bg: #edf4fb;
+    --gold: #a67c3d;
+    --gold-bg: #faf3e6;
+    --orange: #d4772c;
+    --orange-bg: #fef4ea;
+    --marker-yellow: linear-gradient(transparent 60%, #fde68a 60%);
+    --marker-pink: linear-gradient(transparent 60%, #fecdd3 60%);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'M PLUS Rounded 1c', 'Hiragino Maru Gothic ProN', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.9;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .marker-y { background-image: var(--marker-yellow); font-weight: 700; }
+  .marker-p { background-image: var(--marker-pink); font-weight: 700; }
+  .bold { font-weight: 700; }
+
+  /* HERO */
+  .hero {
+    padding: 40px 24px 24px;
+    text-align: center;
+    background: linear-gradient(180deg, var(--gold-bg) 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    background: var(--gold);
+    color: #fff;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+  }
+  .hero-title { font-size: 22px; font-weight: 800; line-height: 1.5; margin-bottom: 10px; }
+  .hero-sub { font-size: 13px; color: var(--text-sub); }
+
+  /* SECTIONS */
+  section { padding: 28px 20px; max-width: 520px; margin: 0 auto; }
+
+  /* STEP CARD */
+  .step-card {
+    background: var(--bg-white);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  }
+  .step-head {
+    padding: 14px 18px;
+    background: var(--text);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .step-num {
+    width: 36px; height: 36px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .step-title { font-size: 15px; font-weight: 800; }
+  .step-body { padding: 18px; }
+  .step-body p { font-size: 14px; color: var(--text-sub); margin-bottom: 12px; }
+
+  /* SCREENSHOT WRAP */
+  .ss-wrap {
+    position: relative;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    margin: 14px 0;
+  }
+  .ss-wrap img { display: block; width: 100%; height: auto; }
+
+  /* MASK OVERLAYS */
+  .mask {
+    position: absolute;
+    background: #1f2937;
+    color: #fff;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: monospace;
+    font-weight: 700;
+    box-shadow: 0 0 0 2px #fff;
+    overflow: hidden;
+  }
+  .mask-blur {
+    position: absolute;
+    background: rgba(229, 222, 211, 0.96);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: var(--text-muted);
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-align: center;
+    padding: 4px;
+  }
+
+  /* HIGHLIGHT BOX (ボタン位置に枠) */
+  .highlight-box {
+    position: absolute;
+    border: 4px solid #ef4444;
+    border-radius: 12px;
+    box-shadow: 0 0 0 4px rgba(239,68,68,0.25), 0 0 24px rgba(239,68,68,0.5);
+    animation: pulse 1.6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(239,68,68,0.25), 0 0 24px rgba(239,68,68,0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(239,68,68,0.15), 0 0 32px rgba(239,68,68,0.7); }
+  }
+
+  /* TAP CALLOUT (吹き出し) */
+  .tap-callout {
+    position: absolute;
+    background: #ef4444;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 6px 14px;
+    border-radius: 8px;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(239,68,68,0.4);
+    z-index: 2;
+  }
+  .tap-callout::after {
+    content: '';
+    position: absolute;
+    width: 0; height: 0;
+    border: 8px solid transparent;
+  }
+  .tap-callout.bottom::after {
+    border-top-color: #ef4444;
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* OPTION EXPLAIN */
+  .opt-list {
+    list-style: none;
+    margin: 14px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .opt-item {
+    display: flex;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-card);
+    border-radius: 10px;
+    border-left: 4px solid var(--gold);
+  }
+  .opt-item.recommend {
+    border-left-color: var(--green);
+    background: var(--green-bg);
+  }
+  .opt-icon {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    font-weight: 800;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .opt-text { flex: 1; font-size: 13px; line-height: 1.7; }
+  .opt-text strong { display: block; font-size: 14px; font-weight: 800; margin-bottom: 2px; }
+  .opt-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    background: var(--green);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    border-radius: 4px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* EXAMPLE (wave-cut) */
+  .example {
+    background: var(--bg-white);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .example-head {
+    padding: 12px 16px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ex-tag {
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+  }
+  .ex-tag.normal { background: #dc2626; }
+  .ex-tag.at { background: #16a34a; }
+  .ex-tag.summary { background: #1f2937; }
+  .ex-name { font-size: 13px; font-weight: 800; }
+
+  .crop-top, .crop-bottom {
+    overflow: hidden;
+    background: #fff;
+    position: relative;
+  }
+  .crop-top { height: 320px; }
+  .crop-bottom { height: 320px; }
+
+  .crop-top img, .crop-bottom img {
+    display: block;
+    width: 100%;
+    height: auto;
+    position: absolute;
+    left: 0;
+  }
+  .crop-top img { top: 0; }
+  .crop-bottom img { bottom: 0; }
+
+  .wave-cut {
+    height: 64px;
+    background: var(--bg-card);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px dashed var(--border);
+    border-bottom: 1px dashed var(--border);
+  }
+  .wave-cut::before, .wave-cut::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 12px;
+    background-image: radial-gradient(circle at 8px 0, transparent 8px, var(--bg-card) 8px);
+    background-size: 16px 16px;
+  }
+  .wave-cut::before {
+    top: -1px;
+    background-image: radial-gradient(circle at 8px 12px, transparent 8px, #fff 8px);
+  }
+  .wave-cut::after {
+    bottom: -1px;
+    background-image: radial-gradient(circle at 8px 0, transparent 8px, #fff 8px);
+  }
+  .wave-label {
+    background: #fff;
+    padding: 4px 16px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    z-index: 2;
+  }
+
+  /* INFO BOX */
+  .info-box { border-radius: 10px; padding: 14px 16px; font-size: 13px; line-height: 1.9; margin: 14px 0; }
+  .info-box.blue { background: var(--blue-bg); border-left: 4px solid var(--blue); color: #2a5278; }
+  .info-box.green { background: var(--green-bg); border-left: 4px solid var(--green); color: #1f5436; }
+
+  /* BACK LINK */
+  .back-link {
+    display: inline-block;
+    padding: 12px 24px;
+    background: var(--bg-white);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .back-link:active { background: var(--bg-card); }
+
+  footer {
+    text-align: center;
+    padding: 28px 24px 56px;
+    border-top: 1px solid var(--border-light);
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 2.2;
+  }
+  footer a { color: var(--text-sub); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-badge">画像保存ガイド</div>
+  <h1 class="hero-title">稼働ログを<br>写真フォルダに保存する手順</h1>
+  <p class="hero-sub">3ステップで完了します。</p>
+</div>
+
+<section>
+  <!-- STEP 1 -->
+  <div class="step-card">
+    <div class="step-head">
+      <div class="step-num">1</div>
+      <div class="step-title">「画像で保存」ボタンをタップ</div>
+    </div>
+    <div class="step-body">
+      <p>画像を保存したいタブ（<span class="bold">通常時 / AT記録 / 集計</span>）の上部にある<span class="marker-y">黄色の「画像で保存」ボタン</span>をタップします。</p>
+
+      <div class="ss-wrap">
+        <img src="/images/save-guide/save1.jpg" alt="画像で保存ボタンの位置" />
+        <!-- 個人情報マスク: ホール名・台番 -->
+        <div class="mask-blur" style="top: 12.0%; left: 14%; width: 56%; height: 3.2%; font-size: 10px;">
+          ホール名・台番（マスク済）
+        </div>
+        <!-- ボタン強調枠 -->
+        <div class="highlight-box" style="top: 25.5%; right: 4%; width: 24%; height: 4.4%;"></div>
+        <!-- タップ案内吹き出し -->
+        <div class="tap-callout bottom" style="top: 21.5%; right: 6%;">ここをタップ</div>
+      </div>
+
+      <div class="info-box blue">
+        💡 注意書きにある通り、<span class="bold">ホール名や台番などの特定情報は画像には掲載されません</span>のでご安心ください。
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-card">
+    <div class="step-head">
+      <div class="step-num">2</div>
+      <div class="step-title">共有メニューから「画像を保存」を選ぶ</div>
+    </div>
+    <div class="step-body">
+      <p>タップすると <span class="bold">iPhone / Android の共有メニュー</span> がポップアップします。<br>用途に応じて以下から選択してください。</p>
+
+      <div class="ss-wrap">
+        <img src="/images/save-guide/save2.PNG" alt="共有メニューの選択肢" />
+        <!-- ヘッダー個人情報マスク -->
+        <div class="mask-blur" style="top: 11.0%; left: 14%; width: 56%; height: 2.9%; font-size: 9px;">
+          ホール名・台番（マスク済）
+        </div>
+        <!-- 連絡先（円形アバター + 名前）の行をマスク -->
+        <div class="mask-blur" style="top: 39.5%; left: 4%; width: 92%; height: 11%; font-size: 11px;">
+          連絡先候補（個人情報のためマスク済）
+        </div>
+      </div>
+
+      <ul class="opt-list">
+        <li class="opt-item recommend">
+          <div class="opt-icon">📸</div>
+          <div class="opt-text">
+            <strong>画像を保存<span class="opt-badge">おすすめ</span></strong>
+            写真フォルダ（フォトライブラリ）に直接保存されます。<br>
+            あとで <span class="bold">写真アプリから X / LINE / Instagram</span> 等に投稿するならコレ。
+          </div>
+        </li>
+        <li class="opt-item">
+          <div class="opt-icon">𝕏</div>
+          <div class="opt-text">
+            <strong>X（旧 Twitter）</strong>
+            画像付きツイート画面が開きます。ハッシュタグも自動で入ります。
+          </div>
+        </li>
+        <li class="opt-item">
+          <div class="opt-icon">💬</div>
+          <div class="opt-text">
+            <strong>メッセージ / LINE</strong>
+            選んだトークルームにそのまま画像を送信できます。
+          </div>
+        </li>
+        <li class="opt-item">
+          <div class="opt-icon">📡</div>
+          <div class="opt-text">
+            <strong>AirDrop</strong>
+            近くの iPhone / Mac に直接送信。仲間との共有に便利。
+          </div>
+        </li>
+        <li class="opt-item">
+          <div class="opt-icon">📋</div>
+          <div class="opt-text">
+            <strong>コピー</strong>
+            クリップボードに保存され、他のアプリでペーストできます。
+          </div>
+        </li>
+      </ul>
+
+      <div class="info-box green">
+        ✅ <span class="bold">「画像を保存」を選ぶと、写真アプリから普段通りに開けるようになります。</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: 出力例 -->
+  <div class="step-card">
+    <div class="step-head">
+      <div class="step-num">3</div>
+      <div class="step-title">出力される画像の例</div>
+    </div>
+    <div class="step-body">
+      <p>各タブで保存ボタンを押すと、それぞれ次のような画像が生成されます。<br><span style="font-size:11px;color:var(--text-muted)">※ 縦に長いので<span class="bold">途中をカット</span>して表示しています</span></p>
+
+      <!-- 通常時 -->
+      <div class="example">
+        <div class="example-head">
+          <span class="ex-tag normal">通常時タブ</span>
+          <span class="ex-name">周期記録一覧</span>
+        </div>
+        <div class="crop-top">
+          <img src="/images/save-guide/sessionNormal.png" alt="通常時 出力例（上部）" />
+        </div>
+        <div class="wave-cut">
+          <span class="wave-label">… 中略 …</span>
+        </div>
+        <div class="crop-bottom">
+          <img src="/images/save-guide/sessionNormal.png" alt="通常時 出力例（下部）" />
+        </div>
+      </div>
+
+      <!-- AT -->
+      <div class="example">
+        <div class="example-head">
+          <span class="ex-tag at">AT記録タブ</span>
+          <span class="ex-name">AT セット詳細一覧</span>
+        </div>
+        <div class="crop-top">
+          <img src="/images/save-guide/sassionAT.png" alt="AT記録 出力例（上部）" />
+        </div>
+        <div class="wave-cut">
+          <span class="wave-label">… 中略 …</span>
+        </div>
+        <div class="crop-bottom">
+          <img src="/images/save-guide/sassionAT.png" alt="AT記録 出力例（下部）" />
+        </div>
+      </div>
+
+      <!-- 集計 -->
+      <div class="example">
+        <div class="example-head">
+          <span class="ex-tag summary">集計タブ</span>
+          <span class="ex-name">数値分析サマリー</span>
+        </div>
+        <div class="crop-top">
+          <img src="/images/save-guide/session_sum.PNG" alt="集計 出力例（上部）" />
+        </div>
+        <div class="wave-cut">
+          <span class="wave-label">… 中略 …</span>
+        </div>
+        <div class="crop-bottom">
+          <img src="/images/save-guide/session_sum.PNG" alt="集計 出力例（下部）" />
+        </div>
+      </div>
+
+      <div class="info-box blue">
+        🔒 すべての画像で<span class="bold">ホール名・台番・氏名・メールアドレス</span>等の個人情報は<span class="marker-y">一切掲載されません</span>。
+      </div>
+    </div>
+  </div>
+</section>
+
+<section style="text-align:center;padding-top:8px;padding-bottom:48px">
+  <a href="/lp" class="back-link">← Pro プランのご案内に戻る</a>
+</section>
+
+<footer>
+  TOKYO GHOUL RESONANCE — 実戦分析システム<br>
+  <a href="/terms">利用規約</a> ・ <a href="/privacy">プライバシーポリシー</a> ・ <a href="/lp">Pro プラン</a>
+</footer>
+
+</body>
+</html>
