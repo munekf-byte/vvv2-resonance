@@ -22,6 +22,22 @@ import {
   abbrevMode, abbrevTrigger, abbrevEvent,
   type CellColor,
 } from "@/lib/tg/cellColors";
+import { logAnalyticsEvent } from "@/lib/analytics/event-logger";
+
+// CZイベント名 → analytics cz_type マッピング (合致しなければ analytics に送らない)
+function detectCzType(event: string): "reminiscence" | "oogui_rize" | null {
+  if (event === "レミニセンス") return "reminiscence";
+  if (event === "大喰いの利世") return "oogui_rize";
+  return null;
+}
+
+// CZカウンターのキー → analytics role マッピング
+const CZ_ROLE_MAP: Record<"bell" | "replay" | "weakRare" | "strongRare", string> = {
+  bell: "bell",
+  replay: "replay",
+  weakRare: "weak_rare",
+  strongRare: "strong_rare",
+};
 
 // 通常時では CZ失敗系のみ / AT側では終了画面系のみ (重複排除)
 const ENDING_SUGGESTIONS_NORMAL = TG_ENDING_SUGGESTIONS.filter((s) =>
@@ -93,6 +109,41 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
   const [yamePopup, setYamePopup] = useState(false);
   const [yameG, setYameG] = useState<string>("");
 
+  // analytics: cz_instance_id をマウント時に確定（buildBlock 時の id と一致させる）
+  const [instanceId] = useState<string>(() => block?.id ?? crypto.randomUUID());
+  // analytics: 既存ブロック再編集時の event_seq_in_cz は既存カウンターの合計から続ける
+  const seqRef = useRef<number>(
+    block?.czCounter
+      ? (block.czCounter.bell + block.czCounter.replay
+         + block.czCounter.weakRare + block.czCounter.strongRare)
+      : 0
+  );
+
+  /**
+   * CZイベント1件を analytics に送信（fire-and-forget）。
+   * - レミニセンス / 大喰いの利世 以外では送信しない（CZ ではないため）。
+   * - PUSH / 当 = is_correction:false / -1 = is_correction:true
+   * - triggered: 当ボタンのみ true
+   */
+  function logCZEvent(roleKey: "bell" | "replay" | "weakRare" | "strongRare", opts: {
+    triggered: boolean;
+    isCorrection: boolean;
+  }) {
+    const cz_type = detectCzType(form.event);
+    if (!cz_type) return;
+    seqRef.current += 1;
+    logAnalyticsEvent("cz-event", {
+      cz_instance_id: instanceId,
+      cz_type,
+      event_seq_in_cz: seqRef.current,
+      role: CZ_ROLE_MAP[roleKey],
+      triggered: opts.triggered,
+      is_correction: opts.isCorrection,
+      is_final_game: opts.triggered ? true : null,
+      recorded_at: new Date().toISOString(),
+    });
+  }
+
   const [landscape, setLandscape] = useState(false);
   const [vp, setVp] = useState<{ w: number; h: number } | null>(null);
 
@@ -139,7 +190,13 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
 
   function setCZCounter(key: "bell" | "replay" | "weakRare" | "strongRare", delta: number) {
     const cz = form.czCounter ?? { bell: 0, replay: 0, weakRare: 0, strongRare: 0, hitRole: "" };
-    setField("czCounter", { ...cz, [key]: Math.max(0, (cz[key as keyof typeof cz] as number) + delta) });
+    const currentVal = cz[key as keyof typeof cz] as number;
+    const nextVal = Math.max(0, currentVal + delta);
+    setField("czCounter", { ...cz, [key]: nextVal });
+    // analytics: 実際にカウントが動いた場合のみログ送信（0からの-1など無効操作はスキップ）
+    if (nextVal !== currentVal) {
+      logCZEvent(key, { triggered: false, isCorrection: delta < 0 });
+    }
   }
 
   /** 精神世界弱レア役カウンター（セッション全体）を増減 */
@@ -169,6 +226,10 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
     setCZOverlay(true);
     if (czTimerRef.current) clearTimeout(czTimerRef.current);
     czTimerRef.current = setTimeout(() => setCZOverlayPhase(2), 4500);
+    // analytics: 当タップは triggered=true として記録
+    if (key === "bell" || key === "replay" || key === "weakRare" || key === "strongRare") {
+      logCZEvent(key, { triggered: true, isCorrection: false });
+    }
   }
 
   /** スロット方式の個別セット (kakugan / shinsekai / invitation) */
@@ -193,13 +254,35 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
 
   function buildBlock(): NormalBlock {
     return {
-      id: block?.id ?? crypto.randomUUID(),
+      id: instanceId,
       ...form,
       createdAt: block?.createdAt ?? new Date().toISOString(),
     };
   }
 
-  function handleSave()     { onSave(buildBlock()); }
+  /**
+   * analytics: 保存タイミングで cz_instance_id 配下の全イベントの cz_outcome を確定する。
+   * - atWin=true → 'success' / atWin=false → 'fail'
+   * - レミニセンス / 大喰いの利世 以外では呼ばない（CZ ではないため）
+   * - fire-and-forget（失敗してもユーザー操作を阻害しない）
+   */
+  function flushCzOutcome() {
+    if (typeof window === "undefined") return;
+    if (!detectCzType(form.event)) return;
+    try {
+      void fetch("/api/analytics/cz-outcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cz_instance_id: instanceId,
+          cz_outcome: form.atWin ? "success" : "fail",
+        }),
+        keepalive: true,
+      }).catch(() => {});
+    } catch {}
+  }
+
+  function handleSave()     { flushCzOutcome(); onSave(buildBlock()); }
   function handleTempSave() { onTempSave(buildBlock()); }
 
   /** 赫眼発生 — 現フォームを保存しつつ pending を開始してダッシュボードを閉じる */
@@ -649,12 +732,13 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                 onClick={() => {
                   const finalG = yameG !== "" ? Number(yameG) : form.jisshuG;
                   const yameBlock: NormalBlock = {
-                    id: block?.id ?? crypto.randomUUID(),
+                    id: instanceId,
                     ...form,
                     jisshuG: finalG,
                     yame: true,
                     createdAt: block?.createdAt ?? new Date().toISOString(),
                   };
+                  flushCzOutcome();
                   setYamePopup(false);
                   onYame?.(yameBlock);
                 }}
