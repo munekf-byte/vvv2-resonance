@@ -23,6 +23,9 @@ export default function PrivacyPage() {
           <p className="font-mono text-xs text-gray-400 mt-2">
             L東京喰種 RESONANCE
           </p>
+          <p className="font-mono text-xs text-gray-400 mt-0.5">
+            最終更新日: 2026-05-02
+          </p>
 
           <hr className="my-8 border-gray-200" />
 
@@ -57,13 +60,37 @@ export default function PrivacyPage() {
           </section>
 
           {/* 4. データの保護 */}
-          <section>
+          <section className="mb-10">
             <h2 className="font-sans font-bold text-base sm:text-lg text-gray-800 mb-3">
               4. データの保護
             </h2>
             <p className="text-sm sm:text-[15px] text-gray-700 leading-[1.9]">
               ユーザーのデータは強固なセキュリティ（Row Level Security）によって保護されており、他の一般ユーザーがあなたのデータやメールアドレスを閲覧することはできません。
             </p>
+          </section>
+
+          {/* 5. 統計分析への協力（2026-05-02 追加） */}
+          <section>
+            <h2 className="font-sans font-bold text-base sm:text-lg text-gray-800 mb-3">
+              5. 統計分析への協力（2026-05-02 追加）
+            </h2>
+            <ol className="list-decimal list-outside ml-5 space-y-3 text-sm sm:text-[15px] text-gray-700 leading-[1.9]">
+              <li>
+                本サービスは、CZ（チャンスゾーン）抽選格差や AT セット単位の性能差などの遊技傾向を継続的に検証する目的で、入力された遊技データの一部を匿名化したうえで統計分析サーバーに記録します。
+              </li>
+              <li>
+                記録されるのは、CZ や AT で発生した役・対決・直乗せ・終了画面示唆などの<strong>遊技イベント情報のみ</strong>です。氏名・メールアドレス・Discord ID 等の個人情報は記録されません。
+              </li>
+              <li>
+                ユーザー識別子は、ペッパー（秘密文字列）を付与したうえで SHA-256 で<strong>不可逆ハッシュ化</strong>され、運営者であっても元のユーザーへ逆引きできない形で保存されます。
+              </li>
+              <li>
+                記録されたデータは、本サービスの分析精度向上、限定コミュニティでの統計レポート配信、および類似機種向け分析機能の開発のためにのみ利用されます。第三者への個別データ提供は行いません。
+              </li>
+              <li>
+                本サービスを継続してご利用いただくことで、本条項への同意があったものとみなします。記録停止を希望する場合は、運営者までご連絡ください。
+              </li>
+            </ol>
           </section>
 
           <hr className="my-8 border-gray-200" />
