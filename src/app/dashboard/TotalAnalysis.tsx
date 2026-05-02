@@ -7,7 +7,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { PlaySession, NormalBlock, TGATEntry, TGATSet, TGEndingCard } from "@/types";
 import { lsGetSessionList, lsLoadSession, dbGetSessionList, dbLoadSession } from "@/lib/tg/localStore";
-import { captureAndDownload } from "@/lib/tg/captureImage";
+import { captureAndShare } from "@/lib/tg/captureImage";
 import {
   TG_KAKUGAN, TG_SHINSEKAI,
   TG_ENDING_SUGGESTIONS, TG_TROPHIES,
@@ -382,7 +382,7 @@ export function TotalAnalysis() {
               style={{ backgroundColor: selectorOpen ? "#1f2937" : "#e5e7eb", color: selectorOpen ? "#fff" : "#374151" }}>
               {selectorOpen ? "閉じる" : "セッション選択"}
             </button>
-            <button onClick={() => captureRef.current && captureAndDownload(captureRef.current, `TG_Total_${new Date().toISOString().slice(0, 10)}.png`)}
+            <button onClick={() => captureRef.current && captureAndShare(captureRef.current, `TG_Total_${new Date().toISOString().slice(0, 10)}.png`)}
               className="text-[10px] font-mono font-bold px-3 py-2 rounded bg-gray-800 text-white active:scale-95 transition-transform">
               画像で保存
             </button>

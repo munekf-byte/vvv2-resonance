@@ -6,7 +6,7 @@
 // =============================================================================
 
 import { useRef, useState, useEffect } from "react";
-import { captureAndDownload, captureAndShare } from "@/lib/tg/captureImage";
+import { captureAndShare } from "@/lib/tg/captureImage";
 import type { NormalBlock, TGATEntry, TGATSet, TGArimaJudgment } from "@/types";
 import {
   TG_KAKUGAN, TG_SHINSEKAI,
@@ -318,7 +318,7 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
 
   function handleCapture() {
     if (!captureRef.current) return;
-    captureAndDownload(captureRef.current, `TG_Summary_${new Date().toISOString().slice(0, 10)}.png`);
+    captureAndShare(captureRef.current, `TG_Summary_${new Date().toISOString().slice(0, 10)}.png`);
   }
 
   return (

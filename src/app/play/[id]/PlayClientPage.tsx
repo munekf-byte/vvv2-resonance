@@ -18,7 +18,7 @@ import { UchidashiEditDashboard } from "@/components/tg/UchidashiEditDashboard";
 import { ShushiEditDashboard } from "@/components/tg/ShushiEditDashboard";
 import { lsLoadSession, lsSaveSession, flushPendingSaves, onSyncStatusChange, type SyncStatus } from "@/lib/tg/localStore";
 import { estimateAllModes } from "@/lib/engine/modeEstimation";
-import { captureAndDownload, captureAndShare } from "@/lib/tg/captureImage";
+import { captureAndShare } from "@/lib/tg/captureImage";
 import { inferSetting } from "@/components/tg/SummaryTab";
 import { computeMedalStamps, computeFinalResult } from "@/lib/tg/medalCalc";
 import { LongPressHint } from "@/components/ui/LongPressHint";
@@ -430,7 +430,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
                   𝕏 共有
                 </button>
                 <button
-                  onClick={() => normalListRef.current && captureAndDownload(normalListRef.current, `TG_Normal_${new Date().toISOString().slice(0, 10)}.png`)}
+                  onClick={() => normalListRef.current && captureAndShare(normalListRef.current, `TG_Normal_${new Date().toISOString().slice(0, 10)}.png`)}
                   className="text-[10px] font-mono font-bold px-3 py-3 rounded active:scale-95 transition-transform"
                   style={{ backgroundColor: "#facc15", color: "#1f2937", border: "2px solid #1f2937" }}
                 >
@@ -483,7 +483,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
                   𝕏 共有
                 </button>
                 <button
-                  onClick={() => atListRef.current && captureAndDownload(atListRef.current, `TG_AT_${new Date().toISOString().slice(0, 10)}.png`)}
+                  onClick={() => atListRef.current && captureAndShare(atListRef.current, `TG_AT_${new Date().toISOString().slice(0, 10)}.png`)}
                   className="text-[10px] font-mono font-bold px-3 py-3 rounded active:scale-95 transition-transform"
                   style={{ backgroundColor: "#facc15", color: "#1f2937", border: "2px solid #1f2937" }}
                 >
