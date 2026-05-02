@@ -160,6 +160,7 @@ export function TotalAnalysis() {
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const [sortKey, setSortKey] = useState<"date" | "balance" | "hall" | "setting">("date");
 
   useEffect(() => {
     (async () => {
@@ -206,6 +207,40 @@ export function TotalAnalysis() {
       <p className="text-gray-600 text-sm font-mono">稼働データがありません</p>
     </div>
   );
+
+  // セッション選択パネル用のソートキー導出
+  function getSortDerived(s: PlaySession): { balance: number | null; settingHint: string } {
+    const bal = s.shushi
+      ? Math.round((s.shushi.exchangeCoins ?? 0) - ((s.shushi.handCoins ?? 0) + (s.shushi.cashInvestK ?? 0) * s.shushi.coinRate))
+      : null;
+    const czFail = s.normalBlocks.filter((b) => b.endingSuggestion?.startsWith?.("[cz失敗]")).map((b) => b.endingSuggestion);
+    const setsLocal = s.atEntries.flatMap((e) => e.rows.filter((r): r is TGATSet => r.rowType === "set"));
+    const endScreen = setsLocal.map((x) => x.endingSuggestion ?? "").filter((x) => x.startsWith("[終了画面]"));
+    const hint = inferSetting(czFail, endScreen, s.normalBlocks, s.atEntries);
+    return { balance: bal, settingHint: hint };
+  }
+  const sortedSessions = [...sessions].sort((a, b) => {
+    const ad = getSortDerived(a);
+    const bd = getSortDerived(b);
+    switch (sortKey) {
+      case "balance":
+        return (bd.balance ?? -99999) - (ad.balance ?? -99999);
+      case "hall":
+        return a.machineName.localeCompare(b.machineName, "ja");
+      case "setting": {
+        const priority = ["6確定濃厚", "5以上濃厚", "4以上濃厚", "3以上濃厚", "2以上濃厚", "1否定"];
+        const rankA = ad.settingHint ? priority.findIndex((p) => ad.settingHint.includes(p)) : 99;
+        const rankB = bd.settingHint ? priority.findIndex((p) => bd.settingHint.includes(p)) : 99;
+        const ra = rankA === -1 ? 98 : rankA;
+        const rb = rankB === -1 ? 98 : rankB;
+        if (ra !== rb) return ra - rb;
+        return (b.userSettingGuess ?? "").localeCompare(a.userSettingGuess ?? "", "ja");
+      }
+      case "date":
+      default:
+        return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
+    }
+  });
 
   // ── 計算 ──
   // セッション毎の収支（ユーザー入力ベース） → トータル収支 + 勝敗
@@ -383,7 +418,8 @@ export function TotalAnalysis() {
               {selectorOpen ? "閉じる" : "セッション選択"}
             </button>
             <button onClick={() => captureRef.current && captureAndShare(captureRef.current, `TG_Total_${new Date().toISOString().slice(0, 10)}.png`)}
-              className="text-[10px] font-mono font-bold px-3 py-2 rounded bg-gray-800 text-white active:scale-95 transition-transform">
+              className="text-[10px] font-mono font-bold px-3 py-2 rounded active:scale-95 transition-transform"
+              style={{ backgroundColor: "#facc15", color: "#1f2937", border: "2px solid #1f2937" }}>
               画像で保存
             </button>
           </div>
@@ -399,16 +435,28 @@ export function TotalAnalysis() {
               .tgr-session-scroll::-webkit-scrollbar-thumb:hover { background: #1f2937; }
               .tgr-session-scroll { scrollbar-width: auto; scrollbar-color: #4b5563 #e5e7eb; }
             `}</style>
-            <div className="flex gap-2 px-3 py-2 border-b border-gray-200 bg-gray-50 items-center">
+            <div className="flex gap-2 px-3 py-2 border-b border-gray-200 bg-gray-50 items-center flex-wrap">
               <button onClick={() => setSelectedIds(new Set(sessions.map((s) => s.id)))}
                 className="text-[9px] font-mono font-bold px-2 py-1 rounded bg-gray-700 text-white active:scale-95">全選択</button>
               <button onClick={() => setSelectedIds(new Set())}
                 className="text-[9px] font-mono font-bold px-2 py-1 rounded border border-gray-400 text-gray-600 active:scale-95">全解除</button>
+              {sessions.length > 1 && (
+                <select
+                  value={sortKey}
+                  onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+                  className="text-[10px] font-mono font-bold px-2 py-1 rounded border-2 border-gray-400 bg-white text-gray-700 focus:outline-none focus:border-gray-600"
+                >
+                  <option value="date">日付順</option>
+                  <option value="balance">勝ち額順</option>
+                  <option value="hall">ホール名順</option>
+                  <option value="setting">設定順</option>
+                </select>
+              )}
               <span className="text-[9px] font-mono text-gray-500 ml-auto">{selectedCount}/{sessionCount}件</span>
             </div>
             <div className="relative">
               <div className="tgr-session-scroll overflow-y-auto divide-y divide-gray-100" style={{ maxHeight: "580px" }}>
-                {sessions.map((s) => {
+                {sortedSessions.map((s) => {
                   const checked = selectedIds.has(s.id);
                   const totalG = s.normalBlocks.reduce((sum, b) => sum + (b.jisshuG ?? 0), 0);
                   const atC = s.normalBlocks.filter((b) => b.atWin).length;
@@ -427,8 +475,16 @@ export function TotalAnalysis() {
                     <button key={s.id} onClick={() => toggleSession(s.id)}
                       className="w-full px-3 py-2 text-left transition-colors"
                       style={{ backgroundColor: checked ? "#eff6ff" : "#ffffff" }}>
-                      <div className="flex items-start gap-2">
-                        <span className="text-[14px] mt-0.5 shrink-0">{checked ? "☑" : "☐"}</span>
+                      <div className="flex items-start gap-2.5">
+                        <div className="shrink-0 mt-0.5" style={{
+                          width: "26px", height: "26px", borderRadius: "6px",
+                          border: `2px solid ${checked ? "#1f2937" : "#9ca3af"}`,
+                          backgroundColor: checked ? "#1f2937" : "#fff",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          color: "#fff", fontSize: "16px", fontWeight: 800, lineHeight: 1,
+                        }}>
+                          {checked ? "✓" : ""}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline justify-between gap-2 mb-1">
                             <p className="text-[11px] font-mono font-bold text-gray-800 truncate">{s.machineName}</p>
