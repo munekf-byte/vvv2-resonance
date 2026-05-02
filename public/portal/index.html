@@ -487,29 +487,11 @@
   }
   .x-prof .follow:hover{background:var(--accent);border-color:var(--accent);color:#000}
 
-  .x-posts{display:flex;flex-direction:column;gap:10px;max-height:380px;overflow:auto}
-  .x-posts::-webkit-scrollbar{width:6px}
-  .x-posts::-webkit-scrollbar-thumb{background:var(--tile-edge)}
-  .post{
-    border:1px solid var(--line);
-    padding:12px;
-    font-size:13px;line-height:1.55;
-    background:color-mix(in oklab, var(--bg-0) 60%, transparent);
-    transition:border-color .2s ease;
+  .x-embed{
+    background:#0a0507;border:1px solid var(--line);
+    min-height:200px;
   }
-  .post:hover{border-color:var(--line-strong)}
-  .post .meta{
-    display:flex;justify-content:space-between;align-items:center;
-    font-family:"JetBrains Mono",monospace;font-size:10px;
-    color:var(--ink-dim);letter-spacing:.12em;margin-bottom:8px;
-  }
-  .post .body{color:var(--ink);white-space:pre-wrap}
-  .post .stats{
-    display:flex;gap:14px;margin-top:10px;
-    font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-dim);
-  }
-  .post .stats span b{color:var(--ink)}
-
+  .x-embed iframe{display:block;width:100% !important;}
   /* footer */
   .foot{
     margin-top:48px;padding-top:18px;
@@ -633,7 +615,15 @@
             </div>
             <a class="follow" href="https://x.com/puchun_dobadoba" target="_blank" rel="noopener">FOLLOW →</a>
           </div>
-          <div class="x-posts" id="xPosts"></div>
+          <div class="x-embed">
+            <a class="twitter-timeline"
+               data-theme="dark"
+               data-chrome="noheader nofooter transparent"
+               data-height="380"
+               href="https://twitter.com/puchun_dobadoba?ref_src=twsrc%5Etfw">
+               Tweets by @puchun_dobadoba
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -656,6 +646,9 @@
     }/*EDITMODE-END*/;
     window.__TWEAK_DEFAULTS__ = TWEAK_DEFAULTS;
   </script>
+
+  <!-- X (Twitter) timeline widget -->
+  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
   <!-- React + Babel for tweaks panel only -->
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -728,25 +721,6 @@
         <span class="ttl"><span class="tag ${n.cls}">${n.tag}</span>${n.t}</span>
         <span class="arr">»</span>
       </a>
-    `).join('');
-
-    /* ===== X posts (dummy until embed) ===== */
-    const POSTS = [
-      { time:"5月 1", body:"UNIT.06のアプリ、公開しました🔥\n触ってみてくれ！", likes:128, rt:32, rep:14 },
-      { time:"4月 28", body:"演出エンジン更新したのでチェックよろしく👀 動作の重さも改善してます。", likes:84, rt:11, rep:6 },
-      { time:"4月 24", body:"GW中はキャンペーン走らせます。詳しくはお知らせ欄からどうぞ。", likes:56, rt:9, rep:3 },
-      { time:"4月 18", body:"次のアプリはちょっと変わったやつになる予定。お楽しみに。", likes:212, rt:48, rep:22 },
-    ];
-    document.getElementById('xPosts').innerHTML = POSTS.map(p => `
-      <div class="post">
-        <div class="meta"><span>POST</span><span>${p.time}</span></div>
-        <div class="body">${p.body}</div>
-        <div class="stats">
-          <span>♡ <b>${p.likes}</b></span>
-          <span>↻ <b>${p.rt}</b></span>
-          <span>💬 <b>${p.rep}</b></span>
-        </div>
-      </div>
     `).join('');
 
     /* ===== sync clock ===== */
