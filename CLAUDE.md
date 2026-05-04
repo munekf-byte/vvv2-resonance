@@ -57,7 +57,8 @@
 git add <files>
 git commit --amend --reset-author
 git push -f origin main
-vercel ls で確認
+# 確認は curl で（vercel ls はブラウザ認可ポップアップが障壁になる）
+curl -s https://vvv2-resonance.vercel.app/dashboard | grep -o 'v5\.[0-9]*'
 ```
 
 ## ファイル作成
