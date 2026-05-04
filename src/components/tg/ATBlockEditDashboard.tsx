@@ -24,6 +24,7 @@ import {
   type CellColor,
 } from "@/lib/tg/cellColors";
 import { logAnalyticsEvent } from "@/lib/analytics/event-logger";
+import { LandscapeSelectOverlay } from "./LandscapeSelect";
 
 // "AT3" → 3 (パースできなければ null)
 function parseAtSeqFromKey(atKey: string): number | null {
@@ -210,6 +211,7 @@ export function ATBlockEditDashboard({
             atEntryType={atEntryType}
             onSave={onSave}
             onTempSave={onTempSave}
+            landscape={useLandscape}
           />
         ) : (
           <ArimaForm initial={row?.rowType === "arima" ? row : null} onSave={onSave} onTempSave={onTempSave} />
@@ -225,7 +227,7 @@ export function ATBlockEditDashboard({
 
 function SetForm({
   initial, defaultAtType, atKey, atInstanceId, setSeqInAt, atEntryType,
-  onSave, onTempSave,
+  onSave, onTempSave, landscape = false,
 }: {
   initial: TGATSet | null;
   defaultAtType?: string;
@@ -235,6 +237,7 @@ function SetForm({
   atEntryType?: string | null;
   onSave: (r: TGATRow) => void;
   onTempSave: (r: TGATRow) => void;
+  landscape?: boolean;
 }) {
   const isAtTypeInherited = !!defaultAtType;
   const [form, setForm] = useState<Omit<TGATSet, "id">>(() =>
@@ -429,6 +432,7 @@ function SetForm({
                   result={battle.result}
                   onTriggerChange={(v) => setBattleTrigger(i, v)}
                   onResultToggle={() => toggleBattleResult(i)}
+                  landscape={landscape}
                 />
               );
             })}
@@ -451,6 +455,7 @@ function SetForm({
                   coins={d.coins}
                   onTriggerChange={(v) => setDirectTrigger(i, v)}
                   onCoinsChange={(v) => setDirectCoins(i, v)}
+                  landscape={landscape}
                 />
               );
             })}
@@ -599,18 +604,19 @@ function SetForm({
                         {hasValue ? value : "—"}
                       </span>
                     </div>
-                    <select className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                    <LandscapeSelectOverlay
                       value={value}
-                      onChange={(e) => {
+                      options={["", ...TG_KAKUGAN]}
+                      onChange={(v) => {
                         const next = [...(form.kakugan ?? [])];
                         while (next.length <= i) next.push("");
-                        next[i] = e.target.value;
+                        next[i] = v;
                         while (next.length > 0 && next[next.length - 1] === "") next.pop();
                         setField("kakugan", next);
-                      }}>
-                      <option value="">—</option>
-                      {[...TG_KAKUGAN].map((k) => <option key={k} value={k}>{k}</option>)}
-                    </select>
+                      }}
+                      landscape={landscape}
+                      emptyLabel="—"
+                    />
                   </div>
                 </div>
               );
@@ -700,6 +706,7 @@ function SlotPickerButton({
   height = SLOT_HALF_H,
   bgActive = "#374151", colorActive = "#ffffff",
   bgInactive = "#e8eaed", borderBottom,
+  landscape = false,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -711,6 +718,7 @@ function SlotPickerButton({
   colorActive?: string;
   bgInactive?: string;
   borderBottom?: string;
+  landscape?: boolean;
 }) {
   const hasValue = value !== "";
   const displayLabel = hasValue ? (labelFn ? labelFn(value) : value) : "—";
@@ -728,29 +736,28 @@ function SlotPickerButton({
           {displayLabel}
         </span>
       </div>
-      <select
-        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+      <LandscapeSelectOverlay
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="">—</option>
-        {options.map((opt) => (
-          <option key={opt} value={opt}>{optionLabelFn ? optionLabelFn(opt) : opt}</option>
-        ))}
-      </select>
+        options={["", ...options]}
+        onChange={onChange}
+        landscape={landscape}
+        emptyLabel="—"
+        optionLabel={optionLabelFn}
+      />
     </div>
   );
 }
 
 // ─── BattleSlot (ad-6) — アンバー配色 ────────────────────────────────────────
 function BattleSlot({
-  index, trigger, result, onTriggerChange, onResultToggle,
+  index, trigger, result, onTriggerChange, onResultToggle, landscape = false,
 }: {
   index: number;
   trigger: string;
   result: string;
   onTriggerChange: (v: string) => void;
   onResultToggle: () => void;
+  landscape?: boolean;
 }) {
   const hasTrigger = !!trigger;
   const hasResult  = !!result;
@@ -774,6 +781,7 @@ function BattleSlot({
         colorActive="#ffffff"
         bgInactive="#fff7ed"
         borderBottom="2px solid #fdba74"
+        landscape={landscape}
       />
       {/* 下段: 成績トグル */}
       <button
@@ -796,13 +804,14 @@ function BattleSlot({
 
 // ─── DirectAddSlot (ad-8) ─────────────────────────────────────────────────────
 function DirectAddSlot({
-  index, trigger, coins, onTriggerChange, onCoinsChange,
+  index, trigger, coins, onTriggerChange, onCoinsChange, landscape = false,
 }: {
   index: number;
   trigger: string;
   coins: number | null;
   onTriggerChange: (v: string) => void;
   onCoinsChange: (v: number | null) => void;
+  landscape?: boolean;
 }) {
   const active = !!trigger || coins != null;
 
@@ -823,6 +832,7 @@ function DirectAddSlot({
         colorActive="#ffffff"
         bgInactive="#dbeafe"
         borderBottom="2px solid #93c5fd"
+        landscape={landscape}
       />
       <SlotPickerButton
         value={coins != null ? String(coins) : ""}
@@ -833,6 +843,7 @@ function DirectAddSlot({
         bgActive="#1e3a5f"
         colorActive="#93c5fd"
         bgInactive="#eff6ff"
+        landscape={landscape}
       />
     </div>
   );

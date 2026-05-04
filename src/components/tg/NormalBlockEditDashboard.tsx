@@ -23,6 +23,7 @@ import {
   type CellColor,
 } from "@/lib/tg/cellColors";
 import { logAnalyticsEvent } from "@/lib/analytics/event-logger";
+import { LandscapeSelectOverlay } from "./LandscapeSelect";
 
 // CZイベント名 → analytics cz_type マッピング (合致しなければ analytics に送らない)
 function detectCzType(event: string): "reminiscence" | "oogui_rize" | null {
@@ -285,11 +286,10 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
   function handleSave()     { flushCzOutcome(); onSave(buildBlock()); }
   function handleTempSave() { onTempSave(buildBlock()); }
 
-  /** 赫眼発生 — 現フォームを保存しつつ pending を開始してダッシュボードを閉じる */
+  /** 赫眼発生 — 現フォームを保存しつつ pending を開始（ダッシュボードは閉じない） */
   function handleStartPendingKakugan() {
     const saved = buildBlock();
     onStartPendingKakugan(saved);
-    onClose();
   }
 
   return (
@@ -371,6 +371,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                 onChange={(v) => setField("zone", v)}
                 options={[...TG_ZONES]}
                 colorFn={getZoneCellColor}
+                landscape={useLandscape}
               />
             </FormCell>
             <FormCell label="推定MODE">
@@ -380,6 +381,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                 options={[...TG_MODES]}
                 colorFn={getModeCellColor}
                 labelFn={(v) => v === "不明" ? "不明" : abbrevMode(v)}
+                landscape={useLandscape}
               />
             </FormCell>
           </div>
@@ -393,6 +395,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                 options={[...TG_WIN_TRIGGERS]}
                 colorFn={getTriggerCellColor}
                 labelFn={(v) => v === "不明" ? "不明" : abbrevTrigger(v)}
+                landscape={useLandscape}
               />
             </FormCell>
             <FormCell label="イベント">
@@ -409,6 +412,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                 colorFn={getEventCellColor}
                 labelFn={(v) => v ? abbrevEvent(v) : "なし"}
                 emptyLabel="なし"
+                landscape={useLandscape}
               />
             </FormCell>
             <FormCell label="AT初当たり">
@@ -437,6 +441,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                 colorFn={getEndingCellColor}
                 labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
                 emptyLabel="なし"
+                landscape={useLandscape}
               />
             </FormCell>
             <FormCell label="トロフィー">
@@ -447,6 +452,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                 colorFn={getTrophyCellColor}
                 labelFn={(v) => v ? (getSuggestionListLines(v)?.name ?? v) : "なし"}
                 emptyLabel="なし"
+                landscape={useLandscape}
               />
             </FormCell>
           </div>
@@ -571,6 +577,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
             displayFn={invShortLabel}
             accentColor="#5b21b6"
             borderActive="#7c3aed"
+            landscape={useLandscape}
           />
           <p className="text-[8px] text-gray-400 font-mono mt-1.5">各スロットを独立してタップ選択できます</p>
         </Section>
@@ -582,6 +589,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
             options={[...TG_EYECATCH]}
             onChange={(vals) => setField("eyecatch", vals)}
             colorFn={(v) => v === "赫眼/喰種ver." ? { backgroundColor: "#b91c1c", color: "#ffffff" } : { backgroundColor: "#374151", color: "#ffffff" }}
+            landscape={useLandscape}
           />
         </Section>
 
@@ -593,6 +601,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
             onChange={(vals) => setField("kakugan", vals)}
             accentColor="#b91c1c"
             borderActive="#991b1b"
+            landscape={useLandscape}
           />
           {/* 後追い確定ボタン: 通常→AT へ赫眼が継続する場面で、継続Gが未確定でも先に発生だけマークしたい時に使う */}
           <button
@@ -623,6 +632,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
             onChange={(vals) => setField("shinsekai", vals)}
             accentColor="#1e40af"
             borderActive="#1d4ed8"
+            landscape={useLandscape}
           />
 
           {/* セッション全体の弱レア役カウンター（常時表示・どの周期からも同じ値を編集） */}
@@ -763,6 +773,7 @@ function MultiSlotPicker({
   values, options, onChange, displayFn, colorFn,
   accentColor = "#374151", borderActive = "#374151",
   maxSlots = MAX_SLOTS, slotHeight = 60,
+  landscape = false,
 }: {
   values: string[];
   options: string[];
@@ -773,6 +784,7 @@ function MultiSlotPicker({
   borderActive?: string;
   maxSlots?: number;
   slotHeight?: number;
+  landscape?: boolean;
 }) {
   function setSlot(index: number, value: string) {
     const next = [...values];
@@ -810,16 +822,14 @@ function MultiSlotPicker({
                   {displayLabel}
                 </span>
               </div>
-              <select
-                className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+              <LandscapeSelectOverlay
                 value={value}
-                onChange={(e) => setSlot(i, e.target.value)}
-              >
-                <option value="">—</option>
-                {options.map((opt) => (
-                  <option key={opt} value={opt}>{opt}</option>
-                ))}
-              </select>
+                options={["", ...options]}
+                onChange={(v) => setSlot(i, v)}
+                landscape={landscape}
+                emptyLabel="—"
+                optionLabel={displayFn}
+              />
             </div>
           </div>
         );
@@ -981,7 +991,7 @@ function FormCell({ label, children }: { label: string; children: React.ReactNod
 }
 
 function ColoredSelectIcon({
-  value, onChange, options, colorFn, labelFn, emptyLabel = "未選択",
+  value, onChange, options, colorFn, labelFn, emptyLabel = "未選択", landscape = false,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -989,6 +999,7 @@ function ColoredSelectIcon({
   colorFn?: (v: string) => CellColor;
   labelFn?: (v: string) => string;
   emptyLabel?: string;
+  landscape?: boolean;
 }) {
   const hasValue = value !== "" && value !== undefined;
   const color: CellColor | null = hasValue && colorFn ? colorFn(value) : null;
@@ -1010,17 +1021,14 @@ function ColoredSelectIcon({
         <span className="truncate">{displayLabel}</span>
         <span className="text-[9px] opacity-50 shrink-0">▼</span>
       </div>
-      <select
-        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+      <LandscapeSelectOverlay
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt === "" ? emptyLabel : opt}
-          </option>
-        ))}
-      </select>
+        options={options}
+        onChange={onChange}
+        landscape={landscape}
+        emptyLabel={emptyLabel}
+        optionLabel={labelFn}
+      />
     </div>
   );
 }
