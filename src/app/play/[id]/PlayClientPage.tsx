@@ -230,8 +230,13 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   }
   /** 「赫眼発生」ボタン: 現フォームを保存し pending を開始 */
   function handleStartPendingKakugan(savedBlock: NormalBlock) {
-    if (normalEdit.block === null) appendNormalBlock(savedBlock);
-    else updateNormalBlock(savedBlock.id, savedBlock);
+    if (normalEdit.block === null) {
+      appendNormalBlock(savedBlock);
+      // 新規ブロックを保留対象として追跡できるよう normalEdit.block を確定させる
+      setNormalEdit((prev) => ({ ...prev, block: savedBlock }));
+    } else {
+      updateNormalBlock(savedBlock.id, savedBlock);
+    }
     startPendingKakugan(savedBlock.id);
   }
 
@@ -592,9 +597,11 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
       )}
 
       {/* ===== 通常時 編集ダッシュボード ===== */}
+      {/* block prop は store から live で参照する。保留確定で kakugan が
+          外部追記された時にダッシュボードへ即時反映させるため。 */}
       {normalEdit.open && (
         <NormalBlockEditDashboard
-          block={normalEdit.block}
+          block={normalEdit.block ? (blocks.find((b) => b.id === normalEdit.block!.id) ?? normalEdit.block) : null}
           blockIndex={normalEdit.index}
           medalStamp={medalStamps[normalEdit.index - 1] ?? null}
           shinsekaiWeakRare={shinsekaiWeakRare}

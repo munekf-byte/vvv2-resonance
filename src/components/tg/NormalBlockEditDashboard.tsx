@@ -110,6 +110,21 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
   const [yamePopup, setYamePopup] = useState(false);
   const [yameG, setYameG] = useState<string>("");
 
+  // 保留確定で外部から block.kakugan が伸びたら form 側にも即追従させる。
+  // ローカル編集中は block.kakugan は保存まで動かないので、長さが増えた時だけ
+  // 同期すればユーザーの未保存編集を踏み潰さない。
+  useEffect(() => {
+    if (!block) return;
+    const ext = block.kakugan ?? [];
+    setForm((prev) => {
+      const cur = prev.kakugan ?? [];
+      if (ext.length > cur.length) {
+        return { ...prev, kakugan: ext };
+      }
+      return prev;
+    });
+  }, [block?.kakugan]);
+
   // analytics: cz_instance_id をマウント時に確定（buildBlock 時の id と一致させる）
   const [instanceId] = useState<string>(() => block?.id ?? crypto.randomUUID());
   // analytics: 既存ブロック再編集時の event_seq_in_cz は既存カウンターの合計から続ける
