@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { APP_MACHINE_NAME } from "@/lib/config/app";
 import type { PlaySession } from "@/types";
 
 export async function POST(
@@ -57,7 +58,8 @@ export async function POST(
     .from("play_sessions")
     .update(payload)
     .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .eq("machine_name", APP_MACHINE_NAME);
 
   if (error) {
     console.error("[save]", error.code, error.message, "user:", user.id, "session:", id);
@@ -68,7 +70,7 @@ export async function POST(
       if (match) {
         delete payload[match[1]];
         const { error: retryErr } = await supabase
-          .from("play_sessions").update(payload).eq("id", id).eq("user_id", user.id);
+          .from("play_sessions").update(payload).eq("id", id).eq("user_id", user.id).eq("machine_name", APP_MACHINE_NAME);
         if (!retryErr) return NextResponse.json({ ok: true, dropped: match[1] });
       }
     }
@@ -82,7 +84,8 @@ export async function POST(
     const insertPayload = {
       id,
       ...payload,
-      machine_name: session.machineName ?? "東京喰種 RESONANCE",
+      machine_name: APP_MACHINE_NAME,
+      session_label: session.machineName ?? null,
       started_at: session.startedAt ?? new Date().toISOString(),
       status: session.status ?? "ACTIVE",
     } as Record<string, unknown>;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { APP_MACHINE_NAME } from "@/lib/config/app";
 
 export async function GET() {
   try {
@@ -19,6 +20,7 @@ export async function GET() {
       .from("play_sessions")
       .select("*")
       .eq("user_id", user.id)
+      .eq("machine_name", APP_MACHINE_NAME)
       .eq("is_deleted", false)
       .order("created_at", { ascending: false });
 
@@ -84,7 +86,7 @@ export async function GET() {
       return {
         id: row.id as string,
         userId: (row.user_id as string) ?? "",
-        machineName: (row.machine_name as string) ?? "セッション",
+        machineName: ((row.session_label as string | null) ?? (row.machine_name as string)) ?? "セッション",
         createdAt: (row.created_at as string) ?? "",
         updatedAt: (row.updated_at as string) ?? "",
         blockCount: blocks.length,

@@ -4,6 +4,7 @@
 
 import type { PlaySession, NormalBlock, TGATEntry, SessionSummary, UchidashiState, ShushiData, TGShinsekaiCounter, PendingKakugan } from "@/types";
 import { createServerSupabaseClient } from "./server";
+import { APP_MACHINE_NAME } from "@/lib/config/app";
 
 // -----------------------------------------------------------------------------
 // JSONB キャスト ヘルパー
@@ -18,7 +19,7 @@ function rowToSession(row: Record<string, unknown>): PlaySession {
   return {
     id: row.id as string,
     userId: row.user_id as string,
-    machineName: row.machine_name as string,
+    machineName: ((row.session_label as string | null) ?? (row.machine_name as string)) ?? "",
     startedAt: row.started_at as string,
     endedAt: (row.ended_at as string | null) ?? null,
     status: row.status as PlaySession["status"],
@@ -60,6 +61,7 @@ export async function loadSessionById(
     .select("*")
     .eq("id", id)
     .eq("user_id", userId)
+    .eq("machine_name", APP_MACHINE_NAME)
     .eq("is_deleted", false)
     .single();
 
@@ -99,7 +101,8 @@ export async function saveSessionToDb(session: PlaySession): Promise<boolean> {
       updated_at: new Date().toISOString(),
     })
     .eq("id", session.id)
-    .eq("user_id", session.userId);
+    .eq("user_id", session.userId)
+    .eq("machine_name", APP_MACHINE_NAME);
 
   return !error;
 }

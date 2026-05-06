@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { APP_MACHINE_NAME } from "@/lib/config/app";
 
 /** DELETE → 論理削除 (is_deleted = true) */
 export async function DELETE(
@@ -15,7 +16,8 @@ export async function DELETE(
     .from("play_sessions")
     .update({ is_deleted: true, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .eq("machine_name", APP_MACHINE_NAME);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

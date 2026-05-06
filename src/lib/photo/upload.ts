@@ -13,6 +13,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { compressForUpload } from "./compress";
+import { APP_MACHINE_NAME } from "@/lib/config/app";
 
 export type PhotoKind = "prev" | "result";
 export type PhotoUploadResult =
@@ -115,7 +116,8 @@ export async function uploadSessionPhoto(params: {
     .from("play_sessions")
     .update({ [dbColumn(kind)]: now })
     .eq("id", sessionId)
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .eq("machine_name", APP_MACHINE_NAME);
 
   if (error) {
     await safeRemove(fullPath);

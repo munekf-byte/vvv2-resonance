@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { APP_MACHINE_NAME } from "@/lib/config/app";
 
 export async function GET() {
   try {
@@ -15,6 +16,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("play_sessions")
     .select("*")
+    .eq("machine_name", APP_MACHINE_NAME)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -26,7 +28,7 @@ export async function GET() {
   const sessions = (data ?? []).map((row: Record<string, unknown>) => ({
     id: row.id as string,
     userId: row.user_id as string,
-    machineName: row.machine_name as string,
+    machineName: ((row.session_label as string | null) ?? (row.machine_name as string)) ?? "",
     startedAt: row.started_at as string,
     endedAt: (row.ended_at as string | null) ?? null,
     status: row.status as string,

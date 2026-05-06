@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { APP_MACHINE_NAME } from "@/lib/config/app";
 
 export async function POST(request: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -13,7 +14,8 @@ export async function POST(request: NextRequest) {
   const { error } = await supabase.from("play_sessions").insert({
     id,
     user_id: user.id,
-    machine_name: machineName || "東京喰種 RESONANCE",
+    machine_name: APP_MACHINE_NAME,
+    session_label: machineName ?? null,
     started_at: now,
     status: "ACTIVE",
     start_diff: 0,

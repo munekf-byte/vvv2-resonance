@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { APP_MACHINE_NAME } from "@/lib/config/app";
 
 async function checkAdmin(supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -18,6 +19,7 @@ export async function GET() {
     const { data: sessions, error: sErr } = await supabase
       .from("play_sessions")
       .select("*")
+      .eq("machine_name", APP_MACHINE_NAME)
       .order("created_at", { ascending: false });
 
     if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 });
@@ -33,7 +35,7 @@ export async function GET() {
       return {
         id: s.id,
         userId: s.user_id,
-        machineName: s.machine_name ?? "—",
+        machineName: (s.session_label as string | null) ?? (s.machine_name as string | null) ?? "—",
         createdAt: s.created_at,
         updatedAt: s.updated_at,
         isDeleted: s.is_deleted ?? false,
@@ -68,7 +70,8 @@ export async function PATCH(request: NextRequest) {
     const { error, count } = await supabase
       .from("play_sessions")
       .update({ admin_rank: adminRank } as never)
-      .eq("id", sessionId);
+      .eq("id", sessionId)
+      .eq("machine_name", APP_MACHINE_NAME);
 
     console.log("[admin/sessions PATCH] result: error=", error?.message, error?.code, "count=", count);
 
@@ -92,7 +95,8 @@ export async function DELETE(request: NextRequest) {
     const { error } = await supabase
       .from("play_sessions")
       .delete()
-      .eq("id", sessionId);
+      .eq("id", sessionId)
+      .eq("machine_name", APP_MACHINE_NAME);
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
