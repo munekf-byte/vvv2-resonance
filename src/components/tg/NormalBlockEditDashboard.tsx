@@ -971,7 +971,7 @@ function ZenchoSlot({ zone, value, onChange, landscape }: {
           options={options}
           onChange={onChange}
           landscape={landscape}
-          emptyLabel="ー（未対応）"
+          emptyLabel="ー"
           title={`${zoneLabel} 前兆履歴`}
         />
       </div>
