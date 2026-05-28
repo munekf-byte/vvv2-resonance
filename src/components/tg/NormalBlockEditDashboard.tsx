@@ -578,6 +578,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
                 zone={zone}
                 value={getZenchoType(zone)}
                 onChange={(type) => setZencho(zone, type)}
+                landscape={useLandscape}
               />
             ))}
           </div>
@@ -912,23 +913,25 @@ const ZENCHO_TYPE_COLORS: Record<string, { bg: string; color: string }> = {
   "前兆":     { bg: "#1565c0", color: "#ffffff" },
   "東京上空": { bg: "#c62828", color: "#ffffff" },
   "前兆なし": { bg: "#78909c", color: "#ffffff" },
+  "不明":     { bg: "#fde68a", color: "#92400e" }, // 「ウォッチしたが判定不能」をデフォルト「ー」と区別する黄色系
 };
 
-function ZenchoSlot({ zone, value, onChange }: {
+function ZenchoSlot({ zone, value, onChange, landscape }: {
   zone: string;
   value: string;
   onChange: (v: string) => void;
+  landscape: boolean;
 }) {
-  // 即前兆: 「東京上空」だけがタップで選択可能（"" ⇄ "東京上空" のトグル）
-  // それ以外: "" → 前兆 → 東京上空 → 前兆なし → "" の4ステップサイクル
-  const types: string[] = zone === "即前兆"
-    ? ["", "東京上空"]
+  // 選択肢の意味:
+  //   ""        = ユーザーが手をつけていない（無視した）→ 表示は「ー」
+  //   "前兆"     = 本前兆演出あり
+  //   "東京上空" = 東京上空ステージ
+  //   "前兆なし" = 前兆ステージに上がらなかった
+  //   "不明"     = ウォッチしたが判定不能だった
+  // 即前兆ゾーン: 性質上「東京上空」のみが意味を持つ前兆判定。判定不能なら「不明」を選べる。
+  const options: string[] = zone === "即前兆"
+    ? ["", "東京上空", "不明"]
     : ["", ...TG_ZENCHO_TYPES];
-
-  function cycle() {
-    const idx = types.indexOf(value);
-    onChange(types[(idx + 1) % types.length]);
-  }
 
   const hasValue = value !== "";
   const col = hasValue ? ZENCHO_TYPE_COLORS[value] : null;
@@ -946,24 +949,32 @@ function ZenchoSlot({ zone, value, onChange }: {
       >
         {zoneLabel}
       </div>
-      {/* 下段: タイプ or 「不明」表示 */}
-      <button
-        onClick={cycle}
-        className="flex flex-col items-center justify-center transition-colors active:opacity-80"
-        style={{
-          minHeight: "52px",
-          backgroundColor: col ? col.bg : "#f9fafb",
-          color: col ? col.color : "#9ca3af",
-        }}
-      >
-        {hasValue ? (
-          <span className="text-[10px] font-mono font-bold text-center leading-tight px-0.5">
-            {value}
-          </span>
-        ) : (
-          <span className="text-[13px] font-mono font-bold leading-tight">不明</span>
-        )}
-      </button>
+      {/* 下段: プルダウン選択。"" = ユーザー未対応の「ー」、"不明" = 判定不能 */}
+      <div className="relative" style={{ minHeight: "52px" }}>
+        <div
+          className="absolute inset-0 flex items-center justify-center px-0.5 pointer-events-none"
+          style={{
+            backgroundColor: col ? col.bg : "#f9fafb",
+            color: col ? col.color : "#9ca3af",
+          }}
+        >
+          {hasValue ? (
+            <span className="text-[10px] font-mono font-bold text-center leading-tight">
+              {value}
+            </span>
+          ) : (
+            <span className="text-[13px] font-mono font-bold leading-tight">ー</span>
+          )}
+        </div>
+        <LandscapeSelectOverlay
+          value={value}
+          options={options}
+          onChange={onChange}
+          landscape={landscape}
+          emptyLabel="ー（未対応）"
+          title={`${zoneLabel} 前兆履歴`}
+        />
+      </div>
     </div>
   );
 }
