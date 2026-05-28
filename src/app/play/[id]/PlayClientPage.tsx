@@ -195,7 +195,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
   const atLabels   = computeAtLabels(blocks);
   const atKeyList  = computeAtKeyList(blocks);
   const atCount    = blocks.filter((b) => b.atWin).length;
-  const modeProbs  = useMemo(() => estimateAllModes(blocks), [blocks]);
+  const modeProbs  = useMemo(() => estimateAllModes(blocks, atEntries), [blocks, atEntries]);
   const medalStamps = useMemo(() => computeMedalStamps(blocks, atLabels, atEntries, uchidashi), [blocks, atLabels, atEntries, uchidashi]);
   const finalResult = useMemo(() => computeFinalResult(blocks, atLabels, atEntries, uchidashi), [blocks, atLabels, atEntries, uchidashi]);
 

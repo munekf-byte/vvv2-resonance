@@ -4,7 +4,7 @@
 // docs/tg-mode-estimation.md 準拠
 // =============================================================================
 
-import type { TGNormalBlock } from "@/types";
+import type { TGNormalBlock, TGATEntry } from "@/types";
 import {
   ZENCHO_LIKELIHOOD,
   INVITATION_CONSTRAINTS, MODE_CEILINGS,
@@ -37,14 +37,31 @@ const HEAVEN_THRESHOLD = 0.50;
 // メインAPI
 // -----------------------------------------------------------------------------
 
-export function estimateAllModes(blocks: TGNormalBlock[]): ModeProbs[] {
+export function estimateAllModes(
+  blocks: TGNormalBlock[],
+  atEntries: TGATEntry[] = [],
+): ModeProbs[] {
+  // block.id → "AT1", "AT2", ... マッピング（atWin ブロックの登場順）
+  const blockIdToAtKey = new Map<string, string>();
+  let atCount = 0;
+  for (const block of blocks) {
+    if (block.atWin) {
+      atCount++;
+      blockIdToAtKey.set(block.id, `AT${atCount}`);
+    }
+  }
+  const atKeyToEntry = new Map<string, TGATEntry>();
+  for (const entry of atEntries) {
+    atKeyToEntry.set(entry.atKey, entry);
+  }
+
   const results: ModeProbs[] = [];
 
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i];
 
     // 1. 事前確率の決定
-    let probs = getPrior(i, blocks, results);
+    let probs = getPrior(i, blocks, results, blockIdToAtKey, atKeyToEntry);
 
     // 2. 天井排除（Hard）— 現在G数で物理的に不可能なモードを0に
     probs = applyCeilingElimination(probs, block.jisshuG);
@@ -78,14 +95,36 @@ function getPrior(
   index: number,
   blocks: TGNormalBlock[],
   results: ModeProbs[],
+  blockIdToAtKey: Map<string, string>,
+  atKeyToEntry: Map<string, TGATEntry>,
 ): ModeProbs {
   if (index === 0) return { ...DEFAULT_PRIORS };
 
   const prevBlock = blocks[index - 1];
   const prevProbs = results[index - 1];
 
-  // AT当選後 → フルリセット
+  // AT当選後の処理
   if (prevBlock.atWin) {
+    const atKey = blockIdToAtKey.get(prevBlock.id);
+    const atEntry = atKey ? atKeyToEntry.get(atKey) : undefined;
+
+    if (atEntry) {
+      // 1. 有馬ジャッジメント失敗 → 次ブロック HEAVEN 確定（100G内CZ）
+      const hasArimaFail = atEntry.rows.some(
+        (r) => r.rowType === "arima" && r.result === "失敗",
+      );
+      if (hasArimaFail) {
+        return { A: 0, B: 0, C: 0, CH: 0, PRE: 0, HEAVEN: 1.0 };
+      }
+
+      // 2. AT駆け抜け（ATイベント行が1行で終了）→ 通常A否定
+      if (atEntry.rows.length === 1) {
+        const priors: ModeProbs = { ...DEFAULT_PRIORS, A: 0 };
+        return normalize(priors);
+      }
+    }
+
+    // それ以外 → フルリセット
     return { ...DEFAULT_PRIORS };
   }
 
