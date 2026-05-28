@@ -162,12 +162,12 @@ export const TG_BITES_COINS = [
 ] as const;
 
 export const TG_DIRECT_ADD_TRIGGERS = [
-  "弱🍒", "🍉", "チャ目", "強🍒", "赫眼レア役", "確定🍒", "後乗せ",
+  "弱🍒", "🍉", "チャ目", "強🍒", "[赫眼]レア役", "確定🍒", "後乗せ",
 ] as const;
 
 /** 直乗せ1番目のみの追加選択肢 */
 export const TG_DIRECT_ADD_TRIGGERS_FIRST = [
-  "エピボ中", "開始エピ中", "弱🍒", "🍉", "チャ目", "強🍒", "赫眼レア役", "確定🍒", "後乗せ",
+  "エピボ中", "開始エピ中", "弱🍒", "🍉", "チャ目", "強🍒", "[赫眼]レア役", "確定🍒", "後乗せ",
 ] as const;
 
 export const TG_DIRECT_ADD_COINS = [10, 20, 30, 50, 100, 200, 300, 500] as const;
