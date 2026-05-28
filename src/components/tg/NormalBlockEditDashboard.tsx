@@ -919,7 +919,11 @@ function ZenchoSlot({ zone, value, onChange }: {
   value: string;
   onChange: (v: string) => void;
 }) {
-  const types: string[] = ["", ...TG_ZENCHO_TYPES];
+  // 即前兆: 「東京上空」だけがタップで選択可能（"" ⇄ "東京上空" のトグル）
+  // それ以外: "" → 前兆 → 東京上空 → 前兆なし → "" の4ステップサイクル
+  const types: string[] = zone === "即前兆"
+    ? ["", "東京上空"]
+    : ["", ...TG_ZENCHO_TYPES];
 
   function cycle() {
     const idx = types.indexOf(value);
@@ -928,20 +932,21 @@ function ZenchoSlot({ zone, value, onChange }: {
 
   const hasValue = value !== "";
   const col = hasValue ? ZENCHO_TYPE_COLORS[value] : null;
+  const zoneLabel = zone === "即前兆" ? "即前兆" : `${zone}G`;
 
   return (
     <div
       className="flex flex-col rounded border-2 overflow-hidden"
       style={hasValue ? { borderColor: "#374151" } : { borderColor: "#6b7280" }}
     >
-      {/* 上段: ゾーン数 */}
+      {/* 上段: ゾーン数（即前兆はそのままラベル） */}
       <div
         className="text-center text-[9px] font-mono font-bold py-1 leading-none"
         style={{ backgroundColor: "#dde0e3", color: "#6b7280" }}
       >
-        {zone}G
+        {zoneLabel}
       </div>
-      {/* 下段: タイプ or 切替インジケーター (2倍サイズ) */}
+      {/* 下段: タイプ or 「不明」表示 */}
       <button
         onClick={cycle}
         className="flex flex-col items-center justify-center transition-colors active:opacity-80"
@@ -956,10 +961,7 @@ function ZenchoSlot({ zone, value, onChange }: {
             {value}
           </span>
         ) : (
-          <>
-            <span className="text-[28px] leading-none">⋄</span>
-            <span className="text-[12px] font-mono leading-tight mt-0.5">タップ切替</span>
-          </>
+          <span className="text-[13px] font-mono font-bold leading-tight">不明</span>
         )}
       </button>
     </div>

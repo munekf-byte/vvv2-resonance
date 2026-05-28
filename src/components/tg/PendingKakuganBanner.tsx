@@ -11,13 +11,13 @@ import { TG_KAKUGAN } from "@/lib/engine/constants";
 
 interface Props {
   pending: PendingKakugan;
-  /** 周期No表示用（pending.blockId に対応する 1-based の番号） */
-  blockNo: number | null;
+  /** 発生元の表示ラベル（例: "周期No.3" / "AT2 / SET3"）。バナーとピッカー両方で表示 */
+  contextLabel: string | null;
   onConfirm: (value: string) => void;
   onCancel: () => void;
 }
 
-export function PendingKakuganBanner({ pending, blockNo, onConfirm, onCancel }: Props) {
+export function PendingKakuganBanner({ pending, contextLabel, onConfirm, onCancel }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const startedDisp = (() => {
@@ -53,7 +53,7 @@ export function PendingKakuganBanner({ pending, blockNo, onConfirm, onCancel }: 
           textOverflow: "ellipsis",
         }}
       >
-        🔴 赫眼継続中{blockNo != null ? `（周期No.${blockNo}・${startedDisp}〜）` : `（${startedDisp}〜）`} — タップで継続G確定
+        🔴 赫眼継続中{contextLabel ? `（${contextLabel}・${startedDisp}〜）` : `（${startedDisp}〜）`} — タップで継続G確定
       </button>
 
       {/* 確定ピッカー */}
@@ -73,9 +73,9 @@ export function PendingKakuganBanner({ pending, blockNo, onConfirm, onCancel }: 
               <p className="text-white font-mono font-bold text-sm">
                 赫眼 継続G数 確定
               </p>
-              {blockNo != null && (
+              {contextLabel && (
                 <p className="text-white/80 font-mono text-[10px] mt-0.5">
-                  発生元: 周期No.{blockNo}（{startedDisp} 発生）
+                  発生元: {contextLabel}（{startedDisp} 発生）
                 </p>
               )}
             </div>

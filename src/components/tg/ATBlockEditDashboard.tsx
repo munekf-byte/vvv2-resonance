@@ -67,6 +67,10 @@ interface Props {
   setSeqInAt?: number;
   /** analytics: AT 突入契機 (前段 NormalBlock.winTrigger) */
   atEntryType?: string | null;
+  /** 赫眼 後追い確定 — 既に保留中なら新規開始は不可 */
+  pendingKakuganActive?: boolean;
+  /** 「赫眼発生」ボタン押下 — 現フォームを保存してから AT 由来の pending を開始する */
+  onStartPendingKakugan?: (savedRow: TGATRow) => void;
   onSave: (row: TGATRow) => void;
   onTempSave: (row: TGATRow) => void;
   onClose: () => void;
@@ -124,6 +128,7 @@ const LANDSCAPE_STORAGE_KEY = "tgr_at_dashboard_landscape";
 export function ATBlockEditDashboard({
   atKey, row, defaultRowType = "set", defaultAtType,
   atInstanceId, setSeqInAt, atEntryType,
+  pendingKakuganActive = false, onStartPendingKakugan,
   onSave, onTempSave, onClose,
 }: Props) {
   const isNew    = row === null;
@@ -209,6 +214,8 @@ export function ATBlockEditDashboard({
             atInstanceId={atInstanceId}
             setSeqInAt={setSeqInAt}
             atEntryType={atEntryType}
+            pendingKakuganActive={pendingKakuganActive}
+            onStartPendingKakugan={onStartPendingKakugan}
             onSave={onSave}
             onTempSave={onTempSave}
             landscape={useLandscape}
@@ -227,6 +234,7 @@ export function ATBlockEditDashboard({
 
 function SetForm({
   initial, defaultAtType, atKey, atInstanceId, setSeqInAt, atEntryType,
+  pendingKakuganActive = false, onStartPendingKakugan,
   onSave, onTempSave, landscape = false,
 }: {
   initial: TGATSet | null;
@@ -235,6 +243,8 @@ function SetForm({
   atInstanceId?: string;
   setSeqInAt?: number;
   atEntryType?: string | null;
+  pendingKakuganActive?: boolean;
+  onStartPendingKakugan?: (savedRow: TGATRow) => void;
   onSave: (r: TGATRow) => void;
   onTempSave: (r: TGATRow) => void;
   landscape?: boolean;
@@ -369,6 +379,15 @@ function SetForm({
 
   function handleSave()     { logAtSetEvent(); onSave(buildRow()); }
   function handleTempSave() { onTempSave(buildRow()); }
+  /**
+   * 赫眼発生（後追い確定）— 現フォームを buildRow して onStartPendingKakugan に渡す。
+   * 親は受け取った row を store に書き込んでから、その row.id を pending に焼き込む。
+   * これにより、確定時のG数は必ず「発生をタップした当該 SET 行」に反映される。
+   */
+  function handleStartPendingKakugan() {
+    if (!onStartPendingKakugan || pendingKakuganActive) return;
+    onStartPendingKakugan(buildRow());
+  }
 
   const ec = form.endingCard ?? emptyEndingCard();
   const isED = form.character === "EDボナ";
@@ -622,6 +641,30 @@ function SetForm({
               );
             })}
           </div>
+          {/* 後追い確定ボタン — 通常時と同じ「発生を記録して持ち越し」フロー。
+              次の SET 行や次の AT、通常時画面に遷移しても、確定G数は必ずこの行に書き戻される。 */}
+          {onStartPendingKakugan && (
+            <>
+              <button
+                onClick={handleStartPendingKakugan}
+                disabled={pendingKakuganActive}
+                className="w-full mt-2 py-3 rounded-lg font-mono font-bold text-[12px] active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+                style={{
+                  backgroundColor: pendingKakuganActive ? "#9ca3af" : "#b91c1c",
+                  color: "#ffffff",
+                  border: "2px solid #7f1d1d",
+                  boxShadow: pendingKakuganActive ? "none" : "0 2px 8px rgba(185,28,28,0.35)",
+                }}
+              >
+                {pendingKakuganActive
+                  ? "他の赫眼が保留中（先にバナーから確定）"
+                  : "🔴 赫眼発生（継続Gは後で確定）"}
+              </button>
+              <p className="text-[9px] text-gray-500 font-mono mt-1.5 leading-snug">
+                この SET 行で赫眼が発生したことだけを先に記録し、最終的な継続G数は画面遷移後に追従バナーから確定できます。確定値は必ずこの行に書き戻されます。
+              </p>
+            </>
+          )}
         </Section>
         )}
 

@@ -149,10 +149,16 @@ export interface TGATEntry {
 // 赫眼 後追い確定（pending state）
 // -----------------------------------------------------------------------------
 
-/** 通常ダッシュボードで「赫眼発生」だけ押して継続G数は後で確定するための保留状態 */
+/** 通常ダッシュボード or ATダッシュボードで「赫眼発生」だけ押して継続G数は後で確定するための保留状態 */
 export interface PendingKakugan {
-  /** 発生した周期ブロックの id（confirm 時にここの kakugan[] に値を append する） */
-  blockId: string;
+  /** 発生元区分: normal=通常周期 / at=AT中のSET行（undefined は normal として後方互換） */
+  kind?: "normal" | "at";
+  /** kind=normal: 発生した周期ブロックの id（confirm 時にここの kakugan[] に値を append する） */
+  blockId?: string;
+  /** kind=at: 発生した AT エントリの atKey (例: "AT3") */
+  atKey?: string;
+  /** kind=at: 発生した SET 行の id（confirm 時にここの kakugan[] に値を append する） */
+  rowId?: string;
   /** 発生時刻（ISO 文字列）。バナー表示用 */
   startedAt: string;
 }

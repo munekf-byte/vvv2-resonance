@@ -38,11 +38,19 @@ interface SessionActions {
   updateUserSettingGuess: (guess: string | null) => void;
   updateShinsekaiWeakRare: (counter: TGShinsekaiCounter) => void;
 
-  /** 赫眼 発生をマークして保留開始（バナー表示開始） */
-  startPendingKakugan: (blockId: string) => void;
-  /** 保留中の赫眼を確定 — 対象ブロックの kakugan[] に value を append */
+  /**
+   * 赫眼 発生をマークして保留開始（バナー表示開始）
+   * - 通常周期: { kind: "normal", blockId }
+   * - AT SET 行: { kind: "at", atKey, rowId }
+   */
+  startPendingKakugan: (
+    target:
+      | { kind: "normal"; blockId: string }
+      | { kind: "at"; atKey: string; rowId: string }
+  ) => void;
+  /** 保留中の赫眼を確定 — 発生時に焼き込んだ対象（周期 or AT SET）の kakugan[] に value を append */
   confirmPendingKakugan: (value: string) => void;
-  /** 保留をキャンセル（ブロック側は何も変更しない） */
+  /** 保留をキャンセル（発生元は何も変更しない） */
   cancelPendingKakugan: () => void;
 
   clearSession: () => void;
@@ -118,6 +126,11 @@ export const useSessionStore = create<SessionState & SessionActions>(
       mutateSession(set, get, (s) => ({
         ...s,
         atEntries: s.atEntries.filter((e) => e.atKey !== atKey),
+        // 削除対象が pending の発生元 AT だった場合は保留もクリア
+        pendingKakugan:
+          s.pendingKakugan?.kind === "at" && s.pendingKakugan.atKey === atKey
+            ? null
+            : s.pendingKakugan,
       })),
 
     // ---- TG ATRow ----
@@ -147,6 +160,13 @@ export const useSessionStore = create<SessionState & SessionActions>(
             ? { ...e, rows: e.rows.filter((r) => r.id !== rowId) }
             : e
         ),
+        // 削除対象が pending の発生元 SET 行だった場合は保留もクリア
+        pendingKakugan:
+          s.pendingKakugan?.kind === "at"
+          && s.pendingKakugan.atKey === atKey
+          && s.pendingKakugan.rowId === rowId
+            ? null
+            : s.pendingKakugan,
       })),
 
     // ---- セッション設定 ----
@@ -169,16 +189,41 @@ export const useSessionStore = create<SessionState & SessionActions>(
       mutateSession(set, get, (s) => ({ ...s, shinsekaiWeakRare: counter })),
 
     // ---- 赫眼 後追い確定 ----
-    startPendingKakugan: (blockId) =>
-      mutateSession(set, get, (s) => ({
-        ...s,
-        pendingKakugan: { blockId, startedAt: new Date().toISOString() } satisfies PendingKakugan,
-      })),
+    startPendingKakugan: (target) =>
+      mutateSession(set, get, (s) => {
+        const now = new Date().toISOString();
+        const pk: PendingKakugan =
+          target.kind === "normal"
+            ? { kind: "normal", blockId: target.blockId, startedAt: now }
+            : { kind: "at", atKey: target.atKey, rowId: target.rowId, startedAt: now };
+        return { ...s, pendingKakugan: pk };
+      }),
 
     confirmPendingKakugan: (value) =>
       mutateSession(set, get, (s) => {
         const pk = s.pendingKakugan;
         if (!pk) return s;
+        // AT 由来 — 発生時に焼き込んだ atKey + rowId の SET 行に追記
+        if (pk.kind === "at" && pk.atKey && pk.rowId) {
+          return {
+            ...s,
+            atEntries: s.atEntries.map((e) =>
+              e.atKey === pk.atKey
+                ? {
+                    ...e,
+                    rows: e.rows.map((r) =>
+                      r.id === pk.rowId && r.rowType === "set"
+                        ? { ...r, kakugan: [...(r.kakugan ?? []), value] }
+                        : r
+                    ),
+                  }
+                : e
+            ),
+            pendingKakugan: null,
+          };
+        }
+        // normal 由来（kind 未指定の旧データも normal 扱い）
+        if (!pk.blockId) return { ...s, pendingKakugan: null };
         return {
           ...s,
           normalBlocks: s.normalBlocks.map((b) =>

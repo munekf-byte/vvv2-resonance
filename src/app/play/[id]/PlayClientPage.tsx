@@ -228,7 +228,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
     else updateNormalBlock(block.id, block);
     setNormalEdit(NORMAL_CLOSED);
   }
-  /** 「赫眼発生」ボタン: 現フォームを保存し pending を開始 */
+  /** 「赫眼発生」ボタン（通常）: 現フォームを保存し pending を開始 */
   function handleStartPendingKakugan(savedBlock: NormalBlock) {
     if (normalEdit.block === null) {
       appendNormalBlock(savedBlock);
@@ -237,7 +237,22 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
     } else {
       updateNormalBlock(savedBlock.id, savedBlock);
     }
-    startPendingKakugan(savedBlock.id);
+    startPendingKakugan({ kind: "normal", blockId: savedBlock.id });
+  }
+
+  /** 「赫眼発生」ボタン（AT SET）: 現フォームを保存し AT 由来の pending を開始 */
+  function handleStartPendingKakuganAT(savedRow: TGATRow) {
+    const { atKey } = atEdit;
+    if (!atEntries.find((e) => e.atKey === atKey)) {
+      appendTGATEntry({ atKey, rows: [savedRow] });
+      setATEdit((prev) => ({ ...prev, row: savedRow }));
+    } else if (atEdit.row === null) {
+      appendTGATRow(atKey, savedRow);
+      setATEdit((prev) => ({ ...prev, row: savedRow }));
+    } else {
+      updateTGATRow(atKey, savedRow.id, savedRow);
+    }
+    startPendingKakugan({ kind: "at", atKey, rowId: savedRow.id });
   }
 
   // ── ATハンドラ ─────────────────────────────────────────────────────────────
@@ -319,13 +334,28 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
 
   const anyEditOpen = normalEdit.open || atEdit.open || uchidashiOpen || shushiOpen || settingGuessOpen;
 
-  // 赫眼バナーに表示する周期No（pendingKakugan の発生元ブロックが配列の何番目か）
-  const pendingKakuganBlockNo = pendingKakugan
-    ? (() => {
-        const idx = blocks.findIndex((b) => b.id === pendingKakugan.blockId);
-        return idx >= 0 ? idx + 1 : null;
-      })()
-    : null;
+  // 赫眼バナーに表示する発生元ラベル
+  //   - 通常周期: "周期No.3"
+  //   - AT SET 行: "AT2 / SET3"
+  const pendingKakuganContextLabel = (() => {
+    if (!pendingKakugan) return null;
+    // AT 由来
+    if (pendingKakugan.kind === "at" && pendingKakugan.atKey && pendingKakugan.rowId) {
+      const entry = atEntries.find((e) => e.atKey === pendingKakugan.atKey);
+      if (!entry) return pendingKakugan.atKey;
+      const sets = entry.rows.filter((r): r is TGATSet => r.rowType === "set");
+      const setIdx = sets.findIndex((s) => s.id === pendingKakugan.rowId);
+      return setIdx >= 0
+        ? `${pendingKakugan.atKey} / SET${setIdx + 1}`
+        : pendingKakugan.atKey;
+    }
+    // 通常由来（kind 未指定の旧データも normal 扱い）
+    if (pendingKakugan.blockId) {
+      const idx = blocks.findIndex((b) => b.id === pendingKakugan.blockId);
+      return idx >= 0 ? `周期No.${idx + 1}` : null;
+    }
+    return null;
+  })();
 
   return (
     <div className="flex flex-col overflow-hidden" style={{ height: "100dvh" }}>
@@ -334,7 +364,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
       {pendingKakugan && (
         <PendingKakuganBanner
           pending={pendingKakugan}
-          blockNo={pendingKakuganBlockNo}
+          contextLabel={pendingKakuganContextLabel}
           onConfirm={confirmPendingKakugan}
           onCancel={cancelPendingKakugan}
         />
@@ -629,6 +659,8 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
           atInstanceId={atEdit.atInstanceId}
           setSeqInAt={atEdit.setSeqInAt}
           atEntryType={atEdit.atEntryType}
+          pendingKakuganActive={pendingKakugan !== null}
+          onStartPendingKakugan={handleStartPendingKakuganAT}
           onSave={handleATSave}
           onTempSave={handleATTempSave}
           onClose={() => setATEdit(AT_CLOSED)}

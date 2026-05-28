@@ -162,12 +162,12 @@ export const TG_BITES_COINS = [
 ] as const;
 
 export const TG_DIRECT_ADD_TRIGGERS = [
-  "弱🍒", "🍉", "チャ目", "強🍒", "確定🍒", "後乗せ",
+  "弱🍒", "🍉", "チャ目", "強🍒", "かくがんレア役", "確定🍒", "後乗せ",
 ] as const;
 
 /** 直乗せ1番目のみの追加選択肢 */
 export const TG_DIRECT_ADD_TRIGGERS_FIRST = [
-  "エピボ中", "開始エピ中", "弱🍒", "🍉", "チャ目", "強🍒", "確定🍒", "後乗せ",
+  "エピボ中", "開始エピ中", "弱🍒", "🍉", "チャ目", "強🍒", "かくがんレア役", "確定🍒", "後乗せ",
 ] as const;
 
 export const TG_DIRECT_ADD_COINS = [10, 20, 30, 50, 100, 200, 300, 500] as const;
@@ -193,8 +193,9 @@ export const TG_BATTLE_RESULT_HEADERS = [
 
 // 前兆履歴: ゾーンごとのスロット方式
 // 格納値フォーマット: "ゾーン:タイプ" (例: "100:東京上空")
+// 即前兆: 開始直後の前兆判定。タップで「東京上空」のみ選択可能（特殊扱い）
 export const TG_ZENCHO_ZONES = [
-  "50", "100", "150", "200", "250", "300", "400", "500", "600",
+  "即前兆", "50", "100", "150", "200", "250", "300", "400", "500",
 ] as const;
 
 export const TG_ZENCHO_TYPES = [
