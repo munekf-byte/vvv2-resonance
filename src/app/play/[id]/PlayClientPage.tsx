@@ -698,13 +698,16 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
               </p>
             </div>
             <div className="px-5 py-4">
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 {[
                   { value: "推定低設定", color: "#6b7280" },
-                  { value: "推定4", color: "#2563eb" },
-                  { value: "推定456", color: "#7c3aed" },
-                  { value: "推定56", color: "#ea580c" },
-                  { value: "推定6", color: "#dc2626" },
+                  { value: "推定3",     color: "#4b5563" },
+                  { value: "推定4",     color: "#2563eb" },
+                  { value: "推定45",    color: "#4f46e5" },
+                  { value: "推定456",   color: "#7c3aed" },
+                  { value: "推定5",     color: "#f59e0b" },
+                  { value: "推定56",    color: "#ea580c" },
+                  { value: "推定6",     color: "#dc2626" },
                 ].map(({ value, color }) => (
                   <button
                     key={value}

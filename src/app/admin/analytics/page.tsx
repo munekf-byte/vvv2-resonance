@@ -14,10 +14,13 @@ import {
 
 // ── セグメント列カラー ──────────────────────────────────────────────────────
 const SEG_COLORS: Record<string, { bg: string; text: string }> = {
-  "全体":     { bg: "#f5f0e8", text: "#374151" },
+  "全体":      { bg: "#f5f0e8", text: "#374151" },
   "推定低設定": { bg: "#fef2f2", text: "#991b1b" },
+  "推定3":     { bg: "#f3f4f6", text: "#374151" },
   "推定4":     { bg: "#eff6ff", text: "#1e40af" },
+  "推定45":    { bg: "#eef2ff", text: "#3730a3" },
   "推定456":   { bg: "#eef2ff", text: "#4338ca" },
+  "推定5":     { bg: "#fffbeb", text: "#b45309" },
   "推定56":    { bg: "#fdf4ff", text: "#7c3aed" },
   "推定6":     { bg: "#fff7ed", text: "#c2410c" },
   "確定6":     { bg: "#fefce8", text: "#a16207" },

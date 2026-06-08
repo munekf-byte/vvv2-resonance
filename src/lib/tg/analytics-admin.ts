@@ -16,8 +16,11 @@ import { TG_KAKUGAN, TG_SHINSEKAI, TG_ENDING_SUGGESTIONS, TG_AT_CHARACTERS, TG_B
 export const SETTING_SEGMENTS = [
   "全体",
   "推定低設定",
+  "推定3",
   "推定4",
+  "推定45",
   "推定456",
+  "推定5",
   "推定56",
   "推定6",
   "確定6",
@@ -134,12 +137,24 @@ export function classifySession(session: PlaySession): Set<SettingSegment> {
         segments.add("推定56");
         segments.add("推定456");
         break;
+      case "推定5":
+        segments.add("推定5");
+        segments.add("推定56");
+        segments.add("推定456");
+        break;
       case "推定456":
+        segments.add("推定456");
+        break;
+      case "推定45":
+        segments.add("推定45");
         segments.add("推定456");
         break;
       case "推定4":
         segments.add("推定4");
         segments.add("推定456");
+        break;
+      case "推定3":
+        segments.add("推定3");
         break;
       case "推定低設定":
         segments.add("推定低設定");
