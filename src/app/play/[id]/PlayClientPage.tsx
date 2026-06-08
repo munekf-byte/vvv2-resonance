@@ -551,6 +551,7 @@ export function PlayClientPage({ initialSession }: PlayClientPageProps) {
             sessionId={initialSession.id}
             userSettingGuess={userSettingGuess}
             uchidashi={uchidashi}
+            shushi={shushi}
             shinsekaiWeakRare={shinsekaiWeakRare}
             finalResult={finalResult}
             userBalance={headerBalance}

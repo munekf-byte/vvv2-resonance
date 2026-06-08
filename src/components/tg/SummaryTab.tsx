@@ -7,7 +7,7 @@
 
 import { useRef, useState, useEffect } from "react";
 import { captureAndShare } from "@/lib/tg/captureImage";
-import type { NormalBlock, TGATEntry, TGATSet, TGArimaJudgment } from "@/types";
+import type { NormalBlock, TGATEntry, TGATSet, TGArimaJudgment, ShushiData } from "@/types";
 import {
   TG_KAKUGAN, TG_SHINSEKAI,
   TG_ENDING_SUGGESTIONS, TG_TROPHIES,
@@ -36,6 +36,7 @@ interface Props {
   sessionId: string;
   userSettingGuess?: string | null;
   uchidashi?: import("@/types").UchidashiState | null;
+  shushi?: ShushiData | null;
   shinsekaiWeakRare?: import("@/types").TGShinsekaiCounter | null;
   finalResult?: number;
   userBalance?: number | null;
@@ -178,24 +179,21 @@ function SqIcon({ top, bottom, bg }: { top: string; bottom: string; bg: string }
 
 // ── メインコンポーネント ─────────────────────────────────────────────────
 
-export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi, shinsekaiWeakRare, finalResult, userBalance, prevPhoto, resultPhoto }: Props) {
+export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uchidashi, shushi, shinsekaiWeakRare, finalResult, userBalance, prevPhoto, resultPhoto }: Props) {
   const captureRef = useRef<HTMLDivElement>(null);
 
+  // TOTALゲーム数 — 収支入力(shushi.totalGames)を真とする。
+  // 旧localStorage(tgr_totalG_<sessionId>)は読み取り専用フォールバックとして互換維持。
   const lsKey = `tgr_totalG_${sessionId}`;
-  const [totalGInput, setTotalGInput] = useState("");
-  const [showTotalGPopup, setShowTotalGPopup] = useState(false);
+  const [legacyTotalG, setLegacyTotalG] = useState<number>(0);
   useEffect(() => {
+    if (shushi?.totalGames != null) return;
     const saved = localStorage.getItem(lsKey);
-    if (saved) setTotalGInput(saved);
-    else setShowTotalGPopup(true);
-  }, [lsKey]);
-  function handleTotalGChange(v: string) {
-    setTotalGInput(v);
-    localStorage.setItem(lsKey, v);
-  }
+    if (saved) setLegacyTotalG(parseInt(saved) || 0);
+  }, [lsKey, shushi?.totalGames]);
 
   const sum2 = blocks.reduce((s, b) => s + (b.jisshuG ?? 0), 0);
-  const rawInput = totalGInput ? parseInt(totalGInput) || 0 : 0;
+  const rawInput = shushi?.totalGames ?? legacyTotalG;
   const uchidashiG = uchidashi?.totalGames ?? 0;
   // 実稼働G数 = 液晶総消化G数 − 打ち出しトータルG数（入力がなければ周期合算にフォールバック）
   const sum1 = rawInput > 0 ? rawInput - uchidashiG : sum2;
@@ -325,9 +323,15 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
     <div className="pb-24">
       <div className="sticky top-0 z-20 bg-gray-100 border-b border-gray-300">
         <div className="px-3 pt-2 pb-1.5 flex items-center justify-between">
-          <p className="text-[10px] font-mono font-bold text-red-600 leading-tight">
-            ※ 液晶メニューのTOTALゲーム数を下記に入力してください
-          </p>
+          {rawInput > 0 ? (
+            <p className="text-[10px] font-mono font-bold leading-tight" style={{ color: "#14532d" }}>
+              ✓ TOTALゲーム数 {rawInput.toLocaleString()}G
+            </p>
+          ) : (
+            <p className="text-[10px] font-mono font-bold text-red-600 leading-tight">
+              ※ 収支入力からTOTALゲーム数を入力してください
+            </p>
+          )}
           <div className="flex gap-1.5 flex-shrink-0 ml-2">
             <button
               onClick={() => captureRef.current && captureAndShare(captureRef.current, `TG_Summary_${new Date().toISOString().slice(0, 10)}.png`, `#東京喰種レゾナンス #パチスロ`)}
@@ -345,39 +349,6 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
         <p className="text-[9px] font-mono text-gray-500 px-3 pb-1.5 leading-tight">
           ※ 稼働ホール名や台番などの特定情報は画像に掲載されませんのでご安心ください
         </p>
-      </div>
-
-      {/* ===== 液晶総消化G数 入力欄（テーブル外・トップ） ===== */}
-      <div style={{ padding: "8px 6px 0", backgroundColor: "#ffffff" }}>
-        <div style={{
-          border: "2px solid #ca8a04", borderRadius: "6px", backgroundColor: "#fffbeb",
-          padding: "8px 10px", display: "flex", alignItems: "center", gap: "8px",
-        }}>
-          <div style={{ flexShrink: 0 }}>
-            <span style={{ fontSize: "9px", fontWeight: 700, color: "#92400e", fontFamily: "monospace", display: "block", lineHeight: 1.4 }}>
-              液晶画面の
-            </span>
-            <span style={{ fontSize: "9px", fontWeight: 700, color: "#92400e", fontFamily: "monospace", display: "block", lineHeight: 1.4 }}>
-              TOTALゲーム数
-            </span>
-          </div>
-          <input type="number" value={totalGInput} onChange={(e) => handleTotalGChange(e.target.value)}
-            placeholder="TOTALゲーム数を入力"
-            style={{
-              flex: 1, backgroundColor: "#ffffff", border: "2px solid #ca8a04", borderRadius: "4px",
-              fontSize: "16px", fontFamily: "monospace", fontWeight: 700, textAlign: "right",
-              padding: "6px 8px", outline: "none",
-            }} />
-          <span style={{ fontSize: "11px", fontWeight: 700, color: "#92400e", fontFamily: "monospace", flexShrink: 0 }}>G</span>
-        </div>
-        {uchidashiG > 0 && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "4px 2px 0", fontSize: "8px", fontFamily: "monospace", color: "#6b7280" }}>
-            <span>打ち出し時: {uchidashiG.toLocaleString()}G</span>
-            <span style={{ fontWeight: 700, color: rawInput > 0 ? "#14532d" : "#9ca3af" }}>
-              実稼働: {rawInput > 0 ? `${(rawInput - uchidashiG).toLocaleString()}G` : "—"}
-            </span>
-          </div>
-        )}
       </div>
 
       {/* ===== セッション写真（キャプチャ範囲外: X共有・画像保存に含めない） ===== */}
@@ -868,25 +839,6 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
         )}
 
       </div>
-
-      {/* ===== TOTALゲーム数未入力ポップアップ ===== */}
-      {showTotalGPopup && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center px-6" onClick={() => setShowTotalGPopup(false)}>
-          <div className="absolute inset-0 bg-black/40" />
-          <div className="relative rounded-2xl shadow-xl max-w-sm w-full overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="px-5 py-4" style={{ backgroundColor: "#92400e" }}>
-              <p className="text-white font-mono font-bold text-sm leading-relaxed">
-                終了時に液晶メニューから<br />TOTALゲーム数 を転記してください
-              </p>
-            </div>
-            <button onClick={() => setShowTotalGPopup(false)}
-              className="w-full py-3 text-sm font-mono font-bold text-white hover:opacity-80 transition-opacity"
-              style={{ backgroundColor: "#78350f" }}>
-              OK
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

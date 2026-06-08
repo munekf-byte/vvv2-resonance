@@ -195,6 +195,8 @@ export interface ShushiData {
   cashInvestK: number | null;
   /** 交換枚数（最終持ち帰り枚数） */
   exchangeCoins: number | null;
+  /** TOTALゲーム数（液晶メニュー表示の総消化G数） */
+  totalGames: number | null;
 }
 
 // -----------------------------------------------------------------------------

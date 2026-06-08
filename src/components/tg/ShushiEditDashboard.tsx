@@ -1,7 +1,7 @@
 "use client";
 // =============================================================================
 // 収支入力ダッシュボード
-// 投資枚数・交換枚数・最終収支を記録
+// 投資枚数・交換枚数・トータルゲーム数・最終収支を記録
 // =============================================================================
 
 import { useState } from "react";
@@ -19,6 +19,7 @@ function emptyState(): ShushiData {
     handCoins: null,
     cashInvestK: null,
     exchangeCoins: null,
+    totalGames: null,
   };
 }
 
@@ -32,6 +33,52 @@ function calcTotalInvest(data: ShushiData): number {
 /** 最終収支を計算 */
 function calcBalance(data: ShushiData): number {
   return (data.exchangeCoins ?? 0) - calcTotalInvest(data);
+}
+
+// セクションヘッダー色定義
+const SECTION = {
+  rate:     { border: "#6b7280", bg: "#f3f4f6", title: "#374151" },
+  invest:   { border: "#dc2626", bg: "#fef2f2", title: "#991b1b" },
+  exchange: { border: "#16a34a", bg: "#f0fdf4", title: "#14532d" },
+  totalG:   { border: "#2563eb", bg: "#eff6ff", title: "#1e3a8a" },
+} as const;
+
+function SectionCard({
+  accent, title, children,
+}: {
+  accent: { border: string; bg: string; title: string };
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="bg-white rounded overflow-hidden"
+      style={{ border: `1.5px solid ${accent.border}`, borderLeftWidth: "5px" }}
+    >
+      <div
+        className="px-3 py-2"
+        style={{ backgroundColor: accent.bg, borderBottom: `1px solid ${accent.border}` }}
+      >
+        <p
+          className="text-[13px] font-mono font-black tracking-wider"
+          style={{ color: accent.title }}
+        >
+          {title}
+        </p>
+      </div>
+      <div className="px-3 pt-3 pb-4 space-y-3">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SubLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[11px] font-mono font-bold text-gray-700 mb-1.5">
+      {children}
+    </p>
+  );
 }
 
 export function ShushiEditDashboard({ data, onSave, onClose }: Props) {
@@ -78,50 +125,54 @@ export function ShushiEditDashboard({ data, onSave, onClose }: Props) {
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 pb-32">
 
         {/* ── レート設定 ── */}
-        <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4 space-y-2">
-          <p className="text-[11px] font-mono font-bold text-gray-700 border-b border-gray-300 pb-1">貸出レート設定</p>
+        <SectionCard accent={SECTION.rate} title="貸出レート設定">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono text-gray-600 flex-shrink-0">1000円 =</span>
+            <span className="text-[12px] font-mono font-bold text-gray-700 flex-shrink-0">1000円 =</span>
             <input
               type="number"
               inputMode="numeric"
               className="w-20 text-sm font-mono rounded px-2 py-3 focus:outline-none bg-white text-center"
-              style={{ border: "1px solid #374151" }}
+              style={{ border: "1.5px solid #6b7280" }}
               value={form.coinRate}
               onChange={(e) => handleNumChange("coinRate", e.target.value)}
               min={1}
             />
-            <span className="text-[11px] font-mono text-gray-600 flex-shrink-0">枚</span>
+            <span className="text-[12px] font-mono font-bold text-gray-700 flex-shrink-0">枚</span>
           </div>
-        </div>
+        </SectionCard>
 
         {/* ── 投資枚数 ── */}
-        <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4 space-y-3">
-          <p className="text-[11px] font-mono font-bold text-gray-700 border-b border-gray-300 pb-1">投資枚数</p>
+        <SectionCard accent={SECTION.invest} title="投資枚数（マイナス側）">
 
           {/* 手持ち枚数 */}
           <div>
-            <p className="text-[10px] font-mono text-gray-500 mb-1">手持ち枚数（貯玉・当日出玉など）</p>
+            <SubLabel>
+              <span style={{ color: "#991b1b" }}>● </span>手持ち枚数
+              <span className="text-[9px] font-normal text-gray-500 ml-1">（貯玉・当日出玉）</span>
+            </SubLabel>
             <div className="relative">
               <input
                 type="number"
                 inputMode="numeric"
                 placeholder="枚数"
                 className="w-full text-sm font-mono rounded px-2 py-3 focus:outline-none bg-white text-center"
-                style={{ border: "1px solid #374151" }}
+                style={{ border: "1.5px solid #dc2626" }}
                 value={form.handCoins ?? ""}
                 onChange={(e) => handleNumChange("handCoins", e.target.value)}
                 min={0}
               />
               {form.handCoins != null && (
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-gray-400">枚</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-gray-500">枚</span>
               )}
             </div>
           </div>
 
           {/* 現金投資 */}
           <div>
-            <p className="text-[10px] font-mono text-gray-500 mb-1">現金投資（1000円単位）</p>
+            <SubLabel>
+              <span style={{ color: "#991b1b" }}>● </span>現金投資
+              <span className="text-[9px] font-normal text-gray-500 ml-1">（1000円単位）</span>
+            </SubLabel>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
@@ -129,17 +180,17 @@ export function ShushiEditDashboard({ data, onSave, onClose }: Props) {
                   inputMode="numeric"
                   placeholder="○k"
                   className="w-full text-sm font-mono rounded px-2 py-3 focus:outline-none bg-white text-center"
-                  style={{ border: "1px solid #374151" }}
+                  style={{ border: "1.5px solid #dc2626" }}
                   value={form.cashInvestK ?? ""}
                   onChange={(e) => handleNumChange("cashInvestK", e.target.value)}
                   min={0}
                 />
                 {form.cashInvestK != null && (
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-gray-400">k</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-gray-500">k</span>
                 )}
               </div>
               {form.cashInvestK != null && form.cashInvestK > 0 && (
-                <span className="text-[10px] font-mono text-gray-500 flex-shrink-0">
+                <span className="text-[11px] font-mono font-bold text-gray-700 flex-shrink-0">
                   = {cashCoins.toLocaleString()}枚
                 </span>
               )}
@@ -148,37 +199,71 @@ export function ShushiEditDashboard({ data, onSave, onClose }: Props) {
 
           {/* 投資合計 */}
           {totalInvest > 0 && (
-            <div className="bg-gray-50 rounded px-3 py-2 border border-gray-300">
+            <div
+              className="rounded px-3 py-2"
+              style={{ backgroundColor: "#fee2e2", border: "1.5px solid #dc2626" }}
+            >
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-mono text-gray-500">投資合計</span>
-                <span className="text-sm font-mono font-bold text-gray-800">
+                <span className="text-[11px] font-mono font-bold" style={{ color: "#991b1b" }}>投資合計</span>
+                <span className="text-base font-mono font-black" style={{ color: "#991b1b" }}>
                   {totalInvest.toLocaleString()} 枚
                 </span>
               </div>
             </div>
           )}
-        </div>
+        </SectionCard>
 
         {/* ── 交換枚数 ── */}
-        <div className="bg-white rounded border border-gray-400 px-3 pt-3 pb-4 space-y-3">
-          <p className="text-[11px] font-mono font-bold text-gray-700 border-b border-gray-300 pb-1">交換枚数</p>
-          <p className="text-[10px] font-mono text-gray-500">最終的に持ち帰った枚数を入力</p>
-          <div className="relative">
-            <input
-              type="number"
-              inputMode="numeric"
-              placeholder="交換枚数"
-              className="w-full text-sm font-mono rounded px-2 py-3 focus:outline-none bg-white text-center"
-              style={{ border: "1px solid #374151" }}
-              value={form.exchangeCoins ?? ""}
-              onChange={(e) => handleNumChange("exchangeCoins", e.target.value)}
-              min={0}
-            />
-            {form.exchangeCoins != null && (
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-gray-400">枚</span>
-            )}
+        <SectionCard accent={SECTION.exchange} title="交換枚数（プラス側）">
+          <div>
+            <SubLabel>
+              <span style={{ color: "#14532d" }}>● </span>最終的に持ち帰った枚数
+            </SubLabel>
+            <div className="relative">
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="交換枚数"
+                className="w-full text-sm font-mono rounded px-2 py-3 focus:outline-none bg-white text-center"
+                style={{ border: "1.5px solid #16a34a" }}
+                value={form.exchangeCoins ?? ""}
+                onChange={(e) => handleNumChange("exchangeCoins", e.target.value)}
+                min={0}
+              />
+              {form.exchangeCoins != null && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-gray-500">枚</span>
+              )}
+            </div>
           </div>
-        </div>
+        </SectionCard>
+
+        {/* ── トータルゲーム数 ── */}
+        <SectionCard accent={SECTION.totalG} title="トータルゲーム数">
+          <div>
+            <SubLabel>
+              <span style={{ color: "#1e3a8a" }}>● </span>液晶メニューのTOTAL G数
+              <span className="text-[9px] font-normal text-gray-500 ml-1">（終了時に転記）</span>
+            </SubLabel>
+            <div className="relative">
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="TOTALゲーム数"
+                className="w-full text-sm font-mono rounded px-2 py-3 focus:outline-none bg-white text-center"
+                style={{ border: "1.5px solid #2563eb" }}
+                value={form.totalGames ?? ""}
+                onChange={(e) => handleNumChange("totalGames", e.target.value)}
+                min={0}
+              />
+              {form.totalGames != null && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono font-bold text-gray-500">G</span>
+              )}
+            </div>
+            <p className="text-[10px] font-mono text-gray-500 mt-1.5 leading-relaxed">
+              ※ 集計タブの「実稼働G数」計算に使用されます
+            </p>
+          </div>
+        </SectionCard>
 
         {/* ── 最終収支プレビュー ── */}
         {(totalInvest > 0 || (form.exchangeCoins ?? 0) > 0) && (
@@ -189,14 +274,14 @@ export function ShushiEditDashboard({ data, onSave, onClose }: Props) {
               backgroundColor: balance >= 0 ? "#f0fdf4" : "#fef2f2",
             }}
           >
-            <p className="text-[10px] font-mono text-gray-500 mb-1">最終収支</p>
+            <p className="text-[11px] font-mono font-bold text-gray-700 mb-1">最終収支</p>
             <p
               className="text-lg font-mono font-black text-center"
               style={{ color: balance >= 0 ? "#16a34a" : "#dc2626" }}
             >
               {balance >= 0 ? "+" : ""}{balance.toLocaleString()} 枚
             </p>
-            <p className="text-[9px] font-mono text-gray-400 text-center mt-1">
+            <p className="text-[10px] font-mono text-gray-500 text-center mt-1">
               交換 {(form.exchangeCoins ?? 0).toLocaleString()} − 投資 {totalInvest.toLocaleString()}
             </p>
           </div>
