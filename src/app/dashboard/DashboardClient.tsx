@@ -35,6 +35,8 @@ export function DashboardClient() {
   const [creating, setCreating] = useState(false);
   const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
   const [pendingPhotoPreview, setPendingPhotoPreview] = useState<string | null>(null);
+  // どのフォーム経路で発生したエラーか: "auto"=上記情報ボタン / "free"=フリー入力ボタン / null=エラーなし
+  const [formError, setFormError] = useState<{ scope: "auto" | "free"; fields: string[] } | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<"date" | "balance" | "hall" | "setting">("date");
@@ -118,11 +120,24 @@ export function DashboardClient() {
   }
 
   async function handleCreate() {
-    const name = sessionName.trim() || "東京喰種 RESONANCE";
+    const name = sessionName.trim();
+    if (!name) {
+      setFormError({ scope: "free", fields: ["sessionName"] });
+      return;
+    }
+    setFormError(null);
     await handleCreateWithName(name);
   }
 
   async function handleAutoCreate() {
+    const missing: string[] = [];
+    if (!hallName.trim()) missing.push("hallName");
+    if (!machineNumber.trim()) missing.push("machineNumber");
+    if (missing.length > 0) {
+      setFormError({ scope: "auto", fields: missing });
+      return;
+    }
+    setFormError(null);
     await handleCreateWithName(generateAutoName());
   }
 
@@ -336,24 +351,38 @@ export function DashboardClient() {
 
               {/* ホール名 */}
               <div>
-                <p className="text-[10px] font-mono text-gray-500 mb-1">ホール名</p>
+                <p className="text-[10px] font-mono text-gray-500 mb-1">ホール名 <span className="text-red-600">*</span></p>
                 <input type="text" placeholder="例: マルハン新宿"
-                  className="w-full text-sm font-mono border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500"
+                  className={`w-full text-sm font-mono border-2 rounded-lg px-3 py-2.5 focus:outline-none ${
+                    formError?.scope === "auto" && formError.fields.includes("hallName")
+                      ? "border-red-500 focus:border-red-600 bg-red-50"
+                      : "border-gray-300 focus:border-gray-500"
+                  }`}
                   value={hallName}
-                  onChange={(e) => setHallName(e.target.value)}
+                  onChange={(e) => { setHallName(e.target.value); if (formError?.scope === "auto") setFormError(null); }}
                   maxLength={20}
                 />
+                {formError?.scope === "auto" && formError.fields.includes("hallName") && (
+                  <p className="text-[10px] font-mono text-red-600 mt-1">⚠️ ホール名を入力してください</p>
+                )}
               </div>
 
               {/* 台番号 */}
               <div>
-                <p className="text-[10px] font-mono text-gray-500 mb-1">台番号</p>
+                <p className="text-[10px] font-mono text-gray-500 mb-1">台番号 <span className="text-red-600">*</span></p>
                 <input type="text" inputMode="numeric" placeholder="例: 123"
-                  className="w-full text-sm font-mono border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500"
+                  className={`w-full text-sm font-mono border-2 rounded-lg px-3 py-2.5 focus:outline-none ${
+                    formError?.scope === "auto" && formError.fields.includes("machineNumber")
+                      ? "border-red-500 focus:border-red-600 bg-red-50"
+                      : "border-gray-300 focus:border-gray-500"
+                  }`}
                   value={machineNumber}
-                  onChange={(e) => setMachineNumber(e.target.value)}
+                  onChange={(e) => { setMachineNumber(e.target.value); if (formError?.scope === "auto") setFormError(null); }}
                   maxLength={10}
                 />
+                {formError?.scope === "auto" && formError.fields.includes("machineNumber") && (
+                  <p className="text-[10px] font-mono text-red-600 mt-1">⚠️ 台番号を入力してください</p>
+                )}
               </div>
 
               {/* 前任者履歴写真（Pro限定・任意） */}
@@ -407,19 +436,26 @@ export function DashboardClient() {
 
               {/* フリー入力 */}
               <div>
-                <p className="text-[10px] font-mono text-gray-500 mb-1">セッション名（フリー入力）</p>
+                <p className="text-[10px] font-mono text-gray-500 mb-1">セッション名（フリー入力） <span className="text-red-600">*</span></p>
                 <input type="text" placeholder="例: 東京喰種 夕方実戦"
-                  className="w-full text-sm font-mono border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:border-gray-500"
+                  className={`w-full text-sm font-mono border-2 rounded-lg px-3 py-2.5 focus:outline-none ${
+                    formError?.scope === "free" && formError.fields.includes("sessionName")
+                      ? "border-red-500 focus:border-red-600 bg-red-50"
+                      : "border-gray-300 focus:border-gray-500"
+                  }`}
                   value={sessionName}
-                  onChange={(e) => setSessionName(e.target.value)}
+                  onChange={(e) => { setSessionName(e.target.value); if (formError?.scope === "free") setFormError(null); }}
                   maxLength={30}
                 />
+                {formError?.scope === "free" && formError.fields.includes("sessionName") && (
+                  <p className="text-[10px] font-mono text-red-600 mt-1">⚠️ セッション名を入力してください</p>
+                )}
               </div>
 
               {/* フリー入力でのアクションボタン */}
               <div className="flex gap-2 pt-1">
                 <button
-                  onClick={() => { setShowModal(false); setSessionName(""); setHallName(""); setMachineNumber(""); clearPendingPhoto(); }}
+                  onClick={() => { setShowModal(false); setSessionName(""); setHallName(""); setMachineNumber(""); setFormError(null); clearPendingPhoto(); }}
                   className="flex-1 py-3 rounded-lg border-2 border-gray-300 text-gray-600 font-mono text-sm font-bold hover:bg-gray-50"
                   disabled={creating}
                 >
