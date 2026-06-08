@@ -11,7 +11,7 @@ import type { NormalBlock, TGShinsekaiCounter } from "@/types";
 import {
   TG_ZONES, TG_MODES, TG_WIN_TRIGGERS, TG_EVENTS,
   TG_ENDING_SUGGESTIONS, TG_TROPHIES, TG_KAKUGAN,
-  TG_SHINSEKAI, TG_INVITATIONS,
+  TG_SHINSEKAI, TG_SHINSEKAI_TRIGGER, TG_INVITATIONS,
   TG_ZENCHO_ZONES, TG_ZENCHO_TYPES,
   TG_EYECATCH,
 } from "@/lib/engine/constants";
@@ -81,6 +81,7 @@ function emptyForm(): FormState {
     trophy: "",
     kakugan:    [],
     shinsekai:  [],
+    shinsekaiTrigger: [],
     invitation: [],
     zencho:     [],
     eyecatch: [],
@@ -105,7 +106,7 @@ const LANDSCAPE_STORAGE_KEY = "tgr_normal_dashboard_landscape";
 export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinsekaiWeakRare, onShinsekaiWeakRareChange, pendingKakuganActive, onStartPendingKakugan, onSave, onTempSave, onClose, onYame }: Props) {
   const isNew = block === null;
   const [form, setForm] = useState<FormState>(() =>
-    block ? { ...block, memo: block.memo ?? "" } : emptyForm()
+    block ? { ...block, memo: block.memo ?? "", shinsekaiTrigger: block.shinsekaiTrigger ?? [] } : emptyForm()
   );
   const [yamePopup, setYamePopup] = useState(false);
   const [yameG, setYameG] = useState<string>("");
@@ -248,9 +249,9 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
     }
   }
 
-  /** スロット方式の個別セット (kakugan / shinsekai / invitation) */
-  function setSlot(field: "kakugan" | "shinsekai" | "invitation", index: number, value: string) {
-    const current = [...(form[field] as string[])];
+  /** スロット方式の個別セット (kakugan / shinsekai / shinsekaiTrigger / invitation) */
+  function setSlot(field: "kakugan" | "shinsekai" | "shinsekaiTrigger" | "invitation", index: number, value: string) {
+    const current = [...((form[field] as string[] | undefined) ?? [])];
     while (current.length <= index) current.push("");
     current[index] = value;
     // 末尾の空要素を除去
@@ -640,7 +641,7 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
           </p>
         </Section>
 
-        {/* ── 精神世界 (nd-14) — 5スロット独立プルダウン ── */}
+        {/* ── 精神世界 (nd-14) — 5スロット 2階建てピッカー（上: ゲーム数 / 下: 当選契機） ── */}
         <Section title="精神世界（最大5回）" bgImage="/images/seishin_sekai.jpg">
           <MultiSlotPicker
             values={form.shinsekai}
@@ -649,6 +650,14 @@ export function NormalBlockEditDashboard({ block, blockIndex, medalStamp, shinse
             accentColor="#1e40af"
             borderActive="#1d4ed8"
             landscape={useLandscape}
+            tier2={{
+              values: form.shinsekaiTrigger ?? [],
+              options: [...TG_SHINSEKAI_TRIGGER],
+              onChange: (vals) => setField("shinsekaiTrigger", vals),
+              accentColor: "#7c3aed",
+              borderActive: "#6d28d9",
+              label: "当選契機",
+            }}
           />
 
           {/* セッション全体の弱レア役カウンター（常時表示・どの周期からも同じ値を編集） */}
@@ -790,6 +799,7 @@ function MultiSlotPicker({
   accentColor = "#374151", borderActive = "#374151",
   maxSlots = MAX_SLOTS, slotHeight = 60,
   landscape = false,
+  tier2,
 }: {
   values: string[];
   options: string[];
@@ -801,6 +811,16 @@ function MultiSlotPicker({
   maxSlots?: number;
   slotHeight?: number;
   landscape?: boolean;
+  /** 2階建てピッカー（精神世界 当選契機 用）。tier1 と同じ index に紐づく独立選択肢。 */
+  tier2?: {
+    values: string[];
+    options: string[];
+    onChange: (vals: string[]) => void;
+    accentColor?: string;
+    borderActive?: string;
+    label?: string;
+    slotHeight?: number;
+  };
 }) {
   function setSlot(index: number, value: string) {
     const next = [...values];
@@ -810,12 +830,28 @@ function MultiSlotPicker({
     onChange(next);
   }
 
+  function setTier2Slot(index: number, value: string) {
+    if (!tier2) return;
+    const next = [...tier2.values];
+    while (next.length <= index) next.push("");
+    next[index] = value;
+    while (next.length > 0 && next[next.length - 1] === "") next.pop();
+    tier2.onChange(next);
+  }
+
+  const tier2Accent = tier2?.accentColor ?? "#475569";
+  const tier2Border = tier2?.borderActive ?? "#334155";
+  const tier2Height = tier2?.slotHeight ?? 44;
+
   return (
     <div className="grid grid-cols-5 gap-1.5">
       {Array.from({ length: maxSlots }, (_, i) => {
         const value = values[i] ?? "";
         const hasValue = value !== "";
         const displayLabel = hasValue ? (displayFn ? displayFn(value) : value) : "—";
+
+        const tier2Value = tier2?.values[i] ?? "";
+        const tier2HasValue = tier2Value !== "";
 
         return (
           <div key={i} className="flex flex-col rounded overflow-hidden border-2"
@@ -825,8 +861,8 @@ function MultiSlotPicker({
               style={{ backgroundColor: "#f3f4f6", color: "#9ca3af" }}>
               {i + 1}
             </div>
-            {/* 選択エリア */}
-            <div className="relative flex-1 overflow-hidden" style={{ minHeight: `${slotHeight}px` }}>
+            {/* 選択エリア (tier1) */}
+            <div className="relative overflow-hidden" style={{ minHeight: `${slotHeight}px` }}>
               <div
                 className="absolute inset-0 flex items-center justify-center px-0.5 pointer-events-none"
                 style={hasValue
@@ -847,6 +883,38 @@ function MultiSlotPicker({
                 optionLabel={displayFn}
               />
             </div>
+            {/* 選択エリア (tier2 — 当選契機) */}
+            {tier2 && (
+              <>
+                {tier2.label && (
+                  <div className="text-center text-[8px] font-mono py-0.5 leading-none border-t"
+                    style={{ backgroundColor: "#f1f5f9", color: "#64748b", borderColor: "#e2e8f0" }}>
+                    {tier2.label}
+                  </div>
+                )}
+                <div className="relative overflow-hidden border-t"
+                  style={{ minHeight: `${tier2Height}px`, borderColor: tier2HasValue ? tier2Border : "#e5e7eb" }}>
+                  <div
+                    className="absolute inset-0 flex items-center justify-center px-0.5 pointer-events-none"
+                    style={tier2HasValue
+                      ? { backgroundColor: tier2Accent, color: "#ffffff" }
+                      : { backgroundColor: "#f9fafb", color: "#d1d5db" }
+                    }
+                  >
+                    <span className="text-[9px] font-mono font-bold text-center leading-tight break-all line-clamp-3">
+                      {tier2HasValue ? tier2Value : "—"}
+                    </span>
+                  </div>
+                  <LandscapeSelectOverlay
+                    value={tier2Value}
+                    options={["", ...tier2.options]}
+                    onChange={(v) => setTier2Slot(i, v)}
+                    landscape={landscape}
+                    emptyLabel="—"
+                  />
+                </div>
+              </>
+            )}
           </div>
         );
       })}

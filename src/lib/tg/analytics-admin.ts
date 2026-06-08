@@ -9,7 +9,7 @@ import {
   URA_AT_RATE, HIKIMODOHI_RATE,
 } from "@/lib/tg/settingDiff";
 import { filterBlocksFromSession, computeZoneExact, computeZoneProrate } from "@/lib/tg/analytics";
-import { TG_KAKUGAN, TG_SHINSEKAI, TG_ENDING_SUGGESTIONS, TG_AT_CHARACTERS, TG_BITES_TYPES, TG_INVITATIONS } from "@/lib/engine/constants";
+import { TG_KAKUGAN, TG_SHINSEKAI, TG_SHINSEKAI_TRIGGER, TG_ENDING_SUGGESTIONS, TG_AT_CHARACTERS, TG_BITES_TYPES, TG_INVITATIONS } from "@/lib/engine/constants";
 
 // ── 設定セグメント定義 ──────────────────────────────────────────────────────
 
@@ -172,6 +172,7 @@ export const ANALYSIS_BLOCKS = [
   "CZ役別",
   "赫眼",
   "精神世界",
+  "精神世界 当選契機",
   "CZ失敗終了画面",
   "AT終了画面",
   "有馬set",
@@ -338,6 +339,26 @@ export function computeBlock(blockName: AnalysisBlock, segMap: Record<SettingSeg
             label: k,
             values: segs.map((seg) => {
               const all = segMap[seg].blocks.flatMap((b) => sArr(b.shinsekai));
+              const c = all.filter((v) => v === k).length;
+              return `${c} (${pct(c, all.length)})`;
+            }),
+          })),
+        ],
+      };
+    }
+
+    case "精神世界 当選契機": {
+      const items = [...TG_SHINSEKAI_TRIGGER];
+      return {
+        title: "精神世界 当選契機",
+        rows: [
+          { label: "合計", values: segs.map((seg) =>
+            `${segMap[seg].blocks.flatMap((b) => sArr(b.shinsekaiTrigger)).filter((v) => v !== "").length}`
+          )},
+          ...items.map((k) => ({
+            label: k,
+            values: segs.map((seg) => {
+              const all = segMap[seg].blocks.flatMap((b) => sArr(b.shinsekaiTrigger)).filter((v) => v !== "");
               const c = all.filter((v) => v === k).length;
               return `${c} (${pct(c, all.length)})`;
             }),

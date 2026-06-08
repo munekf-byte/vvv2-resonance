@@ -48,6 +48,9 @@ export interface TGNormalBlock {
   kakugan: string[];
   /** 精神世界 — 複数記録可 (TG_SHINSEKAI values) */
   shinsekai: string[];
+  /** 精神世界 当選契機 — shinsekai と並列の同インデックス配列 (TG_SHINSEKAI_TRIGGER values)。
+   *  既存セッションでは undefined 可。読み出し時は `?? []` で吸収する。 */
+  shinsekaiTrigger?: string[];
   /** 招待状 — 複数記録可 (TG_INVITATIONS values) */
   invitation: string[];
   /** 前兆履歴 — 複数記録可 (TG_ZENCHO values) */

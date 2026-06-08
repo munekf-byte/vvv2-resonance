@@ -9,7 +9,7 @@ import { useRef, useState, useEffect } from "react";
 import { captureAndShare } from "@/lib/tg/captureImage";
 import type { NormalBlock, TGATEntry, TGATSet, TGArimaJudgment, ShushiData } from "@/types";
 import {
-  TG_KAKUGAN, TG_SHINSEKAI,
+  TG_KAKUGAN, TG_SHINSEKAI, TG_SHINSEKAI_TRIGGER,
   TG_ENDING_SUGGESTIONS, TG_TROPHIES,
   TG_AT_CHARACTERS, TG_BITES_TYPES,
   TG_ZONES, TG_INVITATIONS,
@@ -244,6 +244,13 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
   const allShinsekai = blocks.flatMap((b) => b.shinsekai);
   const shinsekaiTotal = allShinsekai.length;
   const shinsekaiBS = [...TG_SHINSEKAI].map((s) => ({ label: s, count: allShinsekai.filter((v) => v === s).length }));
+  // 当選契機ブレイクダウン — shinsekai と同 index の並列配列。記録された分のみ集計（空文字は無視）
+  const allShinsekaiTrigger = blocks.flatMap((b) => b.shinsekaiTrigger ?? []).filter((v) => v !== "");
+  const shinsekaiTriggerTotal = allShinsekaiTrigger.length;
+  const shinsekaiTriggerBD = [...TG_SHINSEKAI_TRIGGER].map((t) => ({
+    label: t,
+    count: allShinsekaiTrigger.filter((v) => v === t).length,
+  }));
   // 精神世界中の弱レア役 — セッション全体カウンターから直接読み出し
   const shinsekaiWeakRareMiss = shinsekaiWeakRare?.miss ?? 0;
   const shinsekaiWeakRareWin = shinsekaiWeakRare?.win ?? 0;
@@ -582,12 +589,18 @@ export function SummaryTab({ blocks, atEntries, sessionId, userSettingGuess, uch
                 grade={s.label === "精神33G" && s.count > 0 ? gradeByRate(s.count, shinsekaiTotal, 25, 60) : undefined} />
             ))}
             <TRow cols={COLS3_PCT} i={shinsekaiBS.length + 1}
+              values={[<b key="l">当選契機</b>, `${shinsekaiTriggerTotal}回`, "—"]} />
+            {shinsekaiTriggerBD.map((t, i) => (
+              <TRow key={t.label} cols={COLS3_PCT} i={shinsekaiBS.length + 2 + i}
+                values={[`　${t.label}`, `${t.count}回`, pct(t.count, shinsekaiTriggerTotal)]} />
+            ))}
+            <TRow cols={COLS3_PCT} i={shinsekaiBS.length + shinsekaiTriggerBD.length + 2}
               values={[<b key="l">弱レア役 発生</b>, `${shinsekaiWeakRareTotal}回`, "—"]} />
-            <TRow cols={COLS3_PCT} i={shinsekaiBS.length + 2}
+            <TRow cols={COLS3_PCT} i={shinsekaiBS.length + shinsekaiTriggerBD.length + 3}
               values={[`　ハズレ`, `${shinsekaiWeakRareMiss}回`, pct(shinsekaiWeakRareMiss, shinsekaiWeakRareTotal)]} />
-            <TRow cols={COLS3_PCT} i={shinsekaiBS.length + 3}
+            <TRow cols={COLS3_PCT} i={shinsekaiBS.length + shinsekaiTriggerBD.length + 4}
               values={[`　当選`, `${shinsekaiWeakRareWin}回`, pct(shinsekaiWeakRareWin, shinsekaiWeakRareTotal)]} />
-            <TRow cols={COLS3_PCT} i={shinsekaiBS.length + 4}
+            <TRow cols={COLS3_PCT} i={shinsekaiBS.length + shinsekaiTriggerBD.length + 5}
               values={[<b key="l">当選率</b>, `${shinsekaiWeakRareWin}/${shinsekaiWeakRareTotal}`, pct(shinsekaiWeakRareWin, shinsekaiWeakRareTotal)]} />
           </Cat>
         </div>

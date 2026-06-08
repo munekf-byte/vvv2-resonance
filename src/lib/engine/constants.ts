@@ -95,6 +95,14 @@ export const TG_SHINSEKAI = [
   "精神33G",
 ] as const;
 
+/** 精神世界 当選契機 — 各精神世界スロットに紐づく入賞契機 */
+export const TG_SHINSEKAI_TRIGGER = [
+  "レア役",
+  "赫眼レア役",
+  "謎当たり",
+  "不明",
+] as const;
+
 // 格納値 = 短縮形 (表示もこのまま使用)
 export const TG_INVITATIONS = [
   "今夜ディ - デフォルト",
