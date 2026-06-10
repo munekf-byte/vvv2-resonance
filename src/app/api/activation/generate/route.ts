@@ -83,6 +83,32 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
+    // ── 登録ユーザー存在チェック ────────────────────────────────────────
+    // profiles は service_role でのみ全件参照可能。auth.users と1:1 で連動するため
+    // profiles 側でメール一致を確認すれば登録済みかどうか判定できる。
+    // 大文字小文字を吸収するため .ilike (ワイルドカード無し = case-insensitive eq)。
+    const { data: existingProfile, error: profileErr } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .ilike("email", email)
+      .maybeSingle();
+
+    if (profileErr) {
+      console.error("[activation/generate] profile lookup error:", profileErr.message);
+      return NextResponse.json({ ok: false, error: "Internal Server Error" }, { status: 500 });
+    }
+
+    if (!existingProfile) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "このメールアドレスで登録されたアカウントが見つかりません。アプリにログインしているメールアドレスを入力してください。",
+        },
+        { status: 404 },
+      );
+    }
+
     // 既存の未使用キーがあれば再利用
     const { data: existing, error: existingErr } = await supabaseAdmin
       .from("activation_keys")
