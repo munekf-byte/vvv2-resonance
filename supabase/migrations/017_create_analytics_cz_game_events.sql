@@ -57,6 +57,7 @@ CREATE INDEX IF NOT EXISTS idx_acge_server_recorded ON public.analytics_cz_game_
 -- =============================================================================
 ALTER TABLE public.analytics_cz_game_events ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Owner read only" ON public.analytics_cz_game_events;
 CREATE POLICY "Owner read only"
   ON public.analytics_cz_game_events
   FOR SELECT

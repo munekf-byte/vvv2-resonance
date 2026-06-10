@@ -49,6 +49,45 @@ function ProPageInner() {
   const [paymentDateInput, setPaymentDateInput] = useState<string>(() => toLocalDatetimeInputValue(new Date()));
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // ── アクティベーションキー入力 ─────────────────────────────────────────
+  const [activationKey, setActivationKey] = useState("");
+  const [activationLoading, setActivationLoading] = useState(false);
+  const [activationError, setActivationError] = useState<string | null>(null);
+
+  async function handleRedeemActivationKey() {
+    if (activationLoading) return;
+    setActivationError(null);
+    const trimmed = activationKey.trim().toUpperCase();
+    if (!trimmed) {
+      setActivationError("キーを入力してください。");
+      return;
+    }
+    setActivationLoading(true);
+    try {
+      const res = await fetch("/api/activation/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: trimmed }),
+      });
+      const data = (await res.json()) as { ok: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        const map: Record<string, string> = {
+          "Invalid or expired key": "キーが無効です。正しいキーを入力してください。",
+          "Email mismatch": "キー生成時のメールアドレスと、ログイン中のアカウントが異なります。",
+          "Already pro": "すでに Pro プランをご利用中です。",
+          "Unauthorized": "ログインが必要です。",
+        };
+        setActivationError(map[data.error ?? ""] || data.error || `エラー (${res.status})`);
+        return;
+      }
+      // 成功 → リロードして Pro 状態を反映 + 昇格ポップアップを表示させる
+      window.location.replace("/pro");
+    } catch (e) {
+      setActivationError(e instanceof Error ? e.message : "通信エラー");
+    } finally {
+      setActivationLoading(false);
+    }
+  }
 
   async function handleCopyPaypayId() {
     try {
@@ -316,6 +355,53 @@ function ProPageInner() {
         ) : (
           /* ===== パターンA: 決済ページ（無課金ユーザー向け） ===== */
           <div className="space-y-6">
+
+            {/* アクティベーションキー入力（note / BOOTH 購入者向け） */}
+            <div
+              className="rounded-xl overflow-hidden"
+              style={{ backgroundColor: "#ffffff", border: "2px solid #d97706" }}
+            >
+              <div className="px-4 py-3" style={{ backgroundColor: "#d97706" }}>
+                <p className="font-mono font-black text-sm text-white">
+                  🔑 アクティベーションキーで有効化
+                </p>
+              </div>
+              <div className="px-4 py-4">
+                <p className="font-mono text-[11px] text-gray-700 leading-relaxed mb-3">
+                  <span className="font-bold">note</span> または <span className="font-bold">BOOTH</span> で
+                  Pro プランを購入された方は、購入特典のキーを入力してください。
+                </p>
+                <input
+                  type="text"
+                  value={activationKey}
+                  onChange={(e) => setActivationKey(e.target.value)}
+                  placeholder="PRO-XXXX-XXXX-XXXX"
+                  autoComplete="off"
+                  className="w-full px-3 py-3 rounded font-mono text-sm tracking-wider"
+                  style={{ border: "2px solid #d97706", backgroundColor: "#fffbeb" }}
+                />
+                {activationError && (
+                  <p className="font-mono text-[11px] text-red-600 mt-2">{activationError}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={handleRedeemActivationKey}
+                  disabled={activationLoading}
+                  className="block w-full mt-3 py-4 rounded-lg font-mono font-black text-sm active:scale-95 transition-transform text-center disabled:opacity-60"
+                  style={{
+                    background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
+                    color: "#ffffff",
+                    boxShadow: "0 4px 14px rgba(245, 158, 11, 0.4)",
+                  }}
+                >
+                  {activationLoading ? "確認中…" : "有効化する →"}
+                </button>
+                <p className="font-mono text-[10px] text-gray-500 mt-2 leading-relaxed">
+                  キー生成時に入力したメールアドレスと、現在ログイン中のアカウントが
+                  一致している必要があります。
+                </p>
+              </div>
+            </div>
 
             {/* 価格カード */}
             <div
